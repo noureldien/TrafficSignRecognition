@@ -73,6 +73,98 @@ def __shared_dataset(data_xy, borrow=True):
         shared_y_casted = theano.tensor.cast(shared_y, 'int32')
         return shared_x, shared_y_casted
 
+def preprocess_dataset():
+
+    from os import listdir
+    from os.path import isfile, join
+    from skimage import exposure, transform
+    import matplotlib.pyplot as plt
+    import cv2
+
+    directoryTrain1 = "D:\\_Dataset\\GTSRB\\Final_Training_Scaled\\"
+    directoryTrain2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_28_2\\"
+
+    directoryTest1 = "D:\\_Dataset\\GTSRB\\Final_Test_Scaled\\"
+    directoryTest2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28_2\\"
+
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
+
+    plot_images = False
+
+    for i in range (0, 43):
+        print(i)
+        folderName = "{0:05d}\\".format(i)
+        subDirectory1 = directoryTrain1 + folderName
+        subDirectory2 = directoryTrain2 + folderName
+        onlyfiles = [f for f in listdir(subDirectory1) if isfile(join(subDirectory1, f))]
+        for file in onlyfiles:
+            # do the following steps
+            # read -> Grayscale -> imadjust -> histeq -> adapthisteq ->
+            # ContrastStretchNorm -> resize -> write
+            filePath = join(subDirectory1, file)
+            img = cv2.imread(filePath)
+            img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img_eq = exposure.equalize_hist(img_gs)
+            img_adeq = exposure.equalize_adapthist(img_eq, clip_limit=0.015)
+            img_int = exposure.rescale_intensity(img_adeq, in_range=(0.2, 0.9))
+            img_res = transform.resize(img_int, output_shape=(28, 28))
+
+            # save the file
+            img_save = img_res * 255
+            img_save = img_save.astype(int)
+            filePath = join(subDirectory2, file)
+            cv2.imwrite(filePath, img_save)
+
+            if plot_images:
+                # Display results
+                fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(8, 5))
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img, axes[:, 0])
+                ax_img.set_title('Low contrast image')
+                y_min, y_max = ax_hist.get_ylim()
+                ax_hist.set_ylabel('Number of pixels')
+                ax_hist.set_yticks(numpy.linspace(0, y_max, 5))
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_eq, axes[:, 1])
+                ax_img.set_title('Histogram equalization')
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_adeq, axes[:, 2])
+                ax_img.set_title('Adaptive equalization')
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_int, axes[:, 3])
+                ax_img.set_title('Contrast stretching')
+                ax_cdf.set_ylabel('Fraction of total intensity')
+                ax_cdf.set_yticks(numpy.linspace(0, 1, 5))
+                # prevent overlap of y-axis labels
+                fig.subplots_adjust(wspace=0.4)
+                plt.show()
+                return
+
+def __plot_img_and_hist(img, axes, bins=256):
+    """Plot an image along with its histogram and cumulative histogram.
+    """
+    import skimage
+    import skimage.exposure
+    import matplotlib.pyplot as plt
+
+    img = skimage.img_as_float(img)
+    ax_img, ax_hist = axes
+    ax_cdf = ax_hist.twinx()
+
+    # Display image
+    ax_img.imshow(img, cmap=plt.cm.gray)
+    ax_img.set_axis_off()
+
+    # Display histogram
+    ax_hist.hist(img.ravel(), bins=bins, histtype='step', color='black')
+    ax_hist.ticklabel_format(axis='y', style='scientific', scilimits=(0, 0))
+    ax_hist.set_xlabel('Pixel intensity')
+    ax_hist.set_xlim(0, 1)
+    ax_hist.set_yticks([])
+
+    # Display cumulative distribution
+    img_cdf, bins = skimage.exposure.cumulative_distribution(img, bins)
+    ax_cdf.plot(bins, img_cdf, 'r')
+    ax_cdf.set_yticks([])
+
+    return ax_img, ax_hist, ax_cdf
+
 def serialize_gtsr():
     '''
     Read the preprocessed images (training and test) and save them on the disk
