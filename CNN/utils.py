@@ -51,6 +51,75 @@ def load_data(dataset):
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y)]
     return rval
 
+def preprocess_dataset():
+
+    from os import listdir
+    from os.path import isfile, join
+    from skimage import exposure, transform
+    import matplotlib.pyplot as plt
+    import cv2
+
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
+
+    directory1 = "D:\\_Dataset\\GTSRB\\Final_Training_Scaled\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_28_2\\"
+
+    directory1 = "D:\\_Dataset\\GTSRB\\Final_Test_Scaled\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28_2\\"
+
+    directory1 = "D:\\_Dataset\\SuperClass\\Training_Scaled\\"
+    directory2 = "D:\\_Dataset\\SuperClass\\Training_Preprocessed\\"
+
+    #directory1 = "D:\\_Dataset\\SuperClass\\Test_Scaled\\"
+    #directory2 = "D:\\_Dataset\\SuperClass\\Test_Preprocessed\\"
+
+    plot_images = False
+
+    for i in range(0, 3):
+        folderName = "{0:05d}\\".format(i)
+        subDirectory1 = directory1 + folderName
+        subDirectory2 = directory2 + folderName
+        onlyfiles = [f for f in listdir(subDirectory1) if isfile(join(subDirectory1, f))]
+        for file in onlyfiles:
+            # do the following steps : read -> Grayscale -> imadjust -> histeq
+            # -> adapthisteq -> ContrastStretchNorm -> resize -> write
+            filePath = join(subDirectory1, file)
+            img = cv2.imread(filePath)
+            img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img_eq = exposure.equalize_hist(img_gs)
+            img_adeq = exposure.equalize_adapthist(img_eq, clip_limit=0.2, kernel_size=(8, 8))
+            img_int = exposure.rescale_intensity(img_adeq, in_range=(0.1, 0.8))
+            img_res = transform.resize(img_int, output_shape=(28, 28))
+            # save the file
+            img_save = img_res * 255
+            img_save = img_save.astype(int)
+            filePath = join(subDirectory2, file)
+            cv2.imwrite(filePath, img_save)
+
+            if plot_images:
+                #region Plot results
+                fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(8, 5))
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img, axes[:, 0])
+                ax_img.set_title('Low contrast image')
+                y_min, y_max = ax_hist.get_ylim()
+                ax_hist.set_ylabel('Number of pixels')
+                ax_hist.set_yticks(numpy.linspace(0, y_max, 5))
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_eq, axes[:, 1])
+                ax_img.set_title('Histogram equalization')
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_adeq, axes[:, 2])
+                ax_img.set_title('Adaptive equalization')
+                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_int, axes[:, 3])
+                ax_img.set_title('Contrast stretching')
+                ax_cdf.set_ylabel('Fraction of total intensity')
+                ax_cdf.set_yticks(numpy.linspace(0, 1, 5))
+                # prevent overlap of y-axis labels
+                fig.subplots_adjust(wspace=0.4)
+                plt.show()
+                #endregion
+                return
+
+        print('Finish Class: ' + folderName)
+
 def __shared_dataset(data_xy, borrow=True):
         """ Function that loads the dataset into shared variables
 
@@ -72,69 +141,6 @@ def __shared_dataset(data_xy, borrow=True):
         # lets ous get around this issue
         shared_y_casted = theano.tensor.cast(shared_y, 'int32')
         return shared_x, shared_y_casted
-
-def preprocess_dataset():
-
-    from os import listdir
-    from os.path import isfile, join
-    from skimage import exposure, transform
-    import matplotlib.pyplot as plt
-    import cv2
-
-    directoryTrain1 = "D:\\_Dataset\\GTSRB\\Final_Training_Scaled\\"
-    directoryTrain2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_28_2\\"
-
-    directoryTest1 = "D:\\_Dataset\\GTSRB\\Final_Test_Scaled\\"
-    directoryTest2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28_2\\"
-
-    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
-
-    plot_images = False
-
-    for i in range (0, 43):
-        print(i)
-        folderName = "{0:05d}\\".format(i)
-        subDirectory1 = directoryTrain1 + folderName
-        subDirectory2 = directoryTrain2 + folderName
-        onlyfiles = [f for f in listdir(subDirectory1) if isfile(join(subDirectory1, f))]
-        for file in onlyfiles:
-            # do the following steps
-            # read -> Grayscale -> imadjust -> histeq -> adapthisteq ->
-            # ContrastStretchNorm -> resize -> write
-            filePath = join(subDirectory1, file)
-            img = cv2.imread(filePath)
-            img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            img_eq = exposure.equalize_hist(img_gs)
-            img_adeq = exposure.equalize_adapthist(img_eq, clip_limit=0.015)
-            img_int = exposure.rescale_intensity(img_adeq, in_range=(0.2, 0.9))
-            img_res = transform.resize(img_int, output_shape=(28, 28))
-
-            # save the file
-            img_save = img_res * 255
-            img_save = img_save.astype(int)
-            filePath = join(subDirectory2, file)
-            cv2.imwrite(filePath, img_save)
-
-            if plot_images:
-                # Display results
-                fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(8, 5))
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img, axes[:, 0])
-                ax_img.set_title('Low contrast image')
-                y_min, y_max = ax_hist.get_ylim()
-                ax_hist.set_ylabel('Number of pixels')
-                ax_hist.set_yticks(numpy.linspace(0, y_max, 5))
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_eq, axes[:, 1])
-                ax_img.set_title('Histogram equalization')
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_adeq, axes[:, 2])
-                ax_img.set_title('Adaptive equalization')
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_int, axes[:, 3])
-                ax_img.set_title('Contrast stretching')
-                ax_cdf.set_ylabel('Fraction of total intensity')
-                ax_cdf.set_yticks(numpy.linspace(0, 1, 5))
-                # prevent overlap of y-axis labels
-                fig.subplots_adjust(wspace=0.4)
-                plt.show()
-                return
 
 def __plot_img_and_hist(img, axes, bins=256):
     """Plot an image along with its histogram and cumulative histogram.
@@ -164,6 +170,8 @@ def __plot_img_and_hist(img, axes, bins=256):
     ax_cdf.set_yticks([])
 
     return ax_img, ax_hist, ax_cdf
+
+# region GTSR
 
 def serialize_gtsr():
     '''
@@ -352,6 +360,10 @@ def organize_gtsr():
     pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_normalized.pkl', 'wb'))
 
     print("Finish Preparing Data")
+
+# endregion
+
+# region BelgiumTS
 
 def serialize_belgiumTS():
     '''
@@ -547,30 +559,161 @@ def organize_belgiumTS():
 
     print("Finish Preparing Data")
 
+# endregion
+
+# region SuperClass
+
+def serialize_SuperClass():
+    '''
+    Read the preprocessed images (training and test), then split the training to training and validation
+    then save them on the disk, Save them with the same format and data structure as the MNIST dataset
+
+    :return:
+    '''
+
+    from os import listdir
+    from os.path import isfile, join
+    import random
+
+    tr_images = []
+    tr_classes = []
+    test_images = []
+    test_classes = []
+
+    directoryTrain = "D:\\_Dataset\\SuperClass\\Training_Preprocessed_Revised\\"
+    directoryTest = "D:\\_Dataset\\SuperClass\\Test_Preprocessed_Revised\\"
+
+    nClasses = 3
+
+    # get the training data
+    for i in range (0, nClasses):
+        subDirectory = directoryTrain + "{0:05d}\\".format(i)
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory,f))]
+        for file in onlyfiles:
+            fileName = join(subDirectory,file)
+            fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
+            tr_images.append(fileData)
+            tr_classes.append(i)
+
+    # get the test data
+    for i in range (0, nClasses):
+        subDirectory = directoryTest + "{0:05d}\\".format(i)
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory,f))]
+        for file in onlyfiles:
+            fileName = join(subDirectory,file)
+            fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
+            test_images.append(fileData)
+            test_classes.append(i)
+
+    # split the tr to train and valid
+    # normalize the images and save as double
+    train_images = []
+    train_classes = []
+    valid_images = []
+    valid_classes = []
+
+    tr_images_reshaped = []
+    for i in range(10):
+        tr_images_reshaped.append([])
+
+    for i in range(len(tr_images)):
+        tr_images_reshaped[tr_classes[i]].append(tr_images[i])
+
+    for i in range(nClasses):
+        n = tr_classes.count(i)
+        nTrain = int(n * 4/5)
+        nValid = n - nTrain
+
+        # create shuffled indexes to suffle the train images and classes
+        idx = numpy.arange(start=0, stop=n, dtype=int).tolist()
+        random.shuffle(idx)
+
+        # take the first nTrain items as train_set
+        idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
+        images = [ tr_images_reshaped[i][j] for j in idxRange ]
+        classes = (numpy.ones(shape=(nTrain,), dtype=int) * i).tolist()
+        train_images.extend(images)
+        train_classes.extend(classes)
+
+        # take the next nValid items as validation_set
+        idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
+        images = [tr_images_reshaped[i][j] for j in idxRange ]
+        classes = (numpy.ones(shape=(nValid,), dtype=int) * i).tolist()
+        valid_images.extend(images)
+        valid_classes.extend(classes)
+
+    # shuffle the train and valid dateset
+    idx = numpy.arange(start=0, stop=len(train_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    train_images_shuffled = [train_images[j] for j in idx]
+    train_classes_shuffled = [train_classes[j] for j in idx]
+
+    idx = numpy.arange(start=0, stop=len(valid_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    valid_images_shuffled = [valid_images[j] for j in idx]
+    valid_classes_shuffled = [valid_classes[j] for j in idx]
+
+    idx = numpy.arange(start=0, stop=len(test_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    test_images_shuffled = [test_images[j] for j in idx]
+    test_classes_shuffled = [test_classes[j] for j in idx]
+
+    # change array to numpy
+    train_images = numpy.asarray(train_images_shuffled)
+    train_classes = numpy.asarray(train_classes_shuffled)
+    valid_images = numpy.asarray(valid_images_shuffled)
+    valid_classes = numpy.asarray(valid_classes_shuffled)
+    test_images = numpy.asarray(test_images_shuffled)
+    test_classes = numpy.asarray(test_classes_shuffled)
+
+    # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
+    train_images = train_images.astype(float) / 255.0
+    valid_images = valid_images.astype(float) / 255.0
+    test_images = test_images.astype(float) / 255.0
+
+    # now, save the training and data
+    data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
+    pickle.dump(data, open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'wb'))
+
+    print("Finish Preparing Data")
+
+# endregion
+
+# region Check Database
+
 def check_database_1():
     """
     Loop on random sample of the images and see if their values are correct or not
     :return:
     """
 
-    data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_normalized_28.pkl', 'rb'))
-    #data = pickle.load(open('D:\\_Dataset\\mnist.pkl', 'rb'))
+    import matplotlib.pyplot as plt
 
-    images = data[0][0]
-    classes = data[0][1]
+    #data = pickle.load(open('D:\\_Dataset\\mnist.pkl', 'rb'))
+    #data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_normalized_28.pkl', 'rb'))
+    data = pickle.load(open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'rb'))
+
+    images = data[1][0]
+    classes = data[1][1]
 
     del data
 
     # get first column of the tuple (which represents the image, while second one represents the image class)
     # then get the first image and show it
-    idx = numpy.arange(start=0, stop=(len(classes)), step= len(classes)/8, dtype=int).tolist()
+    idx = numpy.arange(start=0, stop=(len(classes)), step= len(classes)/12, dtype=int).tolist()
     print(len(classes))
+    plt.figure(1)
+    plt.ion()
+    plt.gray()
+    plt.axis('off')
     for i in idx:
         photo = images[i]
         photoReshaped = photo.reshape((28, 28))
-        matplotlib.pyplot.imshow(photoReshaped, cmap=matplotlib.cm.Greys_r)
         c = classes[i]
         print(c)
+        plt.imshow(photoReshaped)
+        plt.show()
+        x = 10
 
 def check_database_2():
 
@@ -618,6 +761,73 @@ def check_database_3():
     data3 = numpy.asarray(aPhoto)
     matplotlib.pyplot.imshow(data3)
     hiThere = 10
+
+def check_error_rate():
+
+    import conv
+    import logit
+
+    save_file = open('D:\\_Dataset\\SuperClass\\cnn_model_detector.pkl', 'rb')
+    loaded_objects = []
+    for i in range(14):
+        loaded_objects.append(pickle.load(save_file))
+    save_file.close()
+
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    mlp_layers = loaded_objects[4]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+    layer3_W = theano.shared(loaded_objects[12], borrow=True)
+    layer3_b = theano.shared(loaded_objects[13], borrow=True)
+
+    layer0_img_dim = img_dim # = 28 in case of mnist
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1)/2) # = 12 in case of mnist
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1)/2) # = 4 in case of mnist
+
+    data = pickle.load(open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'rb'))
+    imags = data[2][0]
+    classes = data[2][1]
+    del data
+    mis_classified = 0
+
+    for i in range(0, len(classes)):
+
+        img4D = imags[i].reshape(1, 1, img_dim, img_dim)
+
+        # layer 0: Conv-Pool
+        filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
+        image_shape = (1, 1, layer0_img_dim, layer0_img_dim)
+        (layer0_filters, layer0_output) = conv.filter_image(img=img4D, W=layer0_W, b=layer0_b, image_shape=image_shape, filter_shape=filter_shape, pool_size=pool_size)
+
+        # layer 1: Conv-Pool
+        filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
+        image_shape = (1, nkerns[0], layer1_img_dim, layer1_img_dim)
+        (layer1_filters, layer1_output) = conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b, image_shape=image_shape, filter_shape=filter_shape, pool_size=pool_size)
+
+        # layer 2,3: MLP (hidden + logit)
+        n_in = nkerns[1] * layer2_img_dim * layer2_img_dim
+        n_out = mlp_layers[0]
+        classification_result = logit.classify_images(input=layer1_output, filters=layer1_filters, W1=layer2_W, b1=layer2_b, W2=layer3_W, b2=layer3_b, n_in=n_in, n_out=n_out)
+
+        gt = classes[i]
+        if (classification_result != classes[i]):
+            mis_classified += 1
+
+    error_rate = float(mis_classified) / len(classes)
+    print('Error rate: %.2f' % (error_rate))
+
+
+# endregion
 
 
 

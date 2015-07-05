@@ -21,6 +21,7 @@ print('Traffic Sign Recognition')
 gtsrb_dataset = "D:\\_Dataset\\GTSRB\\gtsrb_normalized_28.pkl"
 belgiumTS_dataset = "D:\\_Dataset\\\BelgiumTS\\BelgiumTS_normalized_28.pkl"
 mnist_dataset = "D:\\_Dataset\\mnist.pkl"
+superclass_dataset = "D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl"
 
 gtsrb_dim = 28
 mnist_dim = 28
@@ -29,23 +30,28 @@ mnist_dim = 28
 # cnn.train(img_dim=mnist_dim, dataset_path=mnist_dataset, learning_rate=0.2, n_epochs=5, nkerns=[20, 50], batch_size=50)
 
 # train model on gtsrb database
-#cnn.train_classifier(img_dim=mnist_dim, dataset_path=mnist_dataset, learning_rate=0.2, n_epochs=5, kernel_dim=(5, 5), nkerns=(100, 200), mpl_layers=(500, 10), batch_size=50)
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.1, n_epochs=5, nkerns=(20, 50), batch_size=50) # 3.73%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50) # 3.35%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.1, n_epochs=5, nkerns=(40, 100), batch_size=50) # 3.06%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50) # 2.77%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50, mlp_layers=(800, 10)) # 3.12%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(500, 10)) # 4.77%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(100, 10)) # 5.06%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=[20, 50], batch_size=50, mlp_layers=(200, 10)) # 4.31%
-#cnn.train_classifier(img_dim=gtsrb_dim, dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], batch_size=50, mlp_layers=(50, 10)) # 8.00%
+#cnn.train_classifier(dataset_path=mnist_dataset, learning_rate=0.2, n_epochs=5, kernel_dim=(5, 5), nkerns=(100, 200), mpl_layers=(500, 10), batch_size=50)
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.1, n_epochs=5, nkerns=(20, 50), batch_size=50) # 3.73%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50) # 3.35%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.1, n_epochs=5, nkerns=(40, 100), batch_size=50) # 3.06%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50) # 2.77%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50, mlp_layers=(800, 10)) # 3.12%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(500, 10)) # 4.77%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(100, 10)) # 5.06%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(200, 10)) # 4.31%
+#cnn.train_classifier(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], batch_size=50, mlp_layers=(50, 10)) # 8.00%
 
 # test model on specific image
-cnn.classify_img_from_file("D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\01860.png")
+#cnn.classify_img_from_file("D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\01860.png")
 
-# test model on gtsrb database
-#cnn.evaluate_lenet5(img_dim=gtsrb_dim, dataset=gtsrb_dataset, learning_rate=0.1, n_epochs=5, kernel_dim=[5, 5],
-#                    nkerns=[100, 200], mpl_layers=[500, 10], batch_size=50)
+# train model on gtsrb database
+#cnn.evaluate_lenet5(img_dim=gtsrb_dim, dataset=gtsrb_dataset, learning_rate=0.1, n_epochs=5, kernel_dim=[5, 5], nkerns=[100, 200], mpl_layers=[500, 10], batch_size=50)
+
+# train model on SuperClass database
+cnn.train_detector(dataset_path=superclass_dataset, learning_rate=0.01, n_epochs=1, batch_size=2, nkerns=(8, 8*9), kernel_dim=(5, 5), mlp_layers=(340, 3), pool_size=(2, 2)) # 6.90%
+
+#utils.check_error_rate()
+
 
 
 

@@ -37,7 +37,7 @@ import conv
 from mlp import HiddenLayer
 
 def train_classifier(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50), mlp_layers=(500, 10), batch_size= 500, pool_size= (2, 2)):
-    """ Demonstrates lenet on MNIST dataset
+    """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
     :param learning_rate: learning rate used (factor for the stochastic
@@ -216,7 +216,7 @@ def train_classifier(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, 
             # train the minibatch
             cost_ij = train_model(minibatch_index)
 
-            if (iter + 1) % validation_frequency == 0:
+            if (iter + 1) == validation_frequency:
 
                 # compute zero-one loss on validation set
                 validation_losses = [validate_model(i) for i in range(int(n_valid_batches))]
@@ -248,8 +248,6 @@ def train_classifier(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, 
     print('Best validation score of %.2f%% obtained at iteration %i with test performance %.2f%%' % (best_validation_loss * 100., best_iter + 1, test_score * 100.))
     print('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.))
     print(sys.stderr)
-
-    return
 
     # serialize the params of the model
     # the -1 is for HIGHEST_PROTOCOL
@@ -269,10 +267,10 @@ def train_classifier(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, 
     pickle.dump(layer2.b.get_value(borrow=True), save_file, -1)
     pickle.dump(layer3.W.get_value(borrow=True), save_file, -1)
     pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
-    save_file.close()
+    #save_file.close()
 
-def train_detector(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50), mlp_layers=(500, 10), batch_size= 500, pool_size= (2, 2)):
-    """ Demonstrates lenet on MNIST dataset
+def train_detector(dataset_path, learning_rate, n_epochs, kernel_dim, nkerns, mlp_layers, batch_size, pool_size, img_dim=28):
+    """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
     :param learning_rate: learning rate used (factor for the stochastic
@@ -451,7 +449,7 @@ def train_detector(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, ke
             # train the minibatch
             cost_ij = train_model(minibatch_index)
 
-            if (iter + 1) % validation_frequency == 0:
+            if (iter + 1) == validation_frequency:
 
                 # compute zero-one loss on validation set
                 validation_losses = [validate_model(i) for i in range(int(n_valid_batches))]
@@ -484,12 +482,10 @@ def train_detector(dataset_path, img_dim=28, learning_rate=0.1, n_epochs=200, ke
     print('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.))
     print(sys.stderr)
 
-    return
-
     # serialize the params of the model
     # the -1 is for HIGHEST_PROTOCOL
     # this will overwrite current contents and it triggers much more efficient storage than numpy's default
-    save_file = open('D:\\_Dataset\\cnn_model.pkl', 'wb')
+    save_file = open('D:\\_Dataset\\SuperClass\\cnn_model_detector.pkl', 'wb')
     pickle.dump(dataset_path, save_file, -1)
     pickle.dump(img_dim, save_file, -1)
     pickle.dump(kernel_dim, save_file, -1)
@@ -533,7 +529,8 @@ def classify_img_from_dataset(dataset_path, index, img_dim=28):
 
 def __classify_img(img4D):
 
-    save_file = open('D:\\_Dataset\\cnn_model_detector.pkl', 'rb')
+    #save_file = open('D:\\_Dataset\\GTSRB\\cnn_model_classifier.pkl', 'rb')
+    save_file = open('D:\\_Dataset\\SuperClass\\cnn_model_detector.pkl', 'rb')
     loaded_objects = []
     for i in range(14):
         loaded_objects.append(pickle.load(save_file))
@@ -579,10 +576,10 @@ def __classify_img(img4D):
 
     end_time = time.clock()
 
-    #__plot_filters_1(img4D, 1)
-    #__plot_filters_1(layer0_filters, 2)
+    __plot_filters_1(img4D, 1)
+    __plot_filters_1(layer0_filters, 2)
     #__plot_filters_1(layer1_filters, 3)
-    #__plot_filters_2(loaded_objects[6], 4)
+    __plot_filters_2(loaded_objects[6], 4)
     #__plot_filters_2(loaded_objects[8], 5)
 
     print('Classification result: %d in %f sec.' % (classification_result, (end_time - start_time)))
