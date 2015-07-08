@@ -86,5 +86,3 @@ def filter_image(img, W, b, image_shape, filter_shape, pool_size):
     f = theano.function([input], output)
     filters = f(img)
     return filters, output
-
-
