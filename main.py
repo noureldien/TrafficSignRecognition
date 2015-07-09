@@ -2,10 +2,9 @@ __author__ = 'Noureldien'
 
 from builtins import print
 
-import os
-import read_minst_db
-import cnn
-import utils
+import CNN
+import CNN.utils
+import CNN.cnn
 
 print('Traffic Sign Recognition')
 
@@ -16,6 +15,7 @@ superclass_dataset = "D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl"
 
 gtsrb_model = 'D:\\_Dataset\\GTSRB\\cnn_model.pkl'
 superclass_model = 'D:\\_Dataset\\SuperClass\\cnn_model.pkl'
+superclass_model_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_svm.pkl'
 
 gtsrb_dim = 28
 mnist_dim = 28
@@ -49,10 +49,17 @@ mnist_dim = 28
 #cnn.evaluate_lenet5(img_dim=gtsrb_dim, dataset=gtsrb_dataset, learning_rate=0.1, n_epochs=5, kernel_dim=[5, 5], nkerns=[100, 200], mpl_layers=[500, 10], batch_size=50)
 
 # train model on SuperClass database
-#cnn.train(dataset_path=superclass_dataset, learning_rate=0.01, n_epochs=1, batch_size=2, nkerns=(8, 8*9), mlp_layers=(340, 3)) # 8.50%
+#CNN.cnn.train(model_path=superclass_model, dataset_path=superclass_dataset, learning_rate=0.01, n_epochs=1, batch_size=2, nkerns=(8, 8*9), mlp_layers=(340, 3)) # 8.50%
+#CNN.cnn.train_cnn_svm(model_path=superclass_model_svm, dataset_path=superclass_dataset, learning_rate=0.01, n_epochs=1, batch_size=2, nkerns=(8, 8*9), mlp_layers=(500, 3)) # 5.01%
 
 # test model on specific image
-#cnn.classify_img_from_file("D:\\_Dataset\\SuperClass\\Test_Preprocessed_Revised\\00001\\00045_00004.png", superclass_model)
+#CNN.cnn.classify_img_from_file("D:\\_Dataset\\SuperClass\\Test_Preprocessed_Revised\\00001\\00045_00004.png", superclass_model)
+
+#CNN.utils.rgb_to_gs("D:\\_Dataset\\UK\\preprocessed\\small 7.png")
+CNN.cnn.classify_img_from_file("D:\\_Dataset\\UK\\preprocessed\\small 5.png", superclass_model)
+#CNN.cnn.classify_imgs_from_files("")
+
+#CNN.utils.preprocess_image(filePathRead="D:\\_Dataset\\UK\\preprocessed\\small.png", filePathWrite="D:\\_Dataset\\UK\\preprocessed\\small 1.png")
 
 
 

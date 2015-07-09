@@ -4,11 +4,14 @@ import gzip
 import numpy
 import theano
 import theano.tensor
-import matplotlib
-import matplotlib.cm
-import matplotlib.pyplot
 import PIL
 import PIL.Image
+import skimage
+import skimage.exposure
+import cv2
+import matplotlib
+import matplotlib.cm
+import matplotlib.pyplot as plt
 
 def unzip_load_data(dataset):
 
@@ -55,9 +58,6 @@ def preprocess_dataset():
 
     from os import listdir
     from os.path import isfile, join
-    from skimage import exposure, transform
-    import matplotlib.pyplot as plt
-    import cv2
 
     csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
 
@@ -73,8 +73,6 @@ def preprocess_dataset():
     #directory1 = "D:\\_Dataset\\SuperClass\\Test_Scaled\\"
     #directory2 = "D:\\_Dataset\\SuperClass\\Test_Preprocessed\\"
 
-    plot_images = False
-
     for i in range(0, 3):
         folderName = "{0:05d}\\".format(i)
         subDirectory1 = directory1 + folderName
@@ -83,42 +81,59 @@ def preprocess_dataset():
         for file in onlyfiles:
             # do the following steps : read -> Grayscale -> imadjust -> histeq
             # -> adapthisteq -> ContrastStretchNorm -> resize -> write
-            filePath = join(subDirectory1, file)
-            img = cv2.imread(filePath)
-            img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            img_eq = exposure.equalize_hist(img_gs)
-            img_adeq = exposure.equalize_adapthist(img_eq, clip_limit=0.2, kernel_size=(8, 8))
-            img_int = exposure.rescale_intensity(img_adeq, in_range=(0.1, 0.8))
-            img_res = transform.resize(img_int, output_shape=(28, 28))
-            # save the file
-            img_save = img_res * 255
-            img_save = img_save.astype(int)
-            filePath = join(subDirectory2, file)
-            cv2.imwrite(filePath, img_save)
-
-            if plot_images:
-                #region Plot results
-                fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(8, 5))
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img, axes[:, 0])
-                ax_img.set_title('Low contrast image')
-                y_min, y_max = ax_hist.get_ylim()
-                ax_hist.set_ylabel('Number of pixels')
-                ax_hist.set_yticks(numpy.linspace(0, y_max, 5))
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_eq, axes[:, 1])
-                ax_img.set_title('Histogram equalization')
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_adeq, axes[:, 2])
-                ax_img.set_title('Adaptive equalization')
-                ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_int, axes[:, 3])
-                ax_img.set_title('Contrast stretching')
-                ax_cdf.set_ylabel('Fraction of total intensity')
-                ax_cdf.set_yticks(numpy.linspace(0, 1, 5))
-                # prevent overlap of y-axis labels
-                fig.subplots_adjust(wspace=0.4)
-                plt.show()
-                #endregion
-                return
+            filePathRead = join(subDirectory1, file)
+            filePathWrite = join(subDirectory2, file)
+            preprocess_image()
 
         print('Finish Class: ' + folderName)
+
+def preprocess_image(filePathRead, filePathWrite):
+
+    img = cv2.imread(filePathRead)
+    img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_eq = skimage.exposure.equalize_hist(img_gs)
+    img_adeq = skimage.exposure.equalize_adapthist(img_eq, clip_limit=0.2, kernel_size=(8, 8))
+    img_int = skimage.exposure.rescale_intensity(img_adeq, in_range=(0.1, 0.8))
+    #img_res = transform.resize(img_int, output_shape=(28, 28))
+    img_res = img_int
+
+    # save the file
+    img_save = img_res * 255
+    img_save = img_save.astype(int)
+    cv2.imwrite(filePathWrite, img_save)
+
+    plot_images = False
+
+    if plot_images:
+        #region Plot results
+        fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(8, 5))
+        ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img, axes[:, 0])
+        ax_img.set_title('Low contrast image')
+        y_min, y_max = ax_hist.get_ylim()
+        ax_hist.set_ylabel('Number of pixels')
+        ax_hist.set_yticks(numpy.linspace(0, y_max, 5))
+        ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_eq, axes[:, 1])
+        ax_img.set_title('Histogram equalization')
+        ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_adeq, axes[:, 2])
+        ax_img.set_title('Adaptive equalization')
+        ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img_int, axes[:, 3])
+        ax_img.set_title('Contrast stretching')
+        ax_cdf.set_ylabel('Fraction of total intensity')
+        ax_cdf.set_yticks(numpy.linspace(0, 1, 5))
+        # prevent overlap of y-axis labels
+        fig.subplots_adjust(wspace=0.4)
+        plt.show()
+
+        return
+        #endregion
+
+def rgb_to_gs(path):
+    img = cv2.imread(path)
+    img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # save the file
+    img_save = img_gs * 255
+    img_save = img_save.astype(int)
+    cv2.imwrite(path, img_save)
 
 def __shared_dataset(data_xy, borrow=True):
         """ Function that loads the dataset into shared variables
