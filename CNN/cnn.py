@@ -19,6 +19,7 @@ References:
    http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf
 
 """
+
 import os
 import sys
 import time
@@ -33,15 +34,18 @@ import CNN.svm
 import CNN.logit
 import CNN.utils
 import CNN.mlp
-import conv
+import CNN.conv
 import enum
 from mlp import HiddenLayer
+
 
 class ClassifierType(enum.Enum):
     logit = 1
     svm = 2
 
-def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50), mlp_layers=(500, 10), batch_size= 500, pool_size= (2, 2)):
+
+def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
+          mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
     """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
@@ -89,7 +93,7 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
     # Reshape matrix of rasterized images of shape (batch_size, 28 * 28)
     # to a 4D tensor, compatible with our LeNetConvPoolLayer
     # (28, 28) is the size of MNIST images.
-    layer0_img_dim = img_dim # = 28 in case of mnist
+    layer0_img_dim = img_dim  # = 28 in case of mnist
     layer0_kernel_dim = kernel_dim[0]
     layer0_input = x.reshape((batch_size, 1, layer0_img_dim, layer0_img_dim))
 
@@ -97,26 +101,26 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
     # filtering reduces the image size to (28-5+1 , 28-5+1) = (24, 24)
     # maxpooling reduces this further to (24/2, 24/2) = (12, 12)
     # 4D output tensor is thus of shape (batch_size, nkerns[0], 12, 12)
-    layer0 = conv.ConvPoolLayer(
+    layer0 = CNN.conv.ConvPoolLayer(
         rng,
         input=layer0_input,
         image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
         filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
-        poolsize= pool_size
+        poolsize=pool_size
     )
 
     # Construct the second convolutional pooling layer
     # filtering reduces the image size to (12-5+1, 12-5+1) = (8, 8)
     # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
     # 4D output tensor is thus of shape (batch_size, nkerns[1], 4, 4)
-    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1)/2) # = 12 in case of mnist
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
     layer1_kernel_dim = kernel_dim[1]
-    layer1 = conv.ConvPoolLayer(
+    layer1 = CNN.conv.ConvPoolLayer(
         rng,
         input=layer0.output,
         image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
         filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
-        poolsize= pool_size
+        poolsize=pool_size
     )
 
     # the HiddenLayer being fully-connected, it operates on 2D matrices of
@@ -126,7 +130,7 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
     layer2_input = layer1.output.flatten(2)
 
     # construct a fully-connected sigmoidal layer
-    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1)/2) # = 4 in case of mnist
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
@@ -211,7 +215,7 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
         epoch += 1
         print("... epoch: %d" % epoch)
 
-        for minibatch_index in range(int( n_train_batches)):
+        for minibatch_index in range(int(n_train_batches)):
 
             iter = (epoch - 1) * n_train_batches + minibatch_index
 
@@ -226,7 +230,8 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
                 # compute zero-one loss on validation set
                 validation_losses = [validate_model(i) for i in range(int(n_valid_batches))]
                 this_validation_loss = numpy.mean(validation_losses)
-                print('... epoch %d, minibatch %d/%d, validation error %.2f %%' % (epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
+                print('... epoch %d, minibatch %d/%d, validation error %.2f %%' % (
+                    epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
 
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
@@ -240,9 +245,10 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
                     best_iter = iter
 
                     # test it on the test set
-                    test_losses = [ test_model(i) for i in range(int(n_test_batches))]
+                    test_losses = [test_model(i) for i in range(int(n_test_batches))]
                     test_score = numpy.mean(test_losses)
-                    print(('    epoch %i, minibatch %i/%i, test error of best model %.2f%%') % (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
+                    print(('    epoch %i, minibatch %i/%i, test error of best model %.2f%%') % (
+                        epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
 
             if patience <= iter:
                 done_looping = True
@@ -250,11 +256,12 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
 
     end_time = time.clock()
     print('Optimization complete.')
-    print('Best validation score of %.2f%% obtained at iteration %i with test performance %.2f%%' % (best_validation_loss * 100., best_iter + 1, test_score * 100.))
+    print('Best validation score of %.2f%% obtained at iteration %i with test performance %.2f%%' % (
+        best_validation_loss * 100., best_iter + 1, test_score * 100.))
     print('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.))
     print(sys.stderr)
 
-    if len(model_path) ==0:
+    if len(model_path) == 0:
         return
 
     # serialize the params of the model
@@ -277,7 +284,9 @@ def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=2
     pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
     save_file.close()
 
-def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50), mlp_layers=(500, 10), batch_size= 500, pool_size= (2, 2)):
+
+def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5),
+                  nkerns=(20, 50), mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
     """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
@@ -328,7 +337,7 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     # Reshape matrix of rasterized images of shape (batch_size, 28 * 28)
     # to a 4D tensor, compatible with our LeNetConvPoolLayer
     # (28, 28) is the size of MNIST images.
-    layer0_img_dim = img_dim # = 28 in case of mnist
+    layer0_img_dim = img_dim  # = 28 in case of mnist
     layer0_kernel_dim = kernel_dim[0]
     layer0_input = x.reshape((batch_size, 1, layer0_img_dim, layer0_img_dim))
 
@@ -336,26 +345,26 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     # filtering reduces the image size to (28-5+1 , 28-5+1) = (24, 24)
     # maxpooling reduces this further to (24/2, 24/2) = (12, 12)
     # 4D output tensor is thus of shape (batch_size, nkerns[0], 12, 12)
-    layer0 = conv.ConvPoolLayer(
+    layer0 = CNN.conv.ConvPoolLayer(
         rng,
         input=layer0_input,
         image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
         filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
-        poolsize= pool_size
+        poolsize=pool_size
     )
 
     # Construct the second convolutional pooling layer
     # filtering reduces the image size to (12-5+1, 12-5+1) = (8, 8)
     # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
     # 4D output tensor is thus of shape (batch_size, nkerns[1], 4, 4)
-    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1)/2) # = 12 in case of mnist
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
     layer1_kernel_dim = kernel_dim[1]
-    layer1 = conv.ConvPoolLayer(
+    layer1 = CNN.conv.ConvPoolLayer(
         rng,
         input=layer0.output,
         image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
         filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
-        poolsize= pool_size
+        poolsize=pool_size
     )
 
     # the HiddenLayer being fully-connected, it operates on 2D matrices of
@@ -365,7 +374,7 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     layer2_input = layer1.output.flatten(2)
 
     # construct a fully-connected sigmoidal layer
-    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1)/2) # = 4 in case of mnist
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
@@ -451,7 +460,7 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
         epoch += 1
         print("... epoch: %d" % epoch)
 
-        for minibatch_index in range(int( n_train_batches)):
+        for minibatch_index in range(int(n_train_batches)):
 
             iter = (epoch - 1) * n_train_batches + minibatch_index
 
@@ -466,7 +475,8 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
                 # compute zero-one loss on validation set
                 validation_losses = [validate_model(i) for i in range(int(n_valid_batches))]
                 this_validation_loss = numpy.mean(validation_losses)
-                print('... epoch %d, minibatch %d/%d, validation error %.2f %%' % (epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
+                print('... epoch %d, minibatch %d/%d, validation error %.2f %%' % (
+                    epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
 
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
@@ -480,9 +490,10 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
                     best_iter = iter
 
                     # test it on the test set
-                    test_losses = [ test_model(i) for i in range(int(n_test_batches))]
+                    test_losses = [test_model(i) for i in range(int(n_test_batches))]
                     test_score = numpy.mean(test_losses)
-                    print(('    epoch %i, minibatch %i/%i, test error of best model %.2f%%') % (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
+                    print(('    epoch %i, minibatch %i/%i, test error of best model %.2f%%') % (
+                        epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
 
             if patience <= iter:
                 done_looping = True
@@ -490,11 +501,12 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
 
     end_time = time.clock()
     print('Optimization complete.')
-    print('Best validation score of %.2f%% obtained at iteration %i with test performance %.2f%%' % (best_validation_loss * 100., best_iter + 1, test_score * 100.))
+    print('Best validation score of %.2f%% obtained at iteration %i with test performance %.2f%%' % (
+        best_validation_loss * 100., best_iter + 1, test_score * 100.))
     print('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.))
     print(sys.stderr)
 
-    if len(model_path) ==0:
+    if len(model_path) == 0:
         return
 
     # serialize the params of the model
@@ -517,19 +529,20 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
     save_file.close()
 
-def classify_img_from_file(img_path, model_path, classifier=ClassifierType.logit, img_dim=28):
 
+def classify_img_from_file(img_path, model_path, classifier=ClassifierType.logit, img_dim=28):
     # this is how to prepare an image to be used by the CNN model
     import PIL
     import PIL.Image
+
     img = PIL.Image.open(img_path)
     img = numpy.asarray(img, dtype='float64') / 256.0
     img4D = img.reshape(1, 1, img_dim, img_dim)
 
     return __classify_img(img4D, model_path, classifier)
 
-def classify_img_from_dataset(dataset_path, model_path, index, classifier=ClassifierType.logit, img_dim=28):
 
+def classify_img_from_dataset(dataset_path, model_path, index, classifier=ClassifierType.logit, img_dim=28):
     data = pickle.load(open(dataset_path, 'rb'))
     img = data[0][0][index]
     del data
@@ -538,17 +551,13 @@ def classify_img_from_dataset(dataset_path, model_path, index, classifier=Classi
     return __classify_img(img, model_path, classifier)
 
     # this is if image is loaded from tensor dataset
-    #img = test_set_x[index]
-    #img = img.eval()
-    #img4D = img.reshape(1, 1, img_dim, img_dim)
+    # img = test_set_x[index]
+    # img = img.eval()
+    # img4D = img.reshape(1, 1, img_dim, img_dim)
 
-def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
 
-    save_file = open(model_path, 'rb')
-    loaded_objects = []
-    for i in range(14):
-        loaded_objects.append(pickle.load(save_file))
-    save_file.close()
+def classify_batch(batch, model_path, classifier=ClassifierType.logit):
+    loaded_objects = __load_model(model_path)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -565,47 +574,214 @@ def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
     layer3_W = theano.shared(loaded_objects[12], borrow=True)
     layer3_b = theano.shared(loaded_objects[13], borrow=True)
 
-    layer0_img_dim = img_dim # = 28 in case of mnist
+    layer0_img_dim = img_dim  # = 28 in case of mnist
     layer0_kernel_dim = kernel_dim[0]
-    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1)/2) # = 12 in case of mnist
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
     layer1_kernel_dim = kernel_dim[1]
-    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1)/2) # = 4 in case of mnist
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
+
+    start_time = time.clock()
+
+    # layer 0: Conv-Pool
+    batch_size = batch.shape[0]
+    filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
+    image_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
+    batch = batch.reshape(image_shape)
+    (layer0_filters, layer0_output) = CNN.conv.filter_image(img=batch, W=layer0_W, b=layer0_b, image_shape=image_shape,
+                                                            filter_shape=filter_shape, pool_size=pool_size)
+
+    # layer 1: Conv-Pool
+    filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
+    image_shape = (batch_size, nkerns[0], layer1_img_dim, layer1_img_dim)
+    (layer1_filters, layer1_output) = CNN.conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b,
+                                                            image_shape=image_shape, filter_shape=filter_shape,
+                                                            pool_size=pool_size)
+
+    # layer 2: hidden layer
+    hidden_n_in = nkerns[1] * layer2_img_dim * layer2_img_dim
+    layer1_output_flattened = layer1_output.flatten(2)
+    hiddenLayer = CNN.mlp.HiddenLayer(input=layer1_output_flattened, W=layer2_W, b=layer2_b, n_in=hidden_n_in,
+                                      n_out=mlp_layers[0], activation=T.tanh, rng=0)
+
+    # layer 3: logit (logistic regression) or SVM
+    c_result = []
+    c_prob = []
+    if classifier == ClassifierType.logit:
+        c_result, c_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened,
+                                                     hidden_output=hiddenLayer.output,
+                                                     filters=layer1_filters, W=layer3_W,
+                                                     b=layer3_b)
+    elif classifier == ClassifierType.svm:
+        c_result, c_prob = CNN.svm.classify_images(input_flatten=layer1_output_flattened,
+                                                   hidden_output=hiddenLayer.output,
+                                                   filters=layer1_filters, W=layer3_W,
+                                                   b=layer3_b)
+    else:
+        raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    return c_result, c_prob, duration
+
+
+def classify_batch_fast(batch, model_path, classifier=ClassifierType.logit):
+    loaded_objects = __load_model(model_path)
+
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    mlp_layers = loaded_objects[4]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+    layer3_W = theano.shared(loaded_objects[12], borrow=True)
+    layer3_b = theano.shared(loaded_objects[13], borrow=True)
+
+    layer0_img_dim = img_dim  # = 28 in case of mnist
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
+
+    start_time = time.clock()
+
+    # layer 0: Conv-Pool
+    batch_size = batch.shape[0]
+    filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
+    image_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
+    batch = batch.reshape(image_shape)
+    (layer0_filters, layer0_output) = CNN.conv.filter_image(img=batch, W=layer0_W, b=layer0_b, image_shape=image_shape,
+                                                            filter_shape=filter_shape, pool_size=pool_size)
+
+    # layer 1: Conv-Pool
+    filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
+    image_shape = (batch_size, nkerns[0], layer1_img_dim, layer1_img_dim)
+    (layer1_filters, layer1_output) = CNN.conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b,
+                                                            image_shape=image_shape, filter_shape=filter_shape,
+                                                            pool_size=pool_size)
+
+    # layer 2: hidden layer
+    hidden_n_in = nkerns[1] * layer2_img_dim * layer2_img_dim
+    layer1_output_flattened = layer1_output.flatten(2)
+    hiddenLayer = CNN.mlp.HiddenLayer(input=layer1_output_flattened, W=layer2_W, b=layer2_b, n_in=hidden_n_in,
+                                      n_out=mlp_layers[0], activation=T.tanh, rng=0)
+
+    # layer 3: logit (logistic regression) or SVM
+    c_result = []
+    c_prob = []
+    if classifier == ClassifierType.logit:
+        c_result, c_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened,
+                                                     hidden_output=hiddenLayer.output,
+                                                     filters=layer1_filters, W=layer3_W,
+                                                     b=layer3_b)
+    elif classifier == ClassifierType.svm:
+        c_result, c_prob = CNN.svm.classify_images(input_flatten=layer1_output_flattened,
+                                                   hidden_output=hiddenLayer.output,
+                                                   filters=layer1_filters, W=layer3_W,
+                                                   b=layer3_b)
+    else:
+        raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    return c_result, c_prob, duration
+
+
+def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
+    loaded_objects = __load_model(model_path)
+
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    mlp_layers = loaded_objects[4]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+    layer3_W = theano.shared(loaded_objects[12], borrow=True)
+    layer3_b = theano.shared(loaded_objects[13], borrow=True)
+
+    layer0_img_dim = img_dim  # = 28 in case of mnist
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
 
     start_time = time.clock()
 
     # layer 0: Conv-Pool
     filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
     image_shape = (1, 1, layer0_img_dim, layer0_img_dim)
-    (layer0_filters, layer0_output) = conv.filter_image(img=img4D, W=layer0_W, b=layer0_b, image_shape=image_shape, filter_shape=filter_shape, pool_size=pool_size)
+    (layer0_filters, layer0_output) = CNN.conv.filter_image(img=img4D, W=layer0_W, b=layer0_b, image_shape=image_shape,
+                                                            filter_shape=filter_shape, pool_size=pool_size)
 
     # layer 1: Conv-Pool
     filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
     image_shape = (1, nkerns[0], layer1_img_dim, layer1_img_dim)
-    (layer1_filters, layer1_output) = conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b, image_shape=image_shape, filter_shape=filter_shape, pool_size=pool_size)
+    (layer1_filters, layer1_output) = CNN.conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b,
+                                                            image_shape=image_shape, filter_shape=filter_shape,
+                                                            pool_size=pool_size)
 
     # layer 2: hidden layer
     hidden_n_in = nkerns[1] * layer2_img_dim * layer2_img_dim
-    layer1_output_flattened =  layer1_output.flatten(2)
-    hiddenLayer = CNN.mlp.HiddenLayer(input=layer1_output_flattened, W=layer2_W, b=layer2_b, n_in=hidden_n_in, n_out=mlp_layers[0], activation=T.tanh, rng=0)
+    layer1_output_flattened = layer1_output.flatten(2)
+    hiddenLayer = CNN.mlp.HiddenLayer(input=layer1_output_flattened, W=layer2_W, b=layer2_b, n_in=hidden_n_in,
+                                      n_out=mlp_layers[0], activation=T.tanh, rng=0)
 
-    # layer 3: logistic regression
-    classification_result, classification_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened, hidden_output=hiddenLayer.output, filters=layer1_filters, W=layer3_W, b=layer3_b)
+    # layer 3: logit (logistic regression) or SVM
+    c_result = []
+    c_prob = []
+    if classifier == ClassifierType.logit:
+        c_result, c_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened,
+                                                     hidden_output=hiddenLayer.output,
+                                                     filters=layer1_filters, W=layer3_W,
+                                                     b=layer3_b)
+    elif classifier == ClassifierType.svm:
+        c_result, c_prob = CNN.svm.classify_images(input_flatten=layer1_output_flattened,
+                                                   hidden_output=hiddenLayer.output,
+                                                   filters=layer1_filters, W=layer3_W,
+                                                   b=layer3_b)
+    else:
+        raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
 
     end_time = time.clock()
 
-    #__plot_filters_1(img4D, 1)
-    #__plot_filters_1(layer0_filters, 2)
-    #__plot_filters_1(layer1_filters, 3)
-    #__plot_filters_2(loaded_objects[6], 4)
-    #__plot_filters_2(loaded_objects[8], 5)
+    # that's because we only classified one image
+    c_result = c_result[0]
+    c_prob = c_prob[0]
+    c_duration = end_time - start_time
 
-    print('Classification result: %d in %f sec.' % (classification_result, (end_time - start_time)))
-    print('Classification confidence: %s' % (__numpy_to_string(classification_prob)))
+    # __plot_filters_1(img4D, 1)
+    # __plot_filters_1(layer0_filters, 2)
+    # __plot_filters_1(layer1_filters, 3)
+    # __plot_filters_2(loaded_objects[6], 4)
+    # __plot_filters_2(loaded_objects[8], 5)
 
-    return classification_result
+    print('Classification result: %d in %f sec.' % (c_result, c_duration))
+    print('Classification confidence: %s' % (__numpy_to_string(c_prob)))
+
+    return c_result, c_prob, c_duration
+
+
+def __load_model(model_path):
+    save_file = open(model_path, 'rb')
+    loaded_objects = []
+    for i in range(14):
+        loaded_objects.append(pickle.load(save_file))
+    save_file.close()
+    return loaded_objects
+
 
 def __plot_filters_1(filters, figure_num):
-
     import matplotlib.pyplot as plt
 
     # plot original image and first and second components of output
@@ -619,8 +795,8 @@ def __plot_filters_1(filters, figure_num):
         plt.imshow(filters[0, i, :, :])
     plt.show()
 
-def __plot_filters_2(filters, figure_num):
 
+def __plot_filters_2(filters, figure_num):
     import matplotlib.pyplot as plt
 
     # plot original image and first and second components of output
@@ -634,7 +810,6 @@ def __plot_filters_2(filters, figure_num):
         plt.imshow(filters[i, 0, :, :])
     plt.show()
 
+
 def __numpy_to_string(arr):
     return ", ".join(format(x, ".3f") for x in arr.tolist())
-
-

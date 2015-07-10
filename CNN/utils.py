@@ -7,19 +7,23 @@ import theano.tensor
 import PIL
 import PIL.Image
 import skimage
+import skimage.transform
 import skimage.exposure
 import cv2
+import CNN
+import CNN.cnn
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
 
-def unzip_load_data(dataset):
 
+def unzip_load_data(dataset):
     f = gzip.open(dataset, 'rb')
     u = pickle._Unpickler(f)
     u.encoding = 'latin1'
     train_set, valid_set, test_set = u.load()
     f.close()
+
 
 def load_data(dataset):
     ''' Loads the dataset
@@ -36,7 +40,7 @@ def load_data(dataset):
 
     # Load the dataset
     f = open(dataset, 'rb')
-    train_set, valid_set, test_set =  pickle.load(f)
+    train_set, valid_set, test_set = pickle.load(f)
     f.close()
     del f
 
@@ -54,8 +58,8 @@ def load_data(dataset):
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y)]
     return rval
 
-def preprocess_dataset():
 
+def preprocess_dataset():
     from os import listdir
     from os.path import isfile, join
 
@@ -70,8 +74,8 @@ def preprocess_dataset():
     directory1 = "D:\\_Dataset\\SuperClass\\Training_Scaled\\"
     directory2 = "D:\\_Dataset\\SuperClass\\Training_Preprocessed\\"
 
-    #directory1 = "D:\\_Dataset\\SuperClass\\Test_Scaled\\"
-    #directory2 = "D:\\_Dataset\\SuperClass\\Test_Preprocessed\\"
+    # directory1 = "D:\\_Dataset\\SuperClass\\Test_Scaled\\"
+    # directory2 = "D:\\_Dataset\\SuperClass\\Test_Preprocessed\\"
 
     for i in range(0, 3):
         folderName = "{0:05d}\\".format(i)
@@ -87,14 +91,14 @@ def preprocess_dataset():
 
         print('Finish Class: ' + folderName)
 
-def preprocess_image(filePathRead, filePathWrite):
 
+def preprocess_image(filePathRead, filePathWrite):
     img = cv2.imread(filePathRead)
     img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_eq = skimage.exposure.equalize_hist(img_gs)
     img_adeq = skimage.exposure.equalize_adapthist(img_eq, clip_limit=0.2, kernel_size=(8, 8))
     img_int = skimage.exposure.rescale_intensity(img_adeq, in_range=(0.1, 0.8))
-    #img_res = transform.resize(img_int, output_shape=(28, 28))
+    # img_res = transform.resize(img_int, output_shape=(28, 28))
     img_res = img_int
 
     # save the file
@@ -105,7 +109,7 @@ def preprocess_image(filePathRead, filePathWrite):
     plot_images = False
 
     if plot_images:
-        #region Plot results
+        # region Plot results
         fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(8, 5))
         ax_img, ax_hist, ax_cdf = __plot_img_and_hist(img, axes[:, 0])
         ax_img.set_title('Low contrast image')
@@ -125,37 +129,111 @@ def preprocess_image(filePathRead, filePathWrite):
         plt.show()
 
         return
-        #endregion
+        # endregion
+
+
+def probability_map(img_path, model_path, classifier=CNN.cnn.ClassifierType.logit, window_size=28):
+    """
+    For the given image, apply sliding window algorithm over different scales and return the heat-probability map
+    :param img_path:
+    :param model_path:
+    :param classifier:
+    :param img_dim:
+    :return:
+    """
+
+    img = cv2.imread(img_path)
+    img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    scaling_factor = 0.75
+    stride = int(window_size * 0.5)
+
+    scales = -1
+    d = min(img.shape[0], img.shape[1])
+    while d >= window_size:
+        d = int(d * scaling_factor)
+        scales += 1
+
+    batch_counts = []
+    batch = []
+    shapes = []
+
+    # loop on different scales of the image
+    for s in range(0, scales):
+
+        # split the images to small images using overlapping sliding window
+        # do classification of all of the small images as one batch
+        # then output the classification result as probability map
+        batch_count = 0
+        y_range = numpy.arange(0, img_gs.shape[0] - window_size, stride)
+        x_range = numpy.arange(0, img_gs.shape[1] - window_size, stride)
+        for y in y_range:
+            for x in x_range:
+                roi = img_gs[y:y + window_size, x:x + window_size] / 255.0
+                batch.append(roi.ravel())
+                batch_count += 1
+
+        batch_counts.append(batch_count)
+
+        # re-scale the image to make it smaller
+        shapes.append((len(y_range), len(x_range)))
+        img_gs = skimage.transform.resize(img_gs, output_shape=(
+            int(img_gs.shape[0] * scaling_factor), int(img_gs.shape[1] * scaling_factor)))
+
+    # after we obained all the batches for all the image scales, classify the batches
+    batch_np = numpy.asarray(batch, float)
+    c_result, c_prob, c_duration = CNN.cnn.classify_batch(batch_np, model_path, classifier)
+    print('Classification of image batches in %f sec.' % (c_duration))
+
+    # get the classification result and probability each scale
+    offset = 0
+    c_prob[c_prob < 0.75] = 0
+    for i in range(0, len(batch_counts)):
+        results = c_result[offset: offset + batch_counts[i]]
+        p_maps = numpy.asarray(c_prob[offset: offset + batch_counts[i]])
+        p_maps = p_maps.reshape(p_maps.shape[1], p_maps.shape[0])
+        __plot_prob_maps(p_maps, shapes[i], i + 1)
+        # for p_map in p_maps:
+        #    p_map = p_map.reshape(shapes[i])
+        #    # display map
+        offset += batch_counts[i]
+
+    x = 10
+    # generate image to show confidence maps for the 3 classes, each with probabilities
+    # note that for each class, we have confidence map at each scale
+
 
 def rgb_to_gs(path):
     img = cv2.imread(path)
-    img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_gs = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
     # save the file
     img_save = img_gs * 255
     img_save = img_save.astype(int)
     cv2.imwrite(path, img_save)
 
-def __shared_dataset(data_xy, borrow=True):
-        """ Function that loads the dataset into shared variables
 
-        The reason we store our dataset in shared variables is to allow
-        Theano to copy it into the GPU memory (when code is run on GPU).
-        Since copying data into the GPU is slow, copying a minibatch everytime
-        is needed (the default behaviour if the data is not in a shared
-        variable) would lead to a large decrease in performance.
-        """
-        data_x, data_y = data_xy
-        shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-        shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX), borrow=borrow)
-        # When storing data on the GPU it has to be stored as floats
-        # therefore we will store the labels as ``floatX`` as well
-        # (``shared_y`` does exactly that). But during our computations
-        # we need them as ints (we use labels as index, and if they are
-        # floats it doesn't make sense) therefore instead of returning
-        # ``shared_y`` we will have to cast it to int. This little hack
-        # lets ous get around this issue
-        shared_y_casted = theano.tensor.cast(shared_y, 'int32')
-        return shared_x, shared_y_casted
+def __shared_dataset(data_xy, borrow=True):
+    """ Function that loads the dataset into shared variables
+
+    The reason we store our dataset in shared variables is to allow
+    Theano to copy it into the GPU memory (when code is run on GPU).
+    Since copying data into the GPU is slow, copying a minibatch everytime
+    is needed (the default behaviour if the data is not in a shared
+    variable) would lead to a large decrease in performance.
+    """
+    data_x, data_y = data_xy
+    shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
+    shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX), borrow=borrow)
+    # When storing data on the GPU it has to be stored as floats
+    # therefore we will store the labels as ``floatX`` as well
+    # (``shared_y`` does exactly that). But during our computations
+    # we need them as ints (we use labels as index, and if they are
+    # floats it doesn't make sense) therefore instead of returning
+    # ``shared_y`` we will have to cast it to int. This little hack
+    # lets ous get around this issue
+    shared_y_casted = theano.tensor.cast(shared_y, 'int32')
+    return shared_x, shared_y_casted
+
 
 def __plot_img_and_hist(img, axes, bins=256):
     """Plot an image along with its histogram and cumulative histogram.
@@ -186,6 +264,21 @@ def __plot_img_and_hist(img, axes, bins=256):
 
     return ax_img, ax_hist, ax_cdf
 
+
+def __plot_prob_maps(maps, shape, fig_num):
+    plt.figure(fig_num)
+    plt.gray()
+    plt.ion()
+    length = len(maps)
+    for i in range(0, length):
+        plt.subplot(1, length, i + 1)
+        plt.axis('off')
+        p_map = maps[i]
+        p_map = p_map.reshape(shape)
+        plt.imshow(p_map)
+    plt.show()
+
+
 # region GTSR
 
 def serialize_gtsr():
@@ -209,18 +302,19 @@ def serialize_gtsr():
     csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
 
     # get the training data
-    for i in range (0, 43):
+    for i in range(0, 43):
         print(i)
         subDirectory = directoryTrain + "{0:05d}\\".format(i)
-        onlyfiles = [ f for f in listdir(subDirectory) if isfile(join(subDirectory,f)) ]
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
         for file in onlyfiles:
-            fileName = join(subDirectory,file)
+            fileName = join(subDirectory, file)
             fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
             train_images.append(fileData)
             train_classes.append(i)
 
     # get the ground truth of the test data
     import csv
+
     with open(csvFileName, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quotechar='|')
         for row in reader:
@@ -228,9 +322,9 @@ def serialize_gtsr():
                 test_classes.append(int(row[7]))
 
     # get the test data
-    onlyfiles = [ f for f in listdir(directoryTest) if isfile(join(directoryTest,f)) ]
+    onlyfiles = [f for f in listdir(directoryTest) if isfile(join(directoryTest, f))]
     for file in onlyfiles:
-        fileName = join(directoryTest,file)
+        fileName = join(directoryTest, file)
         fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
         test_images.append(fileData)
 
@@ -241,6 +335,7 @@ def serialize_gtsr():
     pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb.pkl', 'wb'))
 
     print("Finish Preparing Data")
+
 
 def reduce_gtsr():
     '''
@@ -294,6 +389,7 @@ def reduce_gtsr():
 
     print("Finish Preparing Data")
 
+
 def organize_gtsr():
     """
     Read the reducted dataset (it contains only 10 classes out of 43)
@@ -325,7 +421,7 @@ def organize_gtsr():
 
     for i in range(10):
         n = tr_classes.count(i)
-        nTrain = int(n * 3/4)
+        nTrain = int(n * 3 / 4)
         nValid = n - nTrain
 
         # create shuffled indexes to suffle the train images and classes
@@ -334,14 +430,14 @@ def organize_gtsr():
 
         # take the first nTrain items as train_set
         idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
-        images = [ tr_images_reshaped[i][j] for j in idxRange ]
+        images = [tr_images_reshaped[i][j] for j in idxRange]
         classes = (numpy.ones(shape=(nTrain,), dtype=int) * i).tolist()
         train_images.extend(images)
         train_classes.extend(classes)
 
         # take the next nValid items as validation_set
         idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
-        images = [tr_images_reshaped[i][j] for j in idxRange ]
+        images = [tr_images_reshaped[i][j] for j in idxRange]
         classes = (numpy.ones(shape=(nValid,), dtype=int) * i).tolist()
         valid_images.extend(images)
         valid_classes.extend(classes)
@@ -376,6 +472,7 @@ def organize_gtsr():
 
     print("Finish Preparing Data")
 
+
 # endregion
 
 # region BelgiumTS
@@ -400,21 +497,21 @@ def serialize_belgiumTS():
     directoryTest = "D:\\_Dataset\\BelgiumTS\\Test_Preprocessed_28\\"
 
     # get the training data
-    for i in range (0, 62):
+    for i in range(0, 62):
         subDirectory = directoryTrain + "{0:05d}\\".format(i)
-        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory,f))]
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
         for file in onlyfiles:
-            fileName = join(subDirectory,file)
+            fileName = join(subDirectory, file)
             fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
             train_images.append(fileData)
             train_classes.append(i)
 
     # get the test data
-    for i in range (0, 62):
+    for i in range(0, 62):
         subDirectory = directoryTest + "{0:05d}\\".format(i)
-        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory,f))]
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
         for file in onlyfiles:
-            fileName = join(subDirectory,file)
+            fileName = join(subDirectory, file)
             fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
             test_images.append(fileData)
             test_classes.append(i)
@@ -427,6 +524,7 @@ def serialize_belgiumTS():
     pickle.dump(data, open('D:\\_Dataset\\BelgiumTS\\BelgiumTS.pkl', 'wb'))
 
     print("Finish Preparing Data")
+
 
 def reduce_belgiumTS():
     '''
@@ -483,6 +581,7 @@ def reduce_belgiumTS():
 
     print("Finish Preparing Data")
 
+
 def organize_belgiumTS():
     """
     Read the reducted dataset (it contains only 10 classes out of 43)
@@ -518,7 +617,7 @@ def organize_belgiumTS():
 
     for i in range(10):
         n = tr_classes.count(i)
-        nTrain = int(n * 3/4)
+        nTrain = int(n * 3 / 4)
         nValid = n - nTrain
 
         # create shuffled indexes to suffle the train images and classes
@@ -527,14 +626,14 @@ def organize_belgiumTS():
 
         # take the first nTrain items as train_set
         idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
-        images = [ tr_images_reshaped[i][j] for j in idxRange ]
+        images = [tr_images_reshaped[i][j] for j in idxRange]
         classes = (numpy.ones(shape=(nTrain,), dtype=int) * i).tolist()
         train_images.extend(images)
         train_classes.extend(classes)
 
         # take the next nValid items as validation_set
         idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
-        images = [tr_images_reshaped[i][j] for j in idxRange ]
+        images = [tr_images_reshaped[i][j] for j in idxRange]
         classes = (numpy.ones(shape=(nValid,), dtype=int) * i).tolist()
         valid_images.extend(images)
         valid_classes.extend(classes)
@@ -574,6 +673,7 @@ def organize_belgiumTS():
 
     print("Finish Preparing Data")
 
+
 # endregion
 
 # region SuperClass
@@ -601,21 +701,21 @@ def serialize_SuperClass():
     nClasses = 3
 
     # get the training data
-    for i in range (0, nClasses):
+    for i in range(0, nClasses):
         subDirectory = directoryTrain + "{0:05d}\\".format(i)
-        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory,f))]
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
         for file in onlyfiles:
-            fileName = join(subDirectory,file)
+            fileName = join(subDirectory, file)
             fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
             tr_images.append(fileData)
             tr_classes.append(i)
 
     # get the test data
-    for i in range (0, nClasses):
+    for i in range(0, nClasses):
         subDirectory = directoryTest + "{0:05d}\\".format(i)
-        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory,f))]
+        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
         for file in onlyfiles:
-            fileName = join(subDirectory,file)
+            fileName = join(subDirectory, file)
             fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
             test_images.append(fileData)
             test_classes.append(i)
@@ -636,7 +736,7 @@ def serialize_SuperClass():
 
     for i in range(nClasses):
         n = tr_classes.count(i)
-        nTrain = int(n * 4/5)
+        nTrain = int(n * 4 / 5)
         nValid = n - nTrain
 
         # create shuffled indexes to suffle the train images and classes
@@ -645,14 +745,14 @@ def serialize_SuperClass():
 
         # take the first nTrain items as train_set
         idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
-        images = [ tr_images_reshaped[i][j] for j in idxRange ]
+        images = [tr_images_reshaped[i][j] for j in idxRange]
         classes = (numpy.ones(shape=(nTrain,), dtype=int) * i).tolist()
         train_images.extend(images)
         train_classes.extend(classes)
 
         # take the next nValid items as validation_set
         idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
-        images = [tr_images_reshaped[i][j] for j in idxRange ]
+        images = [tr_images_reshaped[i][j] for j in idxRange]
         classes = (numpy.ones(shape=(nValid,), dtype=int) * i).tolist()
         valid_images.extend(images)
         valid_classes.extend(classes)
@@ -692,6 +792,7 @@ def serialize_SuperClass():
 
     print("Finish Preparing Data")
 
+
 # endregion
 
 # region Check Database
@@ -704,8 +805,8 @@ def check_database_1():
 
     import matplotlib.pyplot as plt
 
-    #data = pickle.load(open('D:\\_Dataset\\mnist.pkl', 'rb'))
-    #data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_normalized_28.pkl', 'rb'))
+    # data = pickle.load(open('D:\\_Dataset\\mnist.pkl', 'rb'))
+    # data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_normalized_28.pkl', 'rb'))
     data = pickle.load(open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'rb'))
 
     images = data[1][0]
@@ -715,7 +816,7 @@ def check_database_1():
 
     # get first column of the tuple (which represents the image, while second one represents the image class)
     # then get the first image and show it
-    idx = numpy.arange(start=0, stop=(len(classes)), step= len(classes)/12, dtype=int).tolist()
+    idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 12, dtype=int).tolist()
     print(len(classes))
     plt.figure(1)
     plt.ion()
@@ -730,8 +831,8 @@ def check_database_1():
         plt.show()
         x = 10
 
-def check_database_2():
 
+def check_database_2():
     data_1 = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_shuffled.pkl', 'rb'))
     data_2 = pickle.load(open("D:\\_Dataset\\mnist.pkl", 'rb'))
 
@@ -742,6 +843,7 @@ def check_database_2():
     del data_2
 
     x = 10
+
 
 def check_database_3():
     ''' Loads the dataset
@@ -768,7 +870,7 @@ def check_database_3():
     photoReshaped = photo.reshape((28, 28))
     matplotlib.pyplot.imshow(photoReshaped, cmap=matplotlib.cm.Greys_r)
 
-    #aPhoto = PIL.Image.open(".\data\\test-image.png")
+    # aPhoto = PIL.Image.open(".\data\\test-image.png")
     aPhoto = PIL.Image.open(".\data\\test_00014.ppm")
     data0 = aPhoto.getdata()
     data1 = list(data0)
@@ -778,7 +880,3 @@ def check_database_3():
     hiThere = 10
 
 # endregion
-
-
-
-

@@ -4,9 +4,10 @@ import theano.tensor as T
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 
-class ConvPoolLayer(object):
 
+class ConvPoolLayer(object):
     """Pool Layer of a convolutional network """
+
     def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2)):
         """
         Allocate a LeNetConvPoolLayer with shared variable internal parameters.
@@ -67,15 +68,12 @@ class ConvPoolLayer(object):
         # store parameters of this layer
         self.params = [self.W, self.b]
 
+
 def filter_image(img, W, b, image_shape, filter_shape, pool_size):
-
-    import theano
-    from theano import tensor as T
-    from theano.tensor.nnet import conv
-
     # instantiate 4D tensor for input
     # 'T.tanh' or 'T.nnet.sigmoid'
     input = T.tensor4(name='input')
+
     # filter_shape=filter_shape, image_shape=image_shape
     conv_out = conv.conv2d(input=input, filters=W, image_shape=image_shape, filter_shape=filter_shape)
     pooled_out = downsample.max_pool_2d(input=conv_out, ds=pool_size, ignore_border=True)

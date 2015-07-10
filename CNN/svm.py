@@ -3,6 +3,7 @@ import theano
 import theano.tensor as T
 import mlp
 
+
 class SVMLayer(object):
     """
     SVM-like layer
@@ -38,7 +39,7 @@ class SVMLayer(object):
         self.y_pred = T.argmax(self.output, axis=1)
 
     def hinge(self, u):
-            return T.maximum(0, 1 - u)
+        return T.maximum(0, 1 - u)
 
     def cost(self, y_h):
         """ return the one-vs-all svm cost
@@ -64,35 +65,6 @@ class SVMLayer(object):
         else:
             raise NotImplementedError()
 
-def classify_images(input, filters, W1, b1, W2, b2, n_in, n_out):
-
-    filters_reshaped = filters.reshape((1, filters.size))
-    h_input = input.flatten(2)
-    hiddenLayer = mlp.HiddenLayer(input=h_input, W=W1, b=b1, n_in=n_in, n_out=n_out, activation=T.tanh, rng=0)
-    p_y_given_x = T.nnet.softmax(T.dot(hiddenLayer.output, W2) + b2)
-    y_pred = T.argmax(p_y_given_x, axis=1)
-
-    # two functions for calculating the result and confidence/probability per class
-    f_pred = theano.function([h_input], y_pred)
-    f_prob = theano.function([h_input], p_y_given_x)
-
-    result_pred = f_pred(filters_reshaped)[0]
-    result_prob = f_prob(filters_reshaped)[0]
-
-    return result_pred, result_prob
-
-    output = T.dot(input, W) + b
-    y_pred = T.argmax(output, axis=1)
-
-    # two functions for calculating the result and confidence/probability per class
-    f_pred = theano.function([h_input], y_pred)
-    f_prob = theano.function([h_input], p_y_given_x)
-
-    result_pred = f_pred(filters_reshaped)[0]
-    result_prob = f_prob(filters_reshaped)[0]
-
-    return result_pred, result_prob
-
 
 def y_one_hot(data_y, n_classes, borrow=True):
     """
@@ -108,4 +80,46 @@ def y_one_hot(data_y, n_classes, borrow=True):
     y_h = -1 * np.ones((data_y.shape[0], n_classes))
     y_h[np.arange(data_y.shape[0]), data_y] = 1
     shared_y_h = theano.shared(np.asarray(y_h, dtype=theano.config.floatX), borrow=borrow)
-    return T.cast(shared_y_h,  'int32')
+    return T.cast(shared_y_h, 'int32')
+
+
+def classify_images(input_flatten, hidden_output, filters, W, b):
+    """ Initialize the parameters of the logistic regression
+
+        :type input: theano.tensor.TensorType
+        :param input: symbolic variable that describes the input of the
+                      architecture (one minibatch)
+
+        :type n_in: int
+        :param n_in: number of input units, the dimension of the space in
+                     which the datapoints lie
+
+        :type n_out: int
+        :param n_out: number of output units, the dimension of the space in
+                      which the labels lie
+
+        """
+
+    # symbolic expression for computing the matrix of class-membership
+    # probabilities
+    # Where:
+    # W is a matrix where column-k represent the separation hyper plain for
+    # class-k
+    # x is a matrix where row-j  represents input training sample-j
+    # b is a vector where element-k represent the free parameter of hyper
+    # plain-k
+
+    s = filters.shape
+    filters_reshaped = filters.reshape((s[0], s[1] * s[2] * s[3]))
+
+    p_y_given_x = T.dot(hidden_output, W) + b
+    y_pred = T.argmax(p_y_given_x, axis=1)
+
+    # two functions for calculating the result and confidence/probability per class
+    f_pred = theano.function([input_flatten], y_pred)
+    f_prob = theano.function([input_flatten], p_y_given_x)
+
+    result_pred = f_pred(filters_reshaped)
+    result_prob = f_prob(filters_reshaped)
+
+    return result_pred, result_prob

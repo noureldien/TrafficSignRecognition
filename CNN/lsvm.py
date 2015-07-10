@@ -1,4 +1,3 @@
-
 """
 Linear SVM
 ==========
@@ -12,6 +11,7 @@ directly with a gradient-based solver.
 import numpy as np
 import autodiff
 import autodiff.optimize
+
 
 def test_svm():
     rng = np.random.RandomState(1)
@@ -31,6 +31,7 @@ def test_svm():
 
     print('optimization successful!')
 
+
 # -- loss function
 def loss_fn(weights, bias, x, y, l2_regularization):
     margin = y * (np.dot(x, weights) + bias)
@@ -39,4 +40,3 @@ def loss_fn(weights, bias, x, y, l2_regularization):
     loss = np.mean(loss) + l2_cost
     print('ran loss_fn(), returning {}'.format(loss))
     return loss
-

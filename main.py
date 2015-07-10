@@ -55,11 +55,18 @@ mnist_dim = 28
 # test model on specific image
 #CNN.cnn.classify_img_from_file("D:\\_Dataset\\SuperClass\\Test_Preprocessed_Revised\\00001\\00045_00004.png", superclass_model)
 
-#CNN.utils.rgb_to_gs("D:\\_Dataset\\UK\\preprocessed\\small 7.png")
-CNN.cnn.classify_img_from_file("D:\\_Dataset\\UK\\preprocessed\\small 5.png", superclass_model)
-#CNN.cnn.classify_imgs_from_files("")
+###### experiments ######
 
+#CNN.utils.rgb_to_gs("D:\\_Dataset\\UK\\preprocessed\\small 8.png")
 #CNN.utils.preprocess_image(filePathRead="D:\\_Dataset\\UK\\preprocessed\\small.png", filePathWrite="D:\\_Dataset\\UK\\preprocessed\\small 1.png")
+
+#CNN.cnn.classify_img_from_file("D:\\_Dataset\\UK\\preprocessed\\small 8.png", superclass_model)
+#CNN.cnn.classify_img_from_file("D:\\_Dataset\\UK\\preprocessed\\small 8.png", superclass_model_svm, CNN.cnn.ClassifierType.svm)
+
+#CNN.utils.probability_map("D:\\_Dataset\\UK\\preprocessed\\big 2.png", superclass_model)
+#CNN.utils.probability_map("D:\\_Dataset\\UK\\preprocessed\\big 2.png", superclass_model_svm, CNN.cnn.ClassifierType.svm)
+
+
 
 
 

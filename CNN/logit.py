@@ -3,6 +3,7 @@ import theano
 import theano.tensor as T
 import mlp
 
+
 class LogisticRegression(object):
     """Multi-class Logistic Regression Class
 
@@ -122,6 +123,7 @@ class LogisticRegression(object):
         else:
             raise NotImplementedError()
 
+
 def classify_images(input_flatten, hidden_output, filters, W, b):
     """ Initialize the parameters of the logistic regression
 
@@ -148,7 +150,8 @@ def classify_images(input_flatten, hidden_output, filters, W, b):
     # b is a vector where element-k represent the free parameter of hyper
     # plain-k
 
-    filters_reshaped = filters.reshape((1, filters.size))
+    s = filters.shape
+    filters_reshaped = filters.reshape((s[0], s[1] * s[2] * s[3]))
 
     p_y_given_x = T.nnet.softmax(T.dot(hidden_output, W) + b)
     y_pred = T.argmax(p_y_given_x, axis=1)
@@ -157,8 +160,7 @@ def classify_images(input_flatten, hidden_output, filters, W, b):
     f_pred = theano.function([input_flatten], y_pred)
     f_prob = theano.function([input_flatten], p_y_given_x)
 
-    result_pred = f_pred(filters_reshaped)[0]
-    result_prob = f_prob(filters_reshaped)[0]
+    result_pred = f_pred(filters_reshaped)
+    result_prob = f_prob(filters_reshaped)
 
     return result_pred, result_prob
-
