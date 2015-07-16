@@ -18,7 +18,6 @@ References:
                  Christopher M. Bishop, section 5
 
 """
-__docformat__ = 'restructedtext en'
 
 import os
 import sys
@@ -29,8 +28,8 @@ import numpy
 import theano
 import theano.tensor as T
 
-import utils
-import logit
+import CNN.utils
+import CNN.logit
 
 # start-snippet-1
 class HiddenLayer(object):
@@ -392,6 +391,3 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, data
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
-
-if __name__ == '__main__':
-    test_mlp()

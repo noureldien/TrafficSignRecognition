@@ -4,7 +4,7 @@ from builtins import print
 
 import CNN
 import CNN.utils
-import CNN.cnn
+import CNN.recog
 
 print('Traffic Sign Recognition')
 
@@ -19,6 +19,11 @@ superclass_model_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_svm.pkl'
 
 gtsrb_dim = 28
 mnist_dim = 28
+
+
+######################################################################
+############################ Recognition #############################
+######################################################################
 
 # train model on mnist database
 #cnn.train(dataset_path=mnist_dataset ,learning_rate=0.1, n_epochs=200, nkerns=(20, 50), batch_size=500)
@@ -55,7 +60,7 @@ mnist_dim = 28
 # test model on specific image
 #CNN.cnn.classify_img_from_file("D:\\_Dataset\\SuperClass\\Test_Preprocessed_Revised\\00001\\00045_00004.png", superclass_model)
 
-###### experiments ######
+###### experiments ######x
 
 #CNN.utils.rgb_to_gs("D:\\_Dataset\\UK\\preprocessed\\small 8.png")
 #CNN.utils.preprocess_image(filePathRead="D:\\_Dataset\\UK\\preprocessed\\small.png", filePathWrite="D:\\_Dataset\\UK\\preprocessed\\small 1.png")
@@ -67,6 +72,11 @@ mnist_dim = 28
 #CNN.utils.probability_map("D:\\_Dataset\\UK\\preprocessed\\big 2.png", superclass_model_svm, CNN.cnn.ClassifierType.svm)
 
 
+###########################################################################
+################################ Detection ################################
+###########################################################################
+
+CNN.utils.ppm_to_png()
 
 
 

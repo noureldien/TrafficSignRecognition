@@ -11,11 +11,12 @@ import skimage.transform
 import skimage.exposure
 import cv2
 import CNN
-import CNN.cnn
+import CNN.recog
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
 
+# region Misc
 
 def unzip_load_data(dataset):
     f = gzip.open(dataset, 'rb')
@@ -132,7 +133,7 @@ def preprocess_image(filePathRead, filePathWrite):
         # endregion
 
 
-def probability_map(img_path, model_path, classifier=CNN.cnn.ClassifierType.logit, window_size=28):
+def probability_map(img_path, model_path, classifier=CNN.recog.ClassifierType.logit, window_size=28):
     """
     For the given image, apply sliding window algorithm over different scales and return the heat-probability map
     :param img_path:
@@ -182,10 +183,11 @@ def probability_map(img_path, model_path, classifier=CNN.cnn.ClassifierType.logi
 
     # after we obained all the batches for all the image scales, classify the batches
     batch_np = numpy.asarray(batch, float)
-    c_result, c_prob, c_duration = CNN.cnn.classify_batch(batch_np, model_path, classifier)
+    c_result, c_prob, c_duration = CNN.recog.classify_batch(batch_np, model_path, classifier)
     print('Classification of image batches in %f sec.' % (c_duration))
 
     # get the classification result and probability each scale
+    return
     offset = 0
     c_prob[c_prob < 0.75] = 0
     for i in range(0, len(batch_counts)):
@@ -198,18 +200,34 @@ def probability_map(img_path, model_path, classifier=CNN.cnn.ClassifierType.logi
         #    # display map
         offset += batch_counts[i]
 
-    x = 10
-    # generate image to show confidence maps for the 3 classes, each with probabilities
-    # note that for each class, we have confidence map at each scale
+        # generate image to show confidence maps for the 3 classes, each with probabilities
+        # note that for each class, we have confidence map at each scale
 
 
 def rgb_to_gs(path):
     img = cv2.imread(path)
     img_gs = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
-    # save the file
     img_save = img_gs * 255
     img_save = img_save.astype(int)
     cv2.imwrite(path, img_save)
+
+
+def ppm_to_png():
+    from os import listdir
+    from os.path import isfile, join
+
+    csvFileName = "D:\\_Dataset\\GTSDB\\Train\\gt.txt"
+
+    directory1 = "D:\\_Dataset\\GTSDB\\Train\\"
+    directory2 = "D:\\_Dataset\\GTSDB\\Train_PNG\\"
+
+    for i in range(299, 600):
+        file1 = "{0:05d}.ppm".format(i)
+        file2 = "{0:05d}.png".format(i)
+        filePathRead = join(directory1, file1)
+        filePathWrite = join(directory2, file2)
+        img = cv2.imread(filePathRead)
+        cv2.imwrite(filePathWrite, img)
 
 
 def __shared_dataset(data_xy, borrow=True):
@@ -278,6 +296,8 @@ def __plot_prob_maps(maps, shape, fig_num):
         plt.imshow(p_map)
     plt.show()
 
+
+# endregion
 
 # region GTSR
 
@@ -792,6 +812,18 @@ def serialize_SuperClass():
 
     print("Finish Preparing Data")
 
+
+# endregion
+
+# region GTSD
+
+def serialize_gtsd():
+
+    # read the german traffic sign detection database
+    # organize the data in a tuble
+    # pre_process the images
+    #
+    x = 10
 
 # endregion
 

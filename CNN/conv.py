@@ -69,6 +69,15 @@ class ConvPoolLayer(object):
         self.params = [self.W, self.b]
 
 
+def convpool_layer(input, W, b, image_shape, filter_shape, pool_size):
+
+    # filter_shape=filter_shape, image_shape=image_shape
+    conv_out = conv.conv2d(input=input, filters=W, image_shape=image_shape, filter_shape=filter_shape)
+    pooled_out = downsample.max_pool_2d(input=conv_out, ds=pool_size, ignore_border=True)
+    output = T.tanh(pooled_out + b.dimshuffle('x', 0, 'x', 'x'))
+    return output
+
+
 def filter_image(img, W, b, image_shape, filter_shape, pool_size):
     # instantiate 4D tensor for input
     # 'T.tanh' or 'T.nnet.sigmoid'

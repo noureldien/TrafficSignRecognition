@@ -36,7 +36,7 @@ import CNN.utils
 import CNN.mlp
 import CNN.conv
 import enum
-from mlp import HiddenLayer
+from CNN.mlp import HiddenLayer
 
 
 class ClassifierType(enum.Enum):
@@ -557,7 +557,75 @@ def classify_img_from_dataset(dataset_path, model_path, index, classifier=Classi
 
 
 def classify_batch(batch, model_path, classifier=ClassifierType.logit):
-    loaded_objects = __load_model(model_path)
+    loaded_objects = load_model(model_path)
+
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    mlp_layers = loaded_objects[4]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+    layer3_W = theano.shared(loaded_objects[12], borrow=True)
+    layer3_b = theano.shared(loaded_objects[13], borrow=True)
+
+    layer0_img_dim = img_dim  # = 28 in case of mnist
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
+
+    start_time = time.clock()
+
+    # layer 0: Conv-Pool
+    batch_size = batch.shape[0]
+    filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
+    image_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
+    batch = batch.reshape(image_shape)
+
+    layer0_input = T.tensor4(name='input')
+    layer0_output = CNN.conv.convpool_layer(input=layer0_input, W=layer0_W, b=layer0_b, image_shape=image_shape,
+                                            filter_shape=filter_shape, pool_size=pool_size)
+
+    # layer 1: Conv-Pool
+    filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
+    image_shape = (batch_size, nkerns[0], layer1_img_dim, layer1_img_dim)
+    layer1_output = CNN.conv.convpool_layer(input=layer0_output, W=layer1_W, b=layer1_b,
+                                            image_shape=image_shape, filter_shape=filter_shape,
+                                            pool_size=pool_size)
+
+    # layer 2: hidden layer
+    hidden_n_in = nkerns[1] * layer2_img_dim * layer2_img_dim
+    layer1_output_flattened = layer1_output.flatten(2)
+    layer2 = CNN.mlp.HiddenLayer(input=layer1_output_flattened, W=layer2_W, b=layer2_b, n_in=hidden_n_in,
+                                 n_out=mlp_layers[0], activation=T.tanh, rng=0)
+
+    # layer 3: logit (logistic regression) or SVM
+    if classifier == ClassifierType.logit:
+        layer3_y, layer3_y_prob = CNN.logit.logit_layer(input=layer2.output, W=layer3_W, b=layer3_b)
+    elif classifier == ClassifierType.svm:
+        layer3_y, layer3_y_prob = CNN.svm.svm_layer(input=layer2.output, W=layer3_W, b=layer3_b)
+    else:
+        raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
+
+    # two functions for calculating the result and confidence/probability per class
+    f_prob = theano.function([layer0_input], layer3_y_prob)
+    f_pred = theano.function([layer3_y_prob], layer3_y)
+    c_prob = f_prob(batch)
+    c_result = f_pred(c_prob)
+
+    end_time = time.clock()
+    duration = end_time - start_time
+    return c_result, c_prob, duration
+
+
+def classify_batch_detailed(batch, model_path, classifier=ClassifierType.logit):
+    loaded_objects = load_model(model_path)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -624,76 +692,17 @@ def classify_batch(batch, model_path, classifier=ClassifierType.logit):
     return c_result, c_prob, duration
 
 
-def classify_batch_fast(batch, model_path, classifier=ClassifierType.logit):
-    loaded_objects = __load_model(model_path)
-
-    img_dim = loaded_objects[1]
-    kernel_dim = loaded_objects[2]
-    nkerns = loaded_objects[3]
-    mlp_layers = loaded_objects[4]
-    pool_size = loaded_objects[5]
-
-    layer0_W = theano.shared(loaded_objects[6], borrow=True)
-    layer0_b = theano.shared(loaded_objects[7], borrow=True)
-    layer1_W = theano.shared(loaded_objects[8], borrow=True)
-    layer1_b = theano.shared(loaded_objects[9], borrow=True)
-    layer2_W = theano.shared(loaded_objects[10], borrow=True)
-    layer2_b = theano.shared(loaded_objects[11], borrow=True)
-    layer3_W = theano.shared(loaded_objects[12], borrow=True)
-    layer3_b = theano.shared(loaded_objects[13], borrow=True)
-
-    layer0_img_dim = img_dim  # = 28 in case of mnist
-    layer0_kernel_dim = kernel_dim[0]
-    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
-    layer1_kernel_dim = kernel_dim[1]
-    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
-
-    start_time = time.clock()
-
-    # layer 0: Conv-Pool
-    batch_size = batch.shape[0]
-    filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
-    image_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
-    batch = batch.reshape(image_shape)
-    (layer0_filters, layer0_output) = CNN.conv.filter_image(img=batch, W=layer0_W, b=layer0_b, image_shape=image_shape,
-                                                            filter_shape=filter_shape, pool_size=pool_size)
-
-    # layer 1: Conv-Pool
-    filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
-    image_shape = (batch_size, nkerns[0], layer1_img_dim, layer1_img_dim)
-    (layer1_filters, layer1_output) = CNN.conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b,
-                                                            image_shape=image_shape, filter_shape=filter_shape,
-                                                            pool_size=pool_size)
-
-    # layer 2: hidden layer
-    hidden_n_in = nkerns[1] * layer2_img_dim * layer2_img_dim
-    layer1_output_flattened = layer1_output.flatten(2)
-    hiddenLayer = CNN.mlp.HiddenLayer(input=layer1_output_flattened, W=layer2_W, b=layer2_b, n_in=hidden_n_in,
-                                      n_out=mlp_layers[0], activation=T.tanh, rng=0)
-
-    # layer 3: logit (logistic regression) or SVM
-    c_result = []
-    c_prob = []
-    if classifier == ClassifierType.logit:
-        c_result, c_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened,
-                                                     hidden_output=hiddenLayer.output,
-                                                     filters=layer1_filters, W=layer3_W,
-                                                     b=layer3_b)
-    elif classifier == ClassifierType.svm:
-        c_result, c_prob = CNN.svm.classify_images(input_flatten=layer1_output_flattened,
-                                                   hidden_output=hiddenLayer.output,
-                                                   filters=layer1_filters, W=layer3_W,
-                                                   b=layer3_b)
-    else:
-        raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
-
-    end_time = time.clock()
-    duration = end_time - start_time
-    return c_result, c_prob, duration
+def load_model(model_path):
+    save_file = open(model_path, 'rb')
+    loaded_objects = []
+    for i in range(14):
+        loaded_objects.append(pickle.load(save_file))
+    save_file.close()
+    return loaded_objects
 
 
 def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
-    loaded_objects = __load_model(model_path)
+    loaded_objects = load_model(model_path)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -770,15 +779,6 @@ def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
     print('Classification confidence: %s' % (__numpy_to_string(c_prob)))
 
     return c_result, c_prob, c_duration
-
-
-def __load_model(model_path):
-    save_file = open(model_path, 'rb')
-    loaded_objects = []
-    for i in range(14):
-        loaded_objects.append(pickle.load(save_file))
-    save_file.close()
-    return loaded_objects
 
 
 def __plot_filters_1(filters, figure_num):

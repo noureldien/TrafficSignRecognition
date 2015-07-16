@@ -1,7 +1,6 @@
 import numpy as np
 import theano
 import theano.tensor as T
-import mlp
 
 
 class SVMLayer(object):
@@ -83,6 +82,13 @@ def y_one_hot(data_y, n_classes, borrow=True):
     return T.cast(shared_y_h, 'int32')
 
 
+def svm_layer(input, W, b):
+    p_y_given_x = T.nnet.softmax(T.dot(input, W) + b)
+    y_pred = T.argmax(p_y_given_x, axis=1)
+
+    return y_pred, p_y_given_x
+
+
 def classify_images(input_flatten, hidden_output, filters, W, b):
     """ Initialize the parameters of the logistic regression
 
@@ -112,14 +118,13 @@ def classify_images(input_flatten, hidden_output, filters, W, b):
     s = filters.shape
     filters_reshaped = filters.reshape((s[0], s[1] * s[2] * s[3]))
 
-    p_y_given_x = T.dot(hidden_output, W) + b
-    y_pred = T.argmax(p_y_given_x, axis=1)
+    y_pred, p_y_given_x = svm_layer(hidden_output, W, b)
 
     # two functions for calculating the result and confidence/probability per class
-    f_pred = theano.function([input_flatten], y_pred)
     f_prob = theano.function([input_flatten], p_y_given_x)
+    f_pred = theano.function([p_y_given_x], y_pred)
 
-    result_pred = f_pred(filters_reshaped)
     result_prob = f_prob(filters_reshaped)
+    result_pred = f_pred(result_prob)
 
     return result_pred, result_prob
