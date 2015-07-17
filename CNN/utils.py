@@ -1,4 +1,3 @@
-import os
 import pickle
 import gzip
 import numpy
@@ -16,6 +15,7 @@ import CNN.enums
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
+import random
 
 # region Misc
 
@@ -53,9 +53,9 @@ def load_data(dataset):
     # the number of rows in the input. It should give the target
     # target to the example with the same index in the input.
 
-    test_set_x, test_set_y = __shared_dataset(test_set)
-    valid_set_x, valid_set_y = __shared_dataset(valid_set)
-    train_set_x, train_set_y = __shared_dataset(train_set)
+    test_set_x, test_set_y = shared_dataset(test_set)
+    valid_set_x, valid_set_y = shared_dataset(valid_set)
+    train_set_x, train_set_y = shared_dataset(train_set)
 
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y)]
     return rval
@@ -137,7 +137,7 @@ def preprocess_image(img, resize=False):
         # endregion
 
 
-def probability_map(img_path, model_path, classifier=CNN.recog.ClassifierType.logit, window_size=28):
+def probability_map(img_path, model_path, classifier=CNN.enums.ClassifierType.logit, window_size=28):
     """
     For the given image, apply sliding window algorithm over different scales and return the heat-probability map
     :param img_path:
@@ -234,7 +234,7 @@ def ppm_to_png():
         cv2.imwrite(filePathWrite, img)
 
 
-def __shared_dataset(data_xy, borrow=True):
+def shared_dataset(data_xy, borrow=True):
     """ Function that loads the dataset into shared variables
 
     The reason we store our dataset in shared variables is to allow
@@ -448,7 +448,7 @@ def organize_gtsr():
         nTrain = int(n * 3 / 4)
         nValid = n - nTrain
 
-        # create shuffled indexes to suffle the train images and classes
+        # create shuffled indexes to shuffle the train images and classes
         idx = numpy.arange(start=0, stop=n, dtype=int).tolist()
         random.shuffle(idx)
 
@@ -644,7 +644,7 @@ def organize_belgiumTS():
         nTrain = int(n * 3 / 4)
         nValid = n - nTrain
 
-        # create shuffled indexes to suffle the train images and classes
+        # create shuffled indexes to shuffle the train images and classes
         idx = numpy.arange(start=0, stop=n, dtype=int).tolist()
         random.shuffle(idx)
 
@@ -763,7 +763,7 @@ def serialize_SuperClass():
         nTrain = int(n * 4 / 5)
         nValid = n - nTrain
 
-        # create shuffled indexes to suffle the train images and classes
+        # create shuffled indexes to shuffle the train images and classes
         idx = numpy.arange(start=0, stop=n, dtype=int).tolist()
         random.shuffle(idx)
 
@@ -822,7 +822,7 @@ def serialize_SuperClass():
 # region GTSD
 
 
-def sample_gtsd():
+def rerialize_gtsdb():
     # read the german traffic sign detection database
     # for each image, create multible scales
     # for each scale, create regions/batches around the ground truth boundary
@@ -837,7 +837,7 @@ def sample_gtsd():
     # get the ground truth of the test data
 
     csv_data = []
-    csvFileName = "D:\\_Dataset\\GTSDB\\Training_PNG\\gt.txt"
+    csvFileName = "D:\\_Dataset\\GTSDB\\Ground_Truth\\gt.txt"
     with open(csvFileName, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quotechar='|')
         for row in reader:
@@ -851,30 +851,34 @@ def sample_gtsd():
             csv_data.append(col_data)
 
     # stride represents how dense to sample regions around the ground truth traffic signs
-    # also down_scaling factor affects the sampling
+    # also up_scaling factor affects the sampling
     # initial dimension defines what is the biggest traffic sign to recognise
     # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
-    stride = 3
-    down_scale_factor = 0.75
-    smallest_area_factor = 4 ** 2
-    window_dim = 600
+    # stride_factor = 2 gives more sampling than stride_factor = 1
+    # don't use value smaller than 1 for stride factor
+    up_scale_factor = 1.2
+    biggest_area_factor = 5 ** 2
+    min_region_dim = 16
     img_width = 1630
     img_height = 800
     resize_dim = 28
+    stride_factor = 2
     regions = []
+    relative_boundaries = []
 
     directory = "D:\\_Dataset\\GTSDB\\Training_PNG\\"
     files = [f for f in listdir(directory) if isfile(join(directory, f))]
 
     for file in files:
         file_id = int(file[:-4])
+        print(file_id)
         file_path = join(directory, file)
         img = cv2.imread(file_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # loop on each ground truth (i.e traffic sign)
         # for now, consider only the 'warning' for the time being
         # get the ground truth of 'warning' signs
-        boundaries = __gtsr_get_boundaries(csv_data, file_id, CNN.enums.SuperclassType._02_Warning)
+        boundaries = __gtsr_get_boundaries(csv_data, file_id, CNN.enums.SuperclassType._01_Prohibitory)
         for boundary in boundaries:
             # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
             # that means, we'll start with a window with initial size 320*320
@@ -882,7 +886,7 @@ def sample_gtsd():
             # 1. each region fully covers the boundary
             # 2. the boundary must not be smaller than the 1/5 of the region
             # ie. according to initial window size, the boundary must not be smaller than 80*80
-            # but sure we will recognize smaller ground truth because we down_scale the window every step
+            # but sure we will recognize smaller ground truth because we up_scale the window every step
             # boundary is x1, y1, x2, y2 => (x1,y1) top left, (x2, y2) bottom right
             # don't forget that stride of sliding the window is dynamic
             x1 = boundary[0]
@@ -892,19 +896,14 @@ def sample_gtsd():
             boundary_width = x2 - x1
             boundary_height = y2 - y1
             boundary_max_dim = max(boundary_width, boundary_height)
+            window_dim = boundary_max_dim
             boundary_area = boundary_width * boundary_height
-            while (window_dim ** 2 / boundary_area) >= smallest_area_factor \
-                    and window_dim >= boundary_width and window_dim >= boundary_height:
-
-                # Important: since the window is going to be scaled to 28*28, so if the ground_truth inside the window
-                # after resizing the window became smaller than 16*16, so no need to consider this scale at all
-                if (boundary_max_dim * resize_dim / window_dim) < 16:
-                    window_dim = int(window_dim * down_scale_factor)
-                    continue
+            while (window_dim ** 2 / boundary_area) <= biggest_area_factor \
+                    and (boundary_max_dim * resize_dim / window_dim) >= min_region_dim \
+                    and window_dim <= img_height and window_dim <= img_width:
 
                 # for the current scale of the window, extract regions, start from the
-                stride = max(28, int((boundary_max_dim / window_dim) * 10 / resize_dim))
-                print(stride)
+                stride = int((boundary_max_dim * resize_dim / (stride_factor * window_dim)))
                 y_range = numpy.arange(start=y2 - window_dim, stop=y1 + 1, step=stride, dtype=int).tolist()
                 x_range = numpy.arange(start=x2 - window_dim, stop=x1 + 1, step=stride, dtype=int).tolist()
                 # the factor used to rescale the region before saving it to the region array
@@ -920,37 +919,78 @@ def sample_gtsd():
                             # - don't forget to re_scale the extracted/sampled region to be 28*28
                             #   hence, multiply the relative position with this scaling accordingly
                             # - also, the image needs to be preprocessed so it can be ready for the CNN
-                            region = img[y:y + window_dim, x:x + window_dim]
-                            if region.shape[0] != region.shape[1]:
-                                raise Exception("Something is not correct with taking regions from image using window")
-                            # region = preprocess_image(region, True)
-                            # region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
-                            region_relative_position = numpy.asarray(
-                                [region[0] - x, region[1] - y, region[2] - x, region[3] - y])
-                            region_relative_position /= r_factor
-                            region_relative_position = region_relative_position.astype(int)
-                            regions.append([region, region_relative_position])
+                            region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
+                            region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
+                            relative_boundary = numpy.asarray([x1 - x, y1 - y, x2 - x, y2 - y]) / r_factor
+                            regions.append(region)
+                            relative_boundaries.append(relative_boundary.astype(int))
 
-                            # save region for experiemnt
-                            count = len(regions)
-                            print(count)
-                            filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file + "_" + "{0:05d}.png".format(
-                                count)
+                            # save region for experiment
+                            # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
+                            # region = region * 255
+                            # cv2.imwrite(filePathWrite, region)
 
-                            region *= 255
-                            region = region.astype(int)
-                            cv2.imwrite(filePathWrite, region)
+                # now we up_scale the window
+                window_dim = int(window_dim * up_scale_factor)
 
-                # now we want to re_scale, instead of down_scaling the whole image, we down_scale the window
-                # don't forget to recalculate the window area
-                window_dim = int(window_dim * down_scale_factor)
+    # dump the regions into a pickle file
+    data = (regions, relative_boundaries)
+    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized.pkl', 'wb'))
 
-        break
-
-        # this is the end of the method
+    print("Finish sampling regions for detector")
 
 
-def __gtsr_get_boundaries(gt_data, image_id, superclass_type=0):
+def organize_gtsdb():
+
+    data = pickle.load(open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized.pkl', 'rb'))
+    regions = data[0]
+    boundaries = data[1]
+    del data
+
+    n = len(boundaries)
+    nTrain = int(n * 2 / 4)
+    nValid = int(n * 1 / 4)
+
+    # may be try to shuffle the data before dividing
+    train_images = regions[0:nTrain]
+    train_classes = boundaries[0:nTrain]
+    valid_images = regions[nTrain:nTrain + nValid]
+    valid_classes = boundaries[nTrain:nTrain + nValid]
+    test_images = regions[nTrain + nValid:n]
+    test_classes = boundaries[nTrain + nValid:n]
+
+    # shuffle the train, valid and test dateset
+    idx = numpy.arange(start=0, stop=len(train_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    train_images_shuffled = [train_images[j] for j in idx]
+    train_classes_shuffled = [train_classes[j] for j in idx]
+
+    idx = numpy.arange(start=0, stop=len(valid_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    valid_images_shuffled = [valid_images[j] for j in idx]
+    valid_classes_shuffled = [valid_classes[j] for j in idx]
+
+    idx = numpy.arange(start=0, stop=len(test_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    test_images_shuffled = [test_images[j] for j in idx]
+    test_classes_shuffled = [test_classes[j] for j in idx]
+
+    # change array to numpy
+    train_images = numpy.asarray(train_images_shuffled)
+    train_classes = numpy.asarray(train_classes_shuffled)
+    valid_images = numpy.asarray(valid_images_shuffled)
+    valid_classes = numpy.asarray(valid_classes_shuffled)
+    test_images = numpy.asarray(test_images_shuffled)
+    test_classes = numpy.asarray(test_classes_shuffled)
+
+    # now, save the training and data
+    data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
+    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory.pkl', 'wb'))
+
+    print("Finish Preparing Data")
+
+
+def __gtsr_get_boundaries(gt_data, image_id, superclass_type=CNN.enums.SuperclassType._00_All):
     '''
     Get the list of ground truth (boundary of a traffic sign) in the image with the given id
     If superclass is provided, then get the ground truth for only this superclass
@@ -966,7 +1006,7 @@ def __gtsr_get_boundaries(gt_data, image_id, superclass_type=0):
     superclasses = [prohib_classes, warning_classes, info_classes]
     type_id = superclass_type.value - 1
 
-    if superclass_type == 0:
+    if type_id == -1:
         items = [f[1:5] for f in gt_data if f[0] == image_id]
     else:
         items = [f[1:5] for f in gt_data if f[0] == image_id and f[5] in superclasses[type_id]]

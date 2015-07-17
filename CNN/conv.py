@@ -69,8 +69,19 @@ class ConvPoolLayer(object):
         self.params = [self.W, self.b]
 
 
-def convpool_layer(input, W, b, image_shape, filter_shape, pool_size):
+class ConvPoolLayer_(object):
+    def __init__(self, input, W, b, filter_shape, image_shape, poolsize=(2, 2)):
+        assert image_shape[1] == filter_shape[1]
+        self.input = input
+        self.W = W
+        self.b = b
+        conv_out = conv.conv2d(input=input, filters=self.W, filter_shape=filter_shape, image_shape=image_shape)
+        pooled_out = downsample.max_pool_2d(input=conv_out, ds=poolsize, ignore_border=True)
+        self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        self.params = [self.W, self.b]
 
+
+def convpool_layer(input, W, b, image_shape, filter_shape, pool_size):
     # filter_shape=filter_shape, image_shape=image_shape
     conv_out = conv.conv2d(input=input, filters=W, image_shape=image_shape, filter_shape=filter_shape)
     pooled_out = downsample.max_pool_2d(input=conv_out, ds=pool_size, ignore_border=True)

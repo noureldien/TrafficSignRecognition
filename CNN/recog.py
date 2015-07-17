@@ -35,14 +35,8 @@ import CNN.logit
 import CNN.utils
 import CNN.mlp
 import CNN.conv
-import enum
 from CNN.mlp import HiddenLayer
-
-
-class ClassifierType(enum.Enum):
-    logit = 1
-    svm = 2
-
+import CNN.enums
 
 def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
           mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
@@ -530,7 +524,7 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     save_file.close()
 
 
-def classify_img_from_file(img_path, model_path, classifier=ClassifierType.logit, img_dim=28):
+def classify_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierType.logit, img_dim=28):
     # this is how to prepare an image to be used by the CNN model
     import PIL
     import PIL.Image
@@ -542,7 +536,7 @@ def classify_img_from_file(img_path, model_path, classifier=ClassifierType.logit
     return __classify_img(img4D, model_path, classifier)
 
 
-def classify_img_from_dataset(dataset_path, model_path, index, classifier=ClassifierType.logit, img_dim=28):
+def classify_img_from_dataset(dataset_path, model_path, index, classifier=CNN.enums.ClassifierType.logit, img_dim=28):
     data = pickle.load(open(dataset_path, 'rb'))
     img = data[0][0][index]
     del data
@@ -556,7 +550,7 @@ def classify_img_from_dataset(dataset_path, model_path, index, classifier=Classi
     # img4D = img.reshape(1, 1, img_dim, img_dim)
 
 
-def classify_batch(batch, model_path, classifier=ClassifierType.logit):
+def classify_batch(batch, model_path, classifier=CNN.enums.ClassifierType.logit):
     loaded_objects = load_model(model_path)
 
     img_dim = loaded_objects[1]
@@ -579,8 +573,6 @@ def classify_batch(batch, model_path, classifier=ClassifierType.logit):
     layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
     layer1_kernel_dim = kernel_dim[1]
     layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
-
-    start_time = time.clock()
 
     # layer 0: Conv-Pool
     batch_size = batch.shape[0]
@@ -606,12 +598,14 @@ def classify_batch(batch, model_path, classifier=ClassifierType.logit):
                                  n_out=mlp_layers[0], activation=T.tanh, rng=0)
 
     # layer 3: logit (logistic regression) or SVM
-    if classifier == ClassifierType.logit:
+    if classifier == CNN.enums.ClassifierType.logit:
         layer3_y, layer3_y_prob = CNN.logit.logit_layer(input=layer2.output, W=layer3_W, b=layer3_b)
-    elif classifier == ClassifierType.svm:
+    elif classifier == CNN.enums.ClassifierType.svm:
         layer3_y, layer3_y_prob = CNN.svm.svm_layer(input=layer2.output, W=layer3_W, b=layer3_b)
     else:
         raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
+
+    start_time = time.clock()
 
     # two functions for calculating the result and confidence/probability per class
     f_prob = theano.function([layer0_input], layer3_y_prob)
@@ -624,7 +618,7 @@ def classify_batch(batch, model_path, classifier=ClassifierType.logit):
     return c_result, c_prob, duration
 
 
-def classify_batch_detailed(batch, model_path, classifier=ClassifierType.logit):
+def classify_batch_step_by_step(batch, model_path, classifier=CNN.enums.ClassifierType.logit):
     loaded_objects = load_model(model_path)
 
     img_dim = loaded_objects[1]
@@ -674,12 +668,12 @@ def classify_batch_detailed(batch, model_path, classifier=ClassifierType.logit):
     # layer 3: logit (logistic regression) or SVM
     c_result = []
     c_prob = []
-    if classifier == ClassifierType.logit:
+    if classifier == CNN.enums.ClassifierType.logit:
         c_result, c_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened,
                                                      hidden_output=hiddenLayer.output,
                                                      filters=layer1_filters, W=layer3_W,
                                                      b=layer3_b)
-    elif classifier == ClassifierType.svm:
+    elif classifier == CNN.enums.ClassifierType.svm:
         c_result, c_prob = CNN.svm.classify_images(input_flatten=layer1_output_flattened,
                                                    hidden_output=hiddenLayer.output,
                                                    filters=layer1_filters, W=layer3_W,
@@ -701,7 +695,7 @@ def load_model(model_path):
     return loaded_objects
 
 
-def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
+def __classify_img(img4D, model_path, classifier=CNN.enums.ClassifierType.logit):
     loaded_objects = load_model(model_path)
 
     img_dim = loaded_objects[1]
@@ -749,12 +743,12 @@ def __classify_img(img4D, model_path, classifier=ClassifierType.logit):
     # layer 3: logit (logistic regression) or SVM
     c_result = []
     c_prob = []
-    if classifier == ClassifierType.logit:
+    if classifier == CNN.enums.ClassifierType.logit:
         c_result, c_prob = CNN.logit.classify_images(input_flatten=layer1_output_flattened,
                                                      hidden_output=hiddenLayer.output,
                                                      filters=layer1_filters, W=layer3_W,
                                                      b=layer3_b)
-    elif classifier == ClassifierType.svm:
+    elif classifier == CNN.enums.ClassifierType.svm:
         c_result, c_prob = CNN.svm.classify_images(input_flatten=layer1_output_flattened,
                                                    hidden_output=hiddenLayer.output,
                                                    filters=layer1_filters, W=layer3_W,
