@@ -12,6 +12,7 @@ import skimage.exposure
 import cv2
 import CNN
 import CNN.recog
+import CNN.enums
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
@@ -95,17 +96,20 @@ def preprocess_dataset():
 
 def preprocess_image(filePathRead, filePathWrite):
     img = cv2.imread(filePathRead)
+    img = preprocess_image(img, False)
+    img *= 255
+    img = img.astype(int)
+    cv2.imwrite(filePathWrite, img)
+
+
+def preprocess_image(img, resize=False):
     img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_eq = skimage.exposure.equalize_hist(img_gs)
     img_adeq = skimage.exposure.equalize_adapthist(img_eq, clip_limit=0.2, kernel_size=(8, 8))
     img_int = skimage.exposure.rescale_intensity(img_adeq, in_range=(0.1, 0.8))
-    # img_res = transform.resize(img_int, output_shape=(28, 28))
-    img_res = img_int
-
-    # save the file
-    img_save = img_res * 255
-    img_save = img_save.astype(int)
-    cv2.imwrite(filePathWrite, img_save)
+    if resize:
+        img_int = skimage.transform.resize(img_int, output_shape=(28, 28))
+    return img_int
 
     plot_images = False
 
@@ -218,14 +222,14 @@ def ppm_to_png():
 
     csvFileName = "D:\\_Dataset\\GTSDB\\Train\\gt.txt"
 
-    directory1 = "D:\\_Dataset\\GTSDB\\Train\\"
+    directory1 = "D:\\_Dataset\\GTSDB\\Train\\00\\"
     directory2 = "D:\\_Dataset\\GTSDB\\Train_PNG\\"
 
-    for i in range(299, 600):
+    for i in range(0, 4):
         file1 = "{0:05d}.ppm".format(i)
         file2 = "{0:05d}.png".format(i)
         filePathRead = join(directory1, file1)
-        filePathWrite = join(directory2, file2)
+        filePathWrite = join(directory1, file2)
         img = cv2.imread(filePathRead)
         cv2.imwrite(filePathWrite, img)
 
@@ -817,13 +821,158 @@ def serialize_SuperClass():
 
 # region GTSD
 
-def serialize_gtsd():
 
+def sample_gtsd():
     # read the german traffic sign detection database
-    # organize the data in a tuble
-    # pre_process the images
-    #
-    x = 10
+    # for each image, create multible scales
+    # for each scale, create regions/batches around the ground truth boundary
+    # all these created regions must comprise completely the ground truth
+    # re-calculate the x,y of the ground truth, instead of the whole image
+    # is the frame_of_reference, the region itself is the frame_of_reference
+
+    from os import listdir
+    from os.path import isfile, join
+    import csv
+
+    # get the ground truth of the test data
+
+    csv_data = []
+    csvFileName = "D:\\_Dataset\\GTSDB\\Training_PNG\\gt.txt"
+    with open(csvFileName, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        for row in reader:
+            col_data = []
+            for col in row:
+                if len(col_data) == 0:
+                    col_data.append(int(col[:-4]))
+                else:
+                    col_data.append(int(col))
+
+            csv_data.append(col_data)
+
+    # stride represents how dense to sample regions around the ground truth traffic signs
+    # also down_scaling factor affects the sampling
+    # initial dimension defines what is the biggest traffic sign to recognise
+    # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
+    stride = 3
+    down_scale_factor = 0.75
+    smallest_area_factor = 4 ** 2
+    window_dim = 600
+    img_width = 1630
+    img_height = 800
+    resize_dim = 28
+    regions = []
+
+    directory = "D:\\_Dataset\\GTSDB\\Training_PNG\\"
+    files = [f for f in listdir(directory) if isfile(join(directory, f))]
+
+    for file in files:
+        file_id = int(file[:-4])
+        file_path = join(directory, file)
+        img = cv2.imread(file_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # loop on each ground truth (i.e traffic sign)
+        # for now, consider only the 'warning' for the time being
+        # get the ground truth of 'warning' signs
+        boundaries = __gtsr_get_boundaries(csv_data, file_id, CNN.enums.SuperclassType._02_Warning)
+        for boundary in boundaries:
+            # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
+            # that means, we'll start with a window with initial size 320*320
+            # for each ground_truth boundary, extract regions in such that:
+            # 1. each region fully covers the boundary
+            # 2. the boundary must not be smaller than the 1/5 of the region
+            # ie. according to initial window size, the boundary must not be smaller than 80*80
+            # but sure we will recognize smaller ground truth because we down_scale the window every step
+            # boundary is x1, y1, x2, y2 => (x1,y1) top left, (x2, y2) bottom right
+            # don't forget that stride of sliding the window is dynamic
+            x1 = boundary[0]
+            y1 = boundary[1]
+            x2 = boundary[2]
+            y2 = boundary[3]
+            boundary_width = x2 - x1
+            boundary_height = y2 - y1
+            boundary_max_dim = max(boundary_width, boundary_height)
+            boundary_area = boundary_width * boundary_height
+            while (window_dim ** 2 / boundary_area) >= smallest_area_factor \
+                    and window_dim >= boundary_width and window_dim >= boundary_height:
+
+                # Important: since the window is going to be scaled to 28*28, so if the ground_truth inside the window
+                # after resizing the window became smaller than 16*16, so no need to consider this scale at all
+                if (boundary_max_dim * resize_dim / window_dim) < 16:
+                    window_dim = int(window_dim * down_scale_factor)
+                    continue
+
+                # for the current scale of the window, extract regions, start from the
+                stride = max(28, int((boundary_max_dim / window_dim) * 10 / resize_dim))
+                print(stride)
+                y_range = numpy.arange(start=y2 - window_dim, stop=y1 + 1, step=stride, dtype=int).tolist()
+                x_range = numpy.arange(start=x2 - window_dim, stop=x1 + 1, step=stride, dtype=int).tolist()
+                # the factor used to rescale the region before saving it to the region array
+                # note that we want to rescale to 28*28 to be compatible with our CNN recognition network
+                r_factor = window_dim / resize_dim
+                for y in y_range:
+                    for x in x_range:
+                        # make sure that the window in the current position (x, y) is within the image itself
+                        if x > -1 and y > -1 and (x + window_dim) < img_width and (y + window_dim) < img_height:
+                            # - add region to the region list
+                            # - adjust the position of the ground_truth to be relative to the window
+                            #   not relative to the image (i.e relative frame of reference)
+                            # - don't forget to re_scale the extracted/sampled region to be 28*28
+                            #   hence, multiply the relative position with this scaling accordingly
+                            # - also, the image needs to be preprocessed so it can be ready for the CNN
+                            region = img[y:y + window_dim, x:x + window_dim]
+                            if region.shape[0] != region.shape[1]:
+                                raise Exception("Something is not correct with taking regions from image using window")
+                            # region = preprocess_image(region, True)
+                            # region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
+                            region_relative_position = numpy.asarray(
+                                [region[0] - x, region[1] - y, region[2] - x, region[3] - y])
+                            region_relative_position /= r_factor
+                            region_relative_position = region_relative_position.astype(int)
+                            regions.append([region, region_relative_position])
+
+                            # save region for experiemnt
+                            count = len(regions)
+                            print(count)
+                            filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file + "_" + "{0:05d}.png".format(
+                                count)
+
+                            region *= 255
+                            region = region.astype(int)
+                            cv2.imwrite(filePathWrite, region)
+
+                # now we want to re_scale, instead of down_scaling the whole image, we down_scale the window
+                # don't forget to recalculate the window area
+                window_dim = int(window_dim * down_scale_factor)
+
+        break
+
+        # this is the end of the method
+
+
+def __gtsr_get_boundaries(gt_data, image_id, superclass_type=0):
+    '''
+    Get the list of ground truth (boundary of a traffic sign) in the image with the given id
+    If superclass is provided, then get the ground truth for only this superclass
+    Else, get them all
+    :param image_id:
+    :param superclass_type:
+    :return:
+    '''
+
+    prohib_classes = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
+    warning_classes = [11, 12, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+    info_classes = [33, 34, 35, 36, 37, 38, 39, 40]
+    superclasses = [prohib_classes, warning_classes, info_classes]
+    type_id = superclass_type.value - 1
+
+    if superclass_type == 0:
+        items = [f[1:5] for f in gt_data if f[0] == image_id]
+    else:
+        items = [f[1:5] for f in gt_data if f[0] == image_id and f[5] in superclasses[type_id]]
+
+    return items
+
 
 # endregion
 
