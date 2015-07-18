@@ -153,7 +153,7 @@ class MLP(object):
 
         # The logistic regression layer gets as input the hidden units
         # of the hidden layer
-        self.logRegressionLayer = logit.LogisticRegression(
+        self.logRegressionLayer = CNN.logit.LogisticRegression(
             input=self.hiddenLayer.output,
             n_in=n_hidden,
             n_out=n_out
@@ -188,6 +188,7 @@ class MLP(object):
         # end-snippet-3
 
 
+
 def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, dataset='mnist.pkl.gz', batch_size=20,
              n_hidden=500):
     """
@@ -215,7 +216,7 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, data
 
 
    """
-    datasets = utils(dataset)
+    datasets = CNN.utils(dataset)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -233,9 +234,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, data
 
     # allocate symbolic variables for the data
     index = T.lscalar()  # index to a [mini]batch
-    x = T.matrix('x')  # the data is presented as rasterized images
-    y = T.ivector('y')  # the labels are presented as 1D vector of
-    # [int] labels
+    x = T.matrix('x')    # the data is presented as rasterized images
+    y = T.ivector('y')   # the labels are presented as 1D vector of [int] labels
 
     rng = numpy.random.RandomState(1234)
 
@@ -390,4 +390,3 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, data
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
-

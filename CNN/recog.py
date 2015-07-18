@@ -381,9 +381,6 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     # classify it using SVM instead of logistic regression
     layer3 = CNN.svm.SVMLayer(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
 
-    # the cost we minimize during training is the cost of the svm not the negative-log-liklihood of the logsitics regressor
-    cost = layer3.cost(y_h)
-
     # create a function to compute the mistakes that are made by the model
     test_model = theano.function(
         [index],
@@ -402,6 +399,9 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
             y: valid_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
+
+    # the cost we minimize during training is the cost of the svm not the negative-log-liklihood of the logsitics regressor
+    cost = layer3.cost(y_h)
 
     # create a list of all model parameters to be fit by gradient descent
     params = layer3.params + layer2.params + layer1.params + layer0.params

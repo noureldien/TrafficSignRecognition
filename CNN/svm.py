@@ -78,8 +78,8 @@ def y_one_hot(data_y, n_classes, borrow=True):
     # one-hot encoded labels as {-1, 1}
     y_h = -1 * np.ones((data_y.shape[0], n_classes))
     y_h[np.arange(data_y.shape[0]), data_y] = 1
-    shared_y_h = theano.shared(np.asarray(y_h, dtype=theano.config.floatX), borrow=borrow)
-    return T.cast(shared_y_h, 'int32')
+    shared_y_h = np.asarray(y_h, dtype=theano.config.floatX)
+    return T.cast(theano.shared(shared_y_h, borrow=borrow), 'int32')
 
 
 def svm_layer(input, W, b):

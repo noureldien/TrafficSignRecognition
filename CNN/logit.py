@@ -118,12 +118,13 @@ class LogisticRegression(object):
         if y.dtype.startswith('int'):
             # the T.neq operator returns a vector of 0s and 1s, where 1
             # represents a mistake in prediction
-            return T.mean(T.neq(self.y_pred, y))
+            error = T.mean(T.neq(self.y_pred, y))
+            return error
         else:
             raise NotImplementedError()
 
 
-class LogisticRegression_(object):
+class SoftMaxRegression(object):
     """Logistic Regression Class
 
     The logistic regression is fully described by a weight matrix :math:`W`
@@ -180,7 +181,7 @@ class LogisticRegression_(object):
 
         # symbolic description of how to compute prediction as class whose
         # probability is maximal
-        self.y_pred = T.argmax(self.p_y_given_x, axis=1)
+        self.y_pred = self.p_y_given_x.flatten(2)
         # end-snippet-1
 
         # parameters of the model
@@ -236,9 +237,10 @@ class LogisticRegression_(object):
             )
         # check if y is of the correct datatype
         if y.dtype.startswith('int'):
-            # the T.neq operator returns a vector of 0s and 1s, where 1
-            # represents a mistake in prediction
-            return T.mean(T.neq(self.y_pred, y))
+            diff = y - self.y_pred
+            diff, order = theano.scan(lambda x_i: T.sqrt((x_i ** 2).sum()), sequences=[diff])
+            error = T.mean(diff)
+            return error
         else:
             raise NotImplementedError()
 
@@ -246,7 +248,6 @@ class LogisticRegression_(object):
 def logit_layer(input, W, b):
     p_y_given_x = T.nnet.softmax(T.dot(input, W) + b)
     y_pred = T.argmax(p_y_given_x, axis=1)
-
     return y_pred, p_y_given_x
 
 

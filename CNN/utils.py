@@ -919,8 +919,10 @@ def rerialize_gtsdb():
                             # - don't forget to re_scale the extracted/sampled region to be 28*28
                             #   hence, multiply the relative position with this scaling accordingly
                             # - also, the image needs to be preprocessed so it can be ready for the CNN
+                            # - reshape the region to 1-D vector to align with the structure of MNIST database
                             region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
                             region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
+                            region = region.reshape(shape=(resize_dim * resize_dim, 1))
                             relative_boundary = numpy.asarray([x1 - x, y1 - y, x2 - x, y2 - y]) / r_factor
                             regions.append(region)
                             relative_boundaries.append(relative_boundary.astype(int))
@@ -941,7 +943,6 @@ def rerialize_gtsdb():
 
 
 def organize_gtsdb():
-
     data = pickle.load(open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized.pkl', 'rb'))
     regions = data[0]
     boundaries = data[1]
@@ -985,9 +986,29 @@ def organize_gtsdb():
 
     # now, save the training and data
     data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
-    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory.pkl', 'wb'))
+    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'wb'))
 
     print("Finish Preparing Data")
+
+
+def fixThis():
+    data = pickle.load(open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'rb'))
+    tr_img = data[0][0]
+    tr_cls = data[0][1]
+    vl_img = data[1][0]
+    vl_cls = data[1][1]
+    ts_img = data[2][0]
+    ts_cls = data[2][1]
+    del data
+
+    d = 28
+    tr_img = tr_img.reshape(tr_img.shape[0], (d * d))
+    vl_img = vl_img.reshape(vl_img.shape[0], (d * d))
+    ts_img = ts_img.reshape(ts_img.shape[0], (d * d))
+
+    # now, save the training and data
+    data = ((tr_img, tr_cls), (vl_img, vl_cls), (ts_img, ts_cls))
+    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'wb'))
 
 
 def __gtsr_get_boundaries(gt_data, image_id, superclass_type=CNN.enums.SuperclassType._00_All):
