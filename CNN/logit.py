@@ -124,7 +124,7 @@ class LogisticRegression(object):
             raise NotImplementedError()
 
 
-class MultiLogisticRegression(object):
+class SoftMaxRegression(object):
     """Logistic Regression Class
 
     The logistic regression is fully described by a weight matrix :math:`W`
@@ -149,8 +149,6 @@ class MultiLogisticRegression(object):
                       which the labels lie
 
         """
-
-
         # start-snippet-1
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         self.W = theano.shared(

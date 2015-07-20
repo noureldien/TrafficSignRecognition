@@ -94,7 +94,7 @@ def train(dataset_path, recognition_model_path, detection_model_path='', learnin
     )
 
     # Layer 3: classify the values of the fully-connected sigmoidal layer
-    layer3 = CNN.logit.MultiLogisticRegression(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
+    layer3 = CNN.logit.SoftMaxRegression(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
 
     # create a function to compute the mistakes that are made by the model
     test_model = theano.function(
