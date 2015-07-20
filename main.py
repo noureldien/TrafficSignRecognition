@@ -46,7 +46,7 @@ mnist_dim = 28
 # CNN.recog.train(dataset_path=gtsrb_dataset, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], batch_size=50, mlp_layers=(50, 10)) # 8.00%
 
 # test model on specific image
-#CNN.recog.classify_img_from_file("D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\00412.png", gtsrb_model)
+# CNN.recog.classify_img_from_file("D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\00412.png", gtsrb_model)
 
 # train model on gtsrb database
 # cnn.evaluate_lenet5(img_dim=gtsrb_dim, dataset=gtsrb_dataset, learning_rate=0.1, n_epochs=5, kernel_dim=[5, 5], nkerns=[100, 200], mpl_layers=[500, 10], batch_size=50)
@@ -80,8 +80,7 @@ gtsdb_model = 'D:\\_Dataset\\GTSDB\\cnn_model.pkl'
 # CNN.utils.organize_gtsdb()
 
 # train the detector
-#CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=superclass_model, detection_model_path=gtsdb_model, batch_size=50)
-CNN.detec.train_helpful(dataset_path=superclass_dataset, recognition_model_path=superclass_model, detection_model_path='', batch_size=50)
+CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=superclass_model, detection_model_path=gtsdb_model, batch_size=5, learning_rate=0.01)
+#CNN.detec.train_helpful(dataset_path=superclass_dataset, recognition_model_path=superclass_model, detection_model_path='', batch_size=5, learning_rate=0.01)
 
 # endregion
-

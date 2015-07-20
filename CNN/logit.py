@@ -124,7 +124,7 @@ class LogisticRegression(object):
             raise NotImplementedError()
 
 
-class SoftMaxRegression(object):
+class MultiLogisticRegression(object):
     """Logistic Regression Class
 
     The logistic regression is fully described by a weight matrix :math:`W`
@@ -149,6 +149,8 @@ class SoftMaxRegression(object):
                       which the labels lie
 
         """
+
+
         # start-snippet-1
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         self.W = theano.shared(
@@ -240,7 +242,7 @@ class SoftMaxRegression(object):
             diff = y - self.y_pred
             diff, order = theano.scan(lambda x_i: T.sqrt((x_i ** 2).sum()), sequences=[diff])
             error = T.mean(diff)
-            return error
+            return diff
         else:
             raise NotImplementedError()
 

@@ -94,7 +94,7 @@ def train(dataset_path, recognition_model_path, detection_model_path='', learnin
     )
 
     # Layer 3: classify the values of the fully-connected sigmoidal layer
-    layer3 = CNN.logit.SoftMaxRegression(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
+    layer3 = CNN.logit.MultiLogisticRegression(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
 
     # create a function to compute the mistakes that are made by the model
     test_model = theano.function(
@@ -177,7 +177,7 @@ def train(dataset_path, recognition_model_path, detection_model_path='', learnin
                 print('... training @ iter = %.0f' % iter)
 
             # train the minibatch
-            cost_ij = train_model(minibatch_index)
+            train_model(minibatch_index)
 
             if (iter + 1) == validation_frequency:
 
@@ -256,9 +256,6 @@ def train_helpful(dataset_path, recognition_model_path, detection_model_path='',
     :type nkerns: list of ints
     :param nkerns: number of kernels on each layer
     """
-
-    learning_rate = 0.01
-    batch_size = 2
 
     rng = numpy.random.RandomState(23455)
     datasets = CNN.utils.load_data(dataset_path)
@@ -354,9 +351,6 @@ def train_helpful(dataset_path, recognition_model_path, detection_model_path='',
     # classify the values of the fully-connected sigmoidal layer
     layer3 = CNN.logit.LogisticRegression(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
 
-    # the cost we minimize during training is the NLL of the model
-    cost = layer3.negative_log_likelihood(y)
-
     # create a function to compute the mistakes that are made by the model
     test_model = theano.function(
         [index],
@@ -375,6 +369,9 @@ def train_helpful(dataset_path, recognition_model_path, detection_model_path='',
             y: valid_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
+
+    # the cost we minimize during training is the NLL of the model
+    cost = layer3.negative_log_likelihood(y)
 
     # create a list of all model parameters to be fit by gradient descent
     params = layer3.params + layer2.params
