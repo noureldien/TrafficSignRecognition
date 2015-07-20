@@ -38,6 +38,7 @@ import CNN.conv
 from CNN.mlp import HiddenLayer
 import CNN.enums
 
+
 def train(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
           mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
     """ Demonstrates cnn on the given dataset
@@ -524,15 +525,20 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     save_file.close()
 
 
-def classify_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierType.logit, img_dim=28):
+def classify_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierType.logit, img_dim=28, is_rgb=False):
     # this is how to prepare an image to be used by the CNN model
     import PIL
     import PIL.Image
 
-    img = PIL.Image.open(img_path)
-    img = numpy.asarray(img, dtype='float64') / 256.0
-    img4D = img.reshape(1, 1, img_dim, img_dim)
+    img = []
+    if is_rgb:
+        img = CNN.utils.rgb_to_gs(img_path)
+        img = img.astype(dtype='float64') / 255.0
+    else:
+        img = PIL.Image.open(img_path)
+        img = numpy.asarray(img, dtype='float64') / 255.0
 
+    img4D = img.reshape(1, 1, img_dim, img_dim)
     return __classify_img(img4D, model_path, classifier)
 
 
@@ -551,7 +557,7 @@ def classify_img_from_dataset(dataset_path, model_path, index, classifier=CNN.en
 
 
 def classify_batch(batch, model_path, classifier=CNN.enums.ClassifierType.logit):
-    loaded_objects = load_model(model_path)
+    loaded_objects = CNN.utils.load_model(model_path)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -619,7 +625,7 @@ def classify_batch(batch, model_path, classifier=CNN.enums.ClassifierType.logit)
 
 
 def classify_batch_step_by_step(batch, model_path, classifier=CNN.enums.ClassifierType.logit):
-    loaded_objects = load_model(model_path)
+    loaded_objects = CNN.utils.load_model(model_path)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -686,17 +692,8 @@ def classify_batch_step_by_step(batch, model_path, classifier=CNN.enums.Classifi
     return c_result, c_prob, duration
 
 
-def load_model(model_path):
-    save_file = open(model_path, 'rb')
-    loaded_objects = []
-    for i in range(14):
-        loaded_objects.append(pickle.load(save_file))
-    save_file.close()
-    return loaded_objects
-
-
 def __classify_img(img4D, model_path, classifier=CNN.enums.ClassifierType.logit):
-    loaded_objects = load_model(model_path)
+    loaded_objects = CNN.utils.load_model(model_path)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -770,7 +767,7 @@ def __classify_img(img4D, model_path, classifier=CNN.enums.ClassifierType.logit)
     # __plot_filters_2(loaded_objects[8], 5)
 
     print('Classification result: %d in %f sec.' % (c_result, c_duration))
-    print('Classification confidence: %s' % (__numpy_to_string(c_prob)))
+    print('Classification confidence: %s' % (CNN.utils.numpy_to_string(c_prob)))
 
     return c_result, c_prob, c_duration
 
@@ -803,7 +800,3 @@ def __plot_filters_2(filters, figure_num):
         plt.axis('off')
         plt.imshow(filters[i, 0, :, :])
     plt.show()
-
-
-def __numpy_to_string(arr):
-    return ", ".join(format(x, ".3f") for x in arr.tolist())

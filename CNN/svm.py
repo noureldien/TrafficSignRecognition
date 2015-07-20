@@ -89,6 +89,13 @@ def svm_layer(input, W, b):
     return y_pred, p_y_given_x
 
 
+def multi_svm_layer(input, W, b):
+    p_y_given_x = T.nnet.softmax(T.dot(input, W) + b)
+    y_pred = T.argmax(p_y_given_x, axis=1)
+
+    return y_pred, p_y_given_x
+
+
 def classify_images(input_flatten, hidden_output, filters, W, b):
     """ Initialize the parameters of the logistic regression
 

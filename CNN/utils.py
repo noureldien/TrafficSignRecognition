@@ -19,6 +19,14 @@ import random
 
 # region Misc
 
+def numpy_to_string(arr):
+    return ", ".join(format(x, ".3f") for x in arr.tolist())
+
+
+# endregion
+
+# region Load Model/Data
+
 def unzip_load_data(dataset):
     f = gzip.open(dataset, 'rb')
     u = pickle._Unpickler(f)
@@ -60,6 +68,43 @@ def load_data(dataset):
     rval = [(train_set_x, train_set_y), (valid_set_x, valid_set_y), (test_set_x, test_set_y)]
     return rval
 
+
+def load_model(model_path):
+    save_file = open(model_path, 'rb')
+    loaded_objects = []
+    for i in range(14):
+        loaded_objects.append(pickle.load(save_file))
+    save_file.close()
+    return loaded_objects
+
+
+def shared_dataset(data_xy, borrow=True):
+    """ Function that loads the dataset into shared variables
+
+    The reason we store our dataset in shared variables is to allow
+    Theano to copy it into the GPU memory (when code is run on GPU).
+    Since copying data into the GPU is slow, copying a minibatch everytime
+    is needed (the default behaviour if the data is not in a shared
+    variable) would lead to a large decrease in performance.
+    """
+    data_x, data_y = data_xy
+
+    shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
+    shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX), borrow=borrow)
+    # When storing data on the GPU it has to be stored as floats
+    # therefore we will store the labels as ``floatX`` as well
+    # (``shared_y`` does exactly that). But during our computations
+    # we need them as ints (we use labels as index, and if they are
+    # floats it doesn't make sense) therefore instead of returning
+    # ``shared_y`` we will have to cast it to int. This little hack
+    # lets ous get around this issue
+    shared_y_casted = theano.tensor.cast(shared_y, 'int32')
+    return shared_x, shared_y_casted
+
+
+# endregion
+
+# region Pre-process
 
 def preprocess_dataset():
     from os import listdir
@@ -211,6 +256,12 @@ def probability_map(img_path, model_path, classifier=CNN.enums.ClassifierType.lo
 def rgb_to_gs(path):
     img = cv2.imread(path)
     img_gs = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+    return img_gs
+
+
+def rgb_to_gs_and_save(path):
+    img = cv2.imread(path)
+    img_gs = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
     img_save = img_gs * 255
     img_save = img_save.astype(int)
     cv2.imwrite(path, img_save)
@@ -232,29 +283,6 @@ def ppm_to_png():
         filePathWrite = join(directory1, file2)
         img = cv2.imread(filePathRead)
         cv2.imwrite(filePathWrite, img)
-
-
-def shared_dataset(data_xy, borrow=True):
-    """ Function that loads the dataset into shared variables
-
-    The reason we store our dataset in shared variables is to allow
-    Theano to copy it into the GPU memory (when code is run on GPU).
-    Since copying data into the GPU is slow, copying a minibatch everytime
-    is needed (the default behaviour if the data is not in a shared
-    variable) would lead to a large decrease in performance.
-    """
-    data_x, data_y = data_xy
-    shared_x = theano.shared(numpy.asarray(data_x, dtype=theano.config.floatX), borrow=borrow)
-    shared_y = theano.shared(numpy.asarray(data_y, dtype=theano.config.floatX), borrow=borrow)
-    # When storing data on the GPU it has to be stored as floats
-    # therefore we will store the labels as ``floatX`` as well
-    # (``shared_y`` does exactly that). But during our computations
-    # we need them as ints (we use labels as index, and if they are
-    # floats it doesn't make sense) therefore instead of returning
-    # ``shared_y`` we will have to cast it to int. This little hack
-    # lets ous get around this issue
-    shared_y_casted = theano.tensor.cast(shared_y, 'int32')
-    return shared_x, shared_y_casted
 
 
 def __plot_img_and_hist(img, axes, bins=256):
@@ -989,26 +1017,6 @@ def organize_gtsdb():
     pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'wb'))
 
     print("Finish Preparing Data")
-
-
-def fixThis():
-    data = pickle.load(open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'rb'))
-    tr_img = data[0][0]
-    tr_cls = data[0][1]
-    vl_img = data[1][0]
-    vl_cls = data[1][1]
-    ts_img = data[2][0]
-    ts_cls = data[2][1]
-    del data
-
-    d = 28
-    tr_img = tr_img.reshape(tr_img.shape[0], (d * d))
-    vl_img = vl_img.reshape(vl_img.shape[0], (d * d))
-    ts_img = ts_img.reshape(ts_img.shape[0], (d * d))
-
-    # now, save the training and data
-    data = ((tr_img, tr_cls), (vl_img, vl_cls), (ts_img, ts_cls))
-    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'wb'))
 
 
 def __gtsr_get_boundaries(gt_data, image_id, superclass_type=CNN.enums.SuperclassType._00_All):

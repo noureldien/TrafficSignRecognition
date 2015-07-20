@@ -9,7 +9,7 @@ import CNN.detec
 
 print('Traffic Sign Recognition')
 
-mnist_dataset = "D:\\_Dataset\\mnist.pkl"
+mnist_dataset = "D:\\_Dataset\\MNIST\\mnist.pkl"
 gtsrb_dataset = "D:\\_Dataset\\GTSRB\\gtsrb_normalized.pkl"
 belgiumTS_dataset = "D:\\_Dataset\\\BelgiumTS\\BelgiumTS_normalized_28.pkl"
 superclass_dataset = "D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl"
@@ -17,6 +17,9 @@ superclass_dataset = "D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl"
 gtsrb_model = 'D:\\_Dataset\\GTSRB\\cnn_model.pkl'
 superclass_model = 'D:\\_Dataset\\SuperClass\\cnn_model.pkl'
 superclass_model_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_svm.pkl'
+
+gtsdb_dataset = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl'
+gtsdb_model = 'D:\\_Dataset\\GTSDB\\cnn_model.pkl'
 
 gtsrb_dim = 28
 mnist_dim = 28
@@ -47,6 +50,7 @@ mnist_dim = 28
 
 # test model on specific image
 # CNN.recog.classify_img_from_file("D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\00412.png", gtsrb_model)
+# CNN.recog.classify_img_from_file("D:\\_Dataset\\BelgiumTS\\Test_Scaled\\00031\\02656_00000.png", gtsrb_model, is_rgb=True)
 
 # train model on gtsrb database
 # cnn.evaluate_lenet5(img_dim=gtsrb_dim, dataset=gtsrb_dataset, learning_rate=0.1, n_epochs=5, kernel_dim=[5, 5], nkerns=[100, 200], mpl_layers=[500, 10], batch_size=50)
@@ -60,7 +64,7 @@ mnist_dim = 28
 
 ###### experiments ######x
 
-# CNN.utils.rgb_to_gs("D:\\_Dataset\\UK\\preprocessed\\small 8.png")
+# CNN.utils.rgb_to_gs_and_save("D:\\_Dataset\\UK\\preprocessed\\small 8.png")
 # CNN.utils.preprocess_image(filePathRead="D:\\_Dataset\\UK\\preprocessed\\small.png", filePathWrite="D:\\_Dataset\\UK\\preprocessed\\small 1.png")
 
 # CNN.cnn.classify_img_from_file("D:\\_Dataset\\UK\\preprocessed\\small 8.png", superclass_model)
@@ -72,15 +76,19 @@ mnist_dim = 28
 # endregion
 
 # region Detection
-gtsdb_dataset = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl'
-gtsdb_model = 'D:\\_Dataset\\GTSDB\\cnn_model.pkl'
 
 # extract region images to train the detector
-# CNN.utils.rerialize_gtsdb()
-# CNN.utils.organize_gtsdb()
+CNN.utils.rerialize_gtsdb()
+CNN.utils.organize_gtsdb()
 
 # train the detector
-CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=superclass_model, detection_model_path=gtsdb_model, batch_size=5, learning_rate=0.01)
-#CNN.detec.train_helpful(dataset_path=superclass_dataset, recognition_model_path=superclass_model, detection_model_path='', batch_size=5, learning_rate=0.01)
+# CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=500, learning_rate=0.01, n_epochs=1) # 10.01%
+# CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=100, learning_rate=0.1, n_epochs=1) # 7.48%
+# CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=10, learning_rate=0.1, n_epochs=1) # 4.42%
+
+# test the detector
+#CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\00025.png", model_path=gtsdb_model)
+#CNN.detec.probability_map_debug()
+
 
 # endregion
