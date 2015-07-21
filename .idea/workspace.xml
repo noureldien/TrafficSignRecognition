@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/detec.py" afterPath="$PROJECT_DIR$/CNN/detec.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/logit.py" afterPath="$PROJECT_DIR$/CNN/logit.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/utils.py" afterPath="$PROJECT_DIR$/CNN/utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
@@ -27,23 +25,23 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="91" column="62" selection-start-line="91" selection-start-column="62" selection-end-line="91" selection-end-column="62" />
+            <state vertical-scroll-proportion="0.48795182">
+              <caret line="87" column="126" selection-start-line="87" selection-start-column="126" selection-end-line="87" selection-end-column="126" />
               <folding>
-                <element signature="e#750#770#0" expanded="false" />
+                <element signature="e#763#783#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="detec.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="detec.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CNN/detec.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.2822222">
-              <caret line="269" column="42" selection-start-line="269" selection-start-column="42" selection-end-line="269" selection-end-column="42" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="544" column="21" selection-start-line="544" selection-start-column="21" selection-end-line="544" selection-end-column="21" />
               <folding>
                 <element signature="e#491#10405#0" expanded="false" />
                 <element signature="e#10597#21855#0" expanded="false" />
@@ -60,8 +58,8 @@
       <file leaf-file-name="utils.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CNN/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="976" column="137" selection-start-line="976" selection-start-column="25" selection-end-line="976" selection-end-column="137" />
+            <state vertical-scroll-proportion="-4.1034484">
+              <caret line="332" column="0" selection-start-line="332" selection-start-column="0" selection-end-line="332" selection-end-column="0" />
               <folding>
                 <element signature="e#308#321#0" expanded="false" />
                 <element signature="e#353#409#0" expanded="false" />
@@ -101,15 +99,18 @@
                 <element signature="e#24069#24088#0" expanded="false" />
                 <element signature="e#24122#28488#0" expanded="false" />
                 <element signature="e#24122#24355#1" expanded="false" />
-                <element signature="e#35806#37710#0" expanded="false" />
-                <element signature="e#37813#38597#0" expanded="false" />
-                <element signature="e#37813#38084#1" expanded="false" />
-                <element signature="e#38613#38636#0" expanded="false" />
-                <element signature="e#38666#39664#0" expanded="false" />
-                <element signature="e#38666#38773#1" expanded="false" />
-                <element signature="e#39695#39928#0" expanded="false" />
-                <element signature="e#39959#40929#0" expanded="false" />
-                <element signature="e#39959#40106#1" expanded="false" />
+                <element signature="e#28504#28517#0" expanded="false" />
+                <element signature="e#28547#36935#0" expanded="false" />
+                <element signature="e#36964#38868#0" expanded="false" />
+                <element signature="e#38952#40196#0" expanded="false" />
+                <element signature="e#40299#41083#0" expanded="false" />
+                <element signature="e#40299#40570#1" expanded="false" />
+                <element signature="e#41099#41122#0" expanded="false" />
+                <element signature="e#41152#42150#0" expanded="false" />
+                <element signature="e#41152#41259#1" expanded="false" />
+                <element signature="e#42181#42414#0" expanded="false" />
+                <element signature="e#42445#43415#0" expanded="false" />
+                <element signature="e#42445#42592#1" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -171,9 +172,9 @@
         <option value="$PROJECT_DIR$/logistic_sgd.py" />
         <option value="$PROJECT_DIR$/CNN/recog.py" />
         <option value="$PROJECT_DIR$/CNN/logit.py" />
+        <option value="$PROJECT_DIR$/CNN/detec.py" />
         <option value="$PROJECT_DIR$/CNN/utils.py" />
         <option value="$PROJECT_DIR$/main.py" />
-        <option value="$PROJECT_DIR$/CNN/detec.py" />
       </list>
     </option>
   </component>
@@ -520,7 +521,13 @@
       <option name="project" value="LOCAL" />
       <updated>1437434307205</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Commit">
+      <created>1437474776640</created>
+      <option name="number" value="00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1437474776640</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TodoView">
@@ -548,7 +555,7 @@
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.15986395" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5029762" order="12" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19932999" sideWeight="0.48363096" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.39698493" sideWeight="0.48363096" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -584,7 +591,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="950" />
+      <option name="time" value="973" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -594,7 +601,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
           <folding>
-            <element signature="e#750#770#0" expanded="false" />
+            <element signature="e#763#783#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -618,7 +625,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="20" column="105" selection-start-line="20" selection-start-column="105" selection-end-line="20" selection-end-column="105" />
           <folding>
-            <element signature="e#750#770#0" expanded="false" />
+            <element signature="e#763#783#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -642,7 +649,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#750#770#0" expanded="false" />
+            <element signature="e#763#783#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -652,7 +659,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#750#770#0" expanded="false" />
+            <element signature="e#763#783#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -662,7 +669,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#750#770#0" expanded="false" />
+            <element signature="e#763#783#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -936,16 +943,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.074235804">
-          <caret line="1" column="40" selection-start-line="1" selection-start-column="40" selection-end-line="1" selection-end-column="40" />
-          <folding>
-            <element signature="e#100#629#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CNN/recog.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.44332492">
@@ -1020,10 +1017,42 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/CNN/utils.py">
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/numpy/core/shape_base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="13.636043">
+          <caret line="227" column="0" selection-start-line="227" selection-start-column="0" selection-end-line="227" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="976" column="137" selection-start-line="976" selection-start-column="25" selection-end-line="976" selection-end-column="137" />
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CNN/detec.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="544" column="21" selection-start-line="544" selection-start-column="21" selection-end-line="544" selection-end-column="21" />
+          <folding>
+            <element signature="e#491#10405#0" expanded="false" />
+            <element signature="e#10597#21855#0" expanded="false" />
+            <element signature="e#21965#26701#0" expanded="false" />
+            <element signature="e#21965#22276#1" expanded="false" />
+            <element signature="e#26790#29915#0" expanded="false" />
+            <element signature="e#30002#33803#0" expanded="false" />
+            <element signature="e#33926#35341#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CNN/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-4.1034484">
+          <caret line="332" column="0" selection-start-line="332" selection-start-column="0" selection-end-line="332" selection-end-column="0" />
           <folding>
             <element signature="e#308#321#0" expanded="false" />
             <element signature="e#353#409#0" expanded="false" />
@@ -1063,41 +1092,28 @@
             <element signature="e#24069#24088#0" expanded="false" />
             <element signature="e#24122#28488#0" expanded="false" />
             <element signature="e#24122#24355#1" expanded="false" />
-            <element signature="e#35806#37710#0" expanded="false" />
-            <element signature="e#37813#38597#0" expanded="false" />
-            <element signature="e#37813#38084#1" expanded="false" />
-            <element signature="e#38613#38636#0" expanded="false" />
-            <element signature="e#38666#39664#0" expanded="false" />
-            <element signature="e#38666#38773#1" expanded="false" />
-            <element signature="e#39695#39928#0" expanded="false" />
-            <element signature="e#39959#40929#0" expanded="false" />
-            <element signature="e#39959#40106#1" expanded="false" />
+            <element signature="e#28504#28517#0" expanded="false" />
+            <element signature="e#28547#36935#0" expanded="false" />
+            <element signature="e#36964#38868#0" expanded="false" />
+            <element signature="e#38952#40196#0" expanded="false" />
+            <element signature="e#40299#41083#0" expanded="false" />
+            <element signature="e#40299#40570#1" expanded="false" />
+            <element signature="e#41099#41122#0" expanded="false" />
+            <element signature="e#41152#42150#0" expanded="false" />
+            <element signature="e#41152#41259#1" expanded="false" />
+            <element signature="e#42181#42414#0" expanded="false" />
+            <element signature="e#42445#43415#0" expanded="false" />
+            <element signature="e#42445#42592#1" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="91" column="62" selection-start-line="91" selection-start-column="62" selection-end-line="91" selection-end-column="62" />
+        <state vertical-scroll-proportion="0.48795182">
+          <caret line="87" column="126" selection-start-line="87" selection-start-column="126" selection-end-line="87" selection-end-column="126" />
           <folding>
-            <element signature="e#750#770#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CNN/detec.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.2822222">
-          <caret line="269" column="42" selection-start-line="269" selection-start-column="42" selection-end-line="269" selection-end-column="42" />
-          <folding>
-            <element signature="e#491#10405#0" expanded="false" />
-            <element signature="e#10597#21855#0" expanded="false" />
-            <element signature="e#21965#26701#0" expanded="false" />
-            <element signature="e#21965#22276#1" expanded="false" />
-            <element signature="e#26790#29915#0" expanded="false" />
-            <element signature="e#30002#33803#0" expanded="false" />
-            <element signature="e#33926#35341#0" expanded="false" />
+            <element signature="e#763#783#0" expanded="false" />
           </folding>
         </state>
       </provider>

@@ -6,6 +6,7 @@ import CNN
 import CNN.utils
 import CNN.recog
 import CNN.detec
+import numpy
 
 print('Traffic Sign Recognition')
 
@@ -84,13 +85,13 @@ mnist_dim = 28
 # train the detector
 # CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=500, learning_rate=0.01, n_epochs=1) # 10.01%
 # CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=100, learning_rate=0.1, n_epochs=1) # 7.48%
-# CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=10, learning_rate=0.1, n_epochs=1) # 4.42%
+CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=5, learning_rate=0.1, n_epochs=1) # 29.5 %
 
 #CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, batch_size=10, learning_rate=0.1, n_epochs=1)
 
 # test the detector
 #CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\00025.png", model_path=gtsdb_model)
-CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\_img1.png", model_path=gtsdb_model)
+#CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\_img1.png", model_path=gtsdb_model)
 
 
 # endregion

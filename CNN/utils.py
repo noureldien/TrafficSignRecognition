@@ -891,8 +891,8 @@ def rerialize_gtsdb():
     img_height = 800
     resize_dim = 28
     stride_factor = 2
-    regions = []
-    relative_boundaries = []
+    regions = numpy.zeros(shape=(0, resize_dim * resize_dim), dtype=float)
+    relative_boundaries = numpy.zeros(shape=(0, 4), dtype=int)
 
     directory = "D:\\_Dataset\\GTSDB\\Training_PNG\\"
     files = [f for f in listdir(directory) if isfile(join(directory, f))]
@@ -966,17 +966,34 @@ def rerialize_gtsdb():
                         #   hence, multiply the relative position with this scaling accordingly
                         # - also, the image needs to be preprocessed so it can be ready for the CNN
                         # - reshape the region to 1-D vector to align with the structure of MNIST database
-                        relative_boundary = numpy.asarray([x1 - x, y1 - y, x2 - x, y2 - y]) / r_factor
+
+                        relative_boundary = (numpy.asarray([x1 - x, y1 - y, x2 - x, y2 - y]) / r_factor).astype(int)
+                        relative_boundaries = numpy.vstack([relative_boundaries, relative_boundary])
+
                         region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
                         region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
                         region = region.reshape((resize_dim * resize_dim,))
-                        regions.append(region)
-                        relative_boundaries.append(relative_boundary.astype(int))
+                        regions = numpy.vstack([regions, region])
 
-                        # save region for experiment
-                        #filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
-                        #region *= 255
-                        #cv2.imwrite(filePathWrite, region)
+                        # save region for experimenting/debugging
+                        # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
+                        # cv2.imwrite(filePathWrite, region.reshape((resize_dim, resize_dim))* 255)
+
+                # add some true negatives to increase variance of the machine
+                # add only n images per scale per image, n = 2
+                regions_negatives = __sample_true_negatives(img, window_dim, resize_dim, boundaries, 2)
+                regions = numpy.vstack([regions, regions_negatives])
+                relative_boundaries = numpy.vstack([relative_boundaries, numpy.zeros(shape=(regions_negatives.shape[0],4), dtype=int)])
+
+                # also add relative boundaries for them as the ground truth
+                # which should only be zeros
+
+                # saving images for experimenting/debugging
+                #ss_count = 0
+                #for s in regions_negative:
+                    #ss_count += 1
+                    #filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:03d}".format(len(regions)) + "{0:02d}.png".format(ss_count)
+                    #cv2.imwrite(filePathWrite, s.reshape((resize_dim, resize_dim)) * 255)
 
                 # now we up_scale the window
                 window_dim = int(window_dim * up_scale_factor)
@@ -1037,6 +1054,42 @@ def organize_gtsdb():
     pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'wb'))
 
     print("Finish Preparing Data")
+
+
+def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count):
+    img_h = img.shape[0]
+    img_w = img.shape[1]
+    n_boundary = len(boundaries)
+
+    regions = numpy.zeros(shape=(0, resize_dim * resize_dim), dtype=float)
+    while regions.shape[0] < count:
+        # create a region in a random/stochastic way
+        # the region be with the same window_dim
+        # and does not intersect with any of the boundaries
+        y1 = random.randint(0, img_h - window_dim)
+        y2 = y1 + window_dim
+        x1 = random.randint(0, img_w - window_dim)
+        x2 = x1 + window_dim
+
+        # now, check if any of the boundaries intersect
+        # with the region
+        n_conditions = 0
+        for boundary in boundaries:
+            b_x1 = boundary[0]
+            b_y1 = boundary[1]
+            b_x2 = boundary[2]
+            b_y2 = boundary[3]
+            if x2 <= b_x1 or x1 >= b_x2 or y2 <= b_y1 or y1 >= b_y2:
+                n_conditions += 1
+            else:
+                break
+        if n_conditions == n_boundary:
+            region = numpy.copy(img[y1:y2, x1:x2])
+            region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
+            region = region.reshape((resize_dim * resize_dim,))
+            regions = numpy.vstack([regions, region])
+
+    return regions
 
 
 def __gtsr_get_boundaries(gt_data, image_id, superclass_type=CNN.enums.SuperclassType._00_All):
