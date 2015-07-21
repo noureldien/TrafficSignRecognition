@@ -885,8 +885,8 @@ def rerialize_gtsdb():
     # stride_factor = 2 gives more sampling than stride_factor = 1
     # don't use value smaller than 1 for stride factor
     up_scale_factor = 1.2
-    biggest_area_factor = 5 ** 2
-    min_region_dim = 16
+    biggest_area_factor = 3 ** 2
+    min_region_dim = 18
     img_width = 1630
     img_height = 800
     resize_dim = 28
@@ -909,12 +909,13 @@ def rerialize_gtsdb():
         boundaries = __gtsr_get_boundaries(csv_data, file_id, CNN.enums.SuperclassType._01_Prohibitory)
         for boundary in boundaries:
             # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
-            # that means, we'll start with a window with initial size 320*320
+            # that means, we'll start with a window with initial size of the ground_truth
             # for each ground_truth boundary, extract regions in such that:
             # 1. each region fully covers the boundary
-            # 2. the boundary must not be smaller than the 1/5 of the region
-            # ie. according to initial window size, the boundary must not be smaller than 80*80
-            # but sure we will recognize smaller ground truth because we up_scale the window every step
+            # 2. the boundary must not be bigger than nth (biggest_area_factor) of the region
+            # we will recognize smaller ground truth because we up_scale the window every step
+            # also, we will recognize bigger ground_truth because the first region taken for
+            # a ground_truth is almost it's size
             # boundary is x1, y1, x2, y2 => (x1,y1) top left, (x2, y2) bottom right
             # don't forget that stride of sliding the window is dynamic
             x1 = boundary[0]
@@ -934,34 +935,53 @@ def rerialize_gtsdb():
                 stride = int((boundary_max_dim * resize_dim / (stride_factor * window_dim)))
                 y_range = numpy.arange(start=y2 - window_dim, stop=y1 + 1, step=stride, dtype=int).tolist()
                 x_range = numpy.arange(start=x2 - window_dim, stop=x1 + 1, step=stride, dtype=int).tolist()
+
+                # if last x in x_range don't make the sliding window reach the end of the region
+                # then add one more x to the x_range to satisfy this
+                x_r_len = len(x_range)
+                y_r_len = len(y_range)
+                if int((x1 - x_range[x_r_len - 1]) * boundary_width / window_dim) > 1:
+                    x_range.append(x1)
+                if int((y1 - y_range[y_r_len - 1]) * boundary_height / window_dim) > 1:
+                    y_range.append(y1)
+
                 # the factor used to rescale the region before saving it to the region array
                 # note that we want to rescale to 28*28 to be compatible with our CNN recognition network
                 r_factor = window_dim / resize_dim
                 for y in y_range:
                     for x in x_range:
-                        # make sure that the window in the current position (x, y) is within the image itself
-                        if x > -1 and y > -1 and (x + window_dim) < img_width and (y + window_dim) < img_height:
-                            # - add region to the region list
-                            # - adjust the position of the ground_truth to be relative to the window
-                            #   not relative to the image (i.e relative frame of reference)
-                            # - don't forget to re_scale the extracted/sampled region to be 28*28
-                            #   hence, multiply the relative position with this scaling accordingly
-                            # - also, the image needs to be preprocessed so it can be ready for the CNN
-                            # - reshape the region to 1-D vector to align with the structure of MNIST database
-                            region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
-                            region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
-                            region = region.reshape(shape=(resize_dim * resize_dim, 1))
-                            relative_boundary = numpy.asarray([x1 - x, y1 - y, x2 - x, y2 - y]) / r_factor
-                            regions.append(region)
-                            relative_boundaries.append(relative_boundary.astype(int))
 
-                            # save region for experiment
-                            # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
-                            # region = region * 255
-                            # cv2.imwrite(filePathWrite, region)
+                        # make sure that the window in the current position (x, y) is within the image itself
+                        if x < 0 or y < 0 or (x + window_dim) > img_width or (y + window_dim) > img_height:
+                            continue
+
+                        # TODO
+                        # if using the extra-stride in the range makes the region get out of the window
+                        # then rebound the window so we can take the last region before exiting the loop
+
+                        # - add region to the region list
+                        # - adjust the position of the ground_truth to be relative to the window
+                        #   not relative to the image (i.e relative frame of reference)
+                        # - don't forget to re_scale the extracted/sampled region to be 28*28
+                        #   hence, multiply the relative position with this scaling accordingly
+                        # - also, the image needs to be preprocessed so it can be ready for the CNN
+                        # - reshape the region to 1-D vector to align with the structure of MNIST database
+                        relative_boundary = numpy.asarray([x1 - x, y1 - y, x2 - x, y2 - y]) / r_factor
+                        region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
+                        region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
+                        region = region.reshape((resize_dim * resize_dim,))
+                        regions.append(region)
+                        relative_boundaries.append(relative_boundary.astype(int))
+
+                        # save region for experiment
+                        #filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
+                        #region *= 255
+                        #cv2.imwrite(filePathWrite, region)
 
                 # now we up_scale the window
                 window_dim = int(window_dim * up_scale_factor)
+
+            dummy_variable_end_file_loop = 10
 
     # dump the regions into a pickle file
     data = (regions, relative_boundaries)

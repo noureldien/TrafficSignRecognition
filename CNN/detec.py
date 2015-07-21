@@ -2,6 +2,10 @@ import os
 import sys
 import time
 
+import cv2
+import skimage
+import skimage.transform
+
 import numpy
 import theano
 import theano.tensor as T
@@ -530,10 +534,10 @@ def train_fast(dataset_path, recognition_model_path, detection_model_path='', le
     pickle.dump(nkerns, save_file, -1)
     pickle.dump(mlp_layers, save_file, -1)
     pickle.dump(pool_size, save_file, -1)
-    pickle.dump(layer0.W.get_value(borrow=True), save_file, -1)
-    pickle.dump(layer0.b.get_value(borrow=True), save_file, -1)
-    pickle.dump(layer1.W.get_value(borrow=True), save_file, -1)
-    pickle.dump(layer1.b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer0_W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer0_b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer1_W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer1_b.get_value(borrow=True), save_file, -1)
     pickle.dump(layer2.W.get_value(borrow=True), save_file, -1)
     pickle.dump(layer2.b.get_value(borrow=True), save_file, -1)
     pickle.dump(layer3.W.get_value(borrow=True), save_file, -1)
@@ -552,10 +556,6 @@ def detect_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierTy
     :param img_dim:
     :return:
     """
-
-    import cv2
-    import skimage
-    import skimage.transform
 
     # stride represents how dense to sample regions around the ground truth traffic signs
     # also down_scaling factor affects the sampling
@@ -576,10 +576,11 @@ def detect_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierTy
     # boundary is x1, y1, x2, y2 => (x1,y1) top left, (x2, y2) bottom right
     # don't forget that stride of sliding the window is dynamic
 
-    down_scale_factor = 0.75
-    window_dim = 600
-    img_width = 1630
-    img_height = 800
+    down_scale_factor = 0.9
+    window_dim = 400
+    img_shape = img.shape
+    img_width = img_shape[1]
+    img_height = img_shape[0]
     img_dim = 28
 
     regions = []
@@ -594,7 +595,7 @@ def detect_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierTy
         # this means that stride is equivialant to 2 pixels
         # when the window is resized to the img_dim (required for CNN)
         r_factor = window_dim / img_dim
-        stride = 10 * int(r_factor)
+        stride = 1 * int(r_factor)
 
         s_count += 1
         r_count = 0
@@ -641,7 +642,7 @@ def detect_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierTy
                 break
             y += stride
 
-        print("Scale: %d, regions: %d" % (s_count, r_count))
+        print("Scale: %d, window_dim: %d, regions: %d" % (s_count, window_dim, r_count))
 
         # now we want to re_scale, instead of down_scaling the whole image, we down_scale the window
         # don't forget to recalculate the window area
@@ -653,7 +654,7 @@ def detect_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierTy
 
         # now, after getting the predictions, construct the probability map
         # and show it
-        __probability_map(d_pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim)
+        __probability_map(d_pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
 
     x = 10
 
@@ -806,7 +807,7 @@ def __detect_img(img4D, model_path, classifier=CNN.enums.ClassifierType.logit):
     return c_result, c_prob, c_duration
 
 
-def __probability_map(predictions, locations, window_dim, x_count, y_count, img_width, img_height, img_dim):
+def __probability_map(predictions, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, count):
     r_factor = window_dim / img_dim
     n = x_count * y_count
     locations = numpy.asarray(locations)
@@ -835,13 +836,18 @@ def __probability_map(predictions, locations, window_dim, x_count, y_count, img_
 
         img[y1:y2, x1:x2] += 1
 
+    # normalize image before saving
+    img = img * 255 / (img.max() - img.min())
+    cv2.imwrite("D:\\_Dataset\\GTSDB\\\Test_Regions\\" + "{0:05d}.png".format(count), img)
+
     # now, plot the image
     # plot original image and first and second components of output
     import matplotlib.pyplot as plt
 
-    plt.figure()
-    plt.gray()
-    plt.ion()
-    plt.axis('off')
-    plt.imshow(img, interpolation='nearest')
-    plt.show()
+    #plt.figure()
+    #plt.gray()
+    #plt.ion()
+    #plt.axis('off')
+    #plt.imshow(img, interpolation='nearest')
+    #plt.show()
+    #dummy_var = 10

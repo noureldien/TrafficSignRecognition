@@ -331,12 +331,56 @@ class MultiLogisticRegression(object):
                 # represents a mistake in prediction
                 # the error should not be if classified correct or wrong
                 # the error should be how close the predicted to the truth
-                # error = T.mean(T.neq(self.y_pred[idx], ys[:, idx]))
-                error = T.mean(T.abs_(self.y_pred[idx] - ys[:, idx])) / n_classes
+                # in other words, we will draw the predicted region and the original region
+                # and see how much is the difference
+                error = T.mean(T.neq(self.y_pred[idx], ys[:, idx]))
+                # error = T.mean(T.abs_(self.y_pred[idx] - ys[:, idx])) / n_classes
                 errs.append(error)
             else:
                 raise NotImplementedError()
         return errs
+
+    def errors_trial(self, ys, n_classes, idx_start, idx_end):
+        errs = []
+
+        for ys_i in ys[idx_start:idx_end]:
+            x = 7
+
+        # for idx in range(idx_start, idx_end):
+        #     if ys[idx, 0].ndim != self.y_pred[0][idx].ndim:
+        #         raise TypeError('y should have the same shape as self.y_pred',
+        #                         ('y', ys[idx, 0].type, 'y_pred', self.y_pred[0][idx].type))
+        #     if ys[idx, 0].dtype.startswith('int'):
+        #         #region_y = ys[idx, 0:4]
+        #         #region_pred = [self.y_pred[0][idx], self.y_pred[1][idx], self.y_pred[2][idx], self.y_pred[3][idx]]
+        #         # error = T.mean(T.abs_(self.y_pred[0][idx] - ys[0][idx])) / n_classes
+        #         error = T.mean(ys[idx, 0])
+        #         errs.append(error)
+        #     else:
+        #         raise NotImplementedError()
+        #     idx += 1
+        # return errs
+
+        return 0
+
+        # for idx in range(self.n_groups):
+        #     if ys[:, idx].ndim != self.y_pred[idx].ndim:
+        #         raise TypeError('y should have the same shape as self.y_pred',
+        #                         ('y', ys[:, idx].type, 'y_pred', self.y_pred[idx].type))
+        #         # check if y is of the correct datatype
+        #     if ys[:, idx].dtype.startswith('int'):
+        #         # the T.neq operator returns a vector of 0s and 1s, where 1
+        #         # represents a mistake in prediction
+        #         # the error should not be if classified correct or wrong
+        #         # the error should be how close the predicted to the truth
+        #         # in other words, we will draw the predicted region and the original region
+        #         # and see how much is the difference
+        #         # error = T.mean(T.neq(self.y_pred[idx], ys[:, idx]))
+        #         error = T.mean(T.abs_(self.y_pred[idx] - ys[:, idx])) / n_classes
+        #         errs.append(error)
+        #     else:
+        #         raise NotImplementedError()
+        # return errs
 
 
 def logit_layer(input, W, b):
