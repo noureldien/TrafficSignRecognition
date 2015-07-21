@@ -79,19 +79,23 @@ mnist_dim = 28
 # region Detection
 
 # extract region images to train the detector
-#CNN.utils.rerialize_gtsdb()
-#CNN.utils.organize_gtsdb()
+# CNN.utils.rerialize_gtsdb()
+# CNN.utils.organize_gtsdb()
 
 # train the detector
 # CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=500, learning_rate=0.01, n_epochs=1) # 10.01%
 # CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=100, learning_rate=0.1, n_epochs=1) # 7.48%
-CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=5, learning_rate=0.1, n_epochs=1) # 29.5 %
+# CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, detection_model_path=gtsdb_model, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
+# CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, batch_size=10, learning_rate=0.1, n_epochs=1)
 
-#CNN.detec.train(dataset_path=gtsdb_dataset, recognition_model_path=gtsrb_model, batch_size=10, learning_rate=0.1, n_epochs=1)
+# train the detector from scratch
+# CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset, detection_model_path=gtsdb_model, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
+# CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset, detection_model_path=gtsdb_model, batch_size=10, learning_rate=0.1, n_epochs=1,
+#                            nkerns=(40, 40 * 9), mlp_layers=(800, 29), kernel_dim = (5, 5))  # 29.5 %
 
 # test the detector
-#CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\00025.png", model_path=gtsdb_model)
-#CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\_img1.png", model_path=gtsdb_model)
+# CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\00025.png", model_path=gtsdb_model)
+CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\_img2.png", model_path=gtsdb_model)
 
 
 # endregion
