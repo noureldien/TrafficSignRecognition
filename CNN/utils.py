@@ -1,6 +1,7 @@
 import os
 from os import listdir
 from os.path import isfile, join
+import csv
 import pickle
 import gzip
 import numpy
@@ -110,11 +111,9 @@ def shared_dataset(data_xy, borrow=True):
 
 # region Pre-process
 
-def preprocess_dataset_train():
-    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
-
+def preprocess_dataset_train(img_dim):
     directory1 = "D:\\_Dataset\\GTSRB\\Final_Training_Cropped\\"
-    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_80\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_%d\\" % (img_dim)
 
     prohibitory_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
     for class_id in prohibitory_classes:
@@ -122,7 +121,6 @@ def preprocess_dataset_train():
         subDirectory1 = directory1 + folderName
         subDirectory2 = directory2 + folderName
         files = [f for f in listdir(subDirectory1) if isfile(join(subDirectory1, f))]
-        print(class_id)
         # create directory to save files in
         if not os.path.exists(subDirectory2):
             os.mkdir(subDirectory2)
@@ -131,44 +129,61 @@ def preprocess_dataset_train():
             # -> adapthisteq -> ContrastStretchNorm -> resize -> write
             filePathRead = join(subDirectory1, file)
             filePathWrite = join(subDirectory2, file)
-            preprocess_image_(filePathRead=filePathRead, filePathWrite=filePathWrite,resize_dim=80)
+            preprocess_image_(filePathRead=filePathRead, filePathWrite=filePathWrite, resize_dim=img_dim)
 
         print('Finish Class: ' + folderName)
 
 
-def preprocess_dataset_test():
-    from os import listdir
-    from os.path import isfile, join
+def preprocess_dataset_test(img_dim):
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test_PNG\\GT-final_test.annotated.csv"
+    test_images = []
+    test_classes = []
+    # get the ground truth of the test data
+    with open(csvFileName, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        for row in reader:
+            if row[7] != "ClassId":
+                test_images.append(row[0][:-4])
+                test_classes.append(int(row[7]))
 
-    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
+    directory1 = "D:\\_Dataset\\GTSRB\\Final_Test_Cropped\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_%d\\" % (img_dim)
 
-    directory1 = "D:\\_Dataset\\GTSRB\\Final_Training_Scaled\\"
-    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_80\\"
+    # for the time being, only process the prohibitory traffic signs
+    prohibitory_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    processed_classes = []
 
-    directory1 = "D:\\_Dataset\\GTSRB\\Final_Test_Scaled\\"
-    directory2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_80\\"
+    files = [f for f in listdir(directory1) if isfile(join(directory1, f))]
+    count = 0
+    for file in files:
+        # get class_id of the current image
+        index = test_images.index(file[:-4])
+        class_id = test_classes[index]
+        if class_id not in prohibitory_classes:
+            continue
+        count += 1
+        if count % 500 == 1:
+            print("Finish %d images" % (count))
+        # do the following steps : read -> Grayscale -> imadjust -> histeq
+        # -> adapthisteq -> ContrastStretchNorm -> resize -> write
+        filePathRead = join(directory1, file)
+        filePathWrite = join(directory2, file)
+        is_processed = preprocess_image_(filePathRead=filePathRead, filePathWrite=filePathWrite, resize_dim=img_dim)
+        if is_processed:
+            processed_classes.append(class_id)
 
-    for i in range(0, 3):
-        folderName = "{0:05d}\\".format(i)
-        subDirectory1 = directory1 + folderName
-        subDirectory2 = directory2 + folderName
-        onlyfiles = [f for f in listdir(subDirectory1) if isfile(join(subDirectory1, f))]
-        for file in onlyfiles:
-            # do the following steps : read -> Grayscale -> imadjust -> histeq
-            # -> adapthisteq -> ContrastStretchNorm -> resize -> write
-            filePathRead = join(subDirectory1, file)
-            filePathWrite = join(subDirectory2, file)
-            preprocess_image(filePathRead, filePathWrite, 80)
-
-        print('Finish Class: ' + folderName)
+    pickle.dump(processed_classes, open("D:\\_Dataset\\GTSRB\\gtsrb_prohibitroy_classes.pkl", 'wb'))
 
 
 def preprocess_image_(filePathRead, filePathWrite, resize_dim=0):
     img = cv2.imread(filePathRead)
+    #if img.shape[0] < 40 or img.shape[1] < 40:
+    #    return False
     img = preprocess_image(img, resize_dim)
     img *= 255
     img = img.astype(int)
     cv2.imwrite(filePathWrite, img)
+    return True
 
 
 def preprocess_image(img, resize_dim=0):
@@ -357,7 +372,7 @@ def __plot_prob_maps(maps, shape, fig_num):
 
 # region GTSR
 
-def serialize_gtsr():
+def serialize_gtsr(img_dim):
     '''
     Read the preprocessed images (training and test) and save them on the disk
     Save them with the same format and data structure as the MNIST dataset
@@ -373,47 +388,51 @@ def serialize_gtsr():
     test_images = []
     test_classes = []
 
-    directoryTrain = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_80\\"
-    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_80\\"
-    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
-
-    # get the training data
-    for i in range(0, 43):
-        print(i)
-        subDirectory = directoryTrain + "{0:05d}\\".format(i)
-        onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
-        for file in onlyfiles:
-            fileName = join(subDirectory, file)
-            fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
-            train_images.append(fileData)
-            train_classes.append(i)
+    directoryTrain = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_%d\\" % (img_dim)
+    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_%d\\" % (img_dim)
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test_PNG\\GT-final_test.annotated.csv"
 
     # get the ground truth of the test data
-    import csv
-
-    with open(csvFileName, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
-        for row in reader:
-            if row[7] != "ClassId":
-                test_classes.append(int(row[7]))
+    test_classes = pickle.load(open("D:\\_Dataset\\GTSRB\\gtsrb_prohibitroy_classes.pkl", "rb"))
+    # prohib_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    # with open(csvFileName, newline='') as csvfile:
+    #     reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+    #     for row in reader:
+    #         if row[7] == "ClassId":
+    #             continue
+    #         class_id = int(row[7])
+    #         if class_id in prohib_classes:
+    #             test_classes.append(class_id)
 
     # get the test data
-    onlyfiles = [f for f in listdir(directoryTest) if isfile(join(directoryTest, f))]
-    for file in onlyfiles:
+    files = [f for f in listdir(directoryTest) if isfile(join(directoryTest, f))]
+    for file in files:
         fileName = join(directoryTest, file)
         fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
         test_images.append(fileData)
+
+    # get the training data
+    sub_directories = [d for d in listdir(directoryTrain) if os.path.isdir(join(directoryTrain, d))]
+    for d in sub_directories:
+        sub_directory = join(directoryTrain, d)
+        onlyfiles = [f for f in listdir(sub_directory) if isfile(join(sub_directory, f))]
+        for file in onlyfiles:
+            fileName = join(sub_directory, file)
+            fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
+            train_images.append(fileData)
+            train_classes.append(int(d))
 
     # now, save the training and data
     train_set = (train_images, train_classes)
     test_set = (test_images, test_classes)
     data = (train_set, test_set)
-    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_rerialized_80.pkl', 'wb'))
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%d.pkl' % (img_dim)
+    pickle.dump(data, open(file_name, 'wb'))
 
     print("Finish Preparing Data")
 
 
-def reduce_gtsr():
+def reduce_gtsr(img_dim):
     '''
     Read the preprocessed images (training and test) and save them on the disk
     Save them with the same format and data structure as the MNIST dataset
@@ -424,7 +443,8 @@ def reduce_gtsr():
     :return:
     '''
 
-    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb.pkl', 'rb'))
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_name, 'rb'))
     tr_set = data[0]
     test_set = data[1]
 
@@ -466,37 +486,37 @@ def reduce_gtsr():
     print("Finish Preparing Data")
 
 
-def organize_gtsr():
+def organize_gtsr(img_dim):
     """
-    Read the reducted dataset (it contains only 10 classes out of 43)
+    Read the reduced dataset (it contains only 10 classes out of 43)
     then split the training to training and validation, the save it on disk
 
     :return:
     """
 
-    import random
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_name, 'rb'))
 
-    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_reduced.pkl', 'rb'))
-
-    tr_set = data[0]
-
-    tr_images = tr_set[0]
-    tr_classes = tr_set[1]
+    tr_images = data[0][0]
+    tr_classes = data[0][1]
 
     train_images = []
     train_classes = []
     valid_images = []
     valid_classes = []
 
+    prohibit_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
     tr_images_reshaped = []
-    for i in range(10):
+    for i in range(len(prohibit_classes)):
         tr_images_reshaped.append([])
 
-    for i in range(len(tr_images)):
-        tr_images_reshaped[tr_classes[i]].append(tr_images[i])
+    for i in range(len(tr_classes)):
+        index = prohibit_classes.index(tr_classes[i])
+        tr_images_reshaped[index].append(tr_images[i])
 
-    for i in range(10):
-        n = tr_classes.count(i)
+    for i in range(len(prohibit_classes)):
+        class_id = prohibit_classes[i]
+        n = tr_classes.count(class_id)
         nTrain = int(n * 3 / 4)
         nValid = n - nTrain
 
@@ -507,14 +527,14 @@ def organize_gtsr():
         # take the first nTrain items as train_set
         idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
         images = [tr_images_reshaped[i][j] for j in idxRange]
-        classes = (numpy.ones(shape=(nTrain,), dtype=int) * i).tolist()
+        classes = (numpy.ones(shape=(nTrain,), dtype=int) * class_id).tolist()
         train_images.extend(images)
         train_classes.extend(classes)
 
         # take the next nValid items as validation_set
         idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
         images = [tr_images_reshaped[i][j] for j in idxRange]
-        classes = (numpy.ones(shape=(nValid,), dtype=int) * i).tolist()
+        classes = (numpy.ones(shape=(nValid,), dtype=int) * class_id).tolist()
         valid_images.extend(images)
         valid_classes.extend(classes)
 
@@ -530,21 +550,24 @@ def organize_gtsr():
     valid_classes_shuffled = [valid_classes[j] for j in idx]
 
     # change array to numpy
-    train_images = numpy.asarray(train_images_shuffled)
+    # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
+    train_images = numpy.asarray(train_images_shuffled, dtype=float) / 255
     train_classes = numpy.asarray(train_classes_shuffled)
-    valid_images = numpy.asarray(valid_images_shuffled)
+    valid_images = numpy.asarray(valid_images_shuffled, dtype=float) / 255
     valid_classes = numpy.asarray(valid_classes_shuffled)
-    test_images = numpy.asarray(data[1][0])
+    test_images = numpy.asarray(data[1][0], dtype=float) / 255
     test_classes = numpy.asarray(data[1][1])
 
-    # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
-    train_images = train_images.astype(float) / 255.0
-    valid_images = valid_images.astype(float) / 255.0
-    test_images = test_images.astype(float) / 255.0
-
     # now, save the training and data
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_%d.pkl' % (img_dim)
     data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
-    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_normalized.pkl', 'wb'))
+
+    # pickle.dump(data, open(file_name, 'wb'))
+
+    # if mmemory warning happen, try this
+    p = pickle._Pickler(open(file_name, "wb"))
+    p.fast = True
+    p.dump(data)
 
     print("Finish Preparing Data")
 
@@ -666,8 +689,6 @@ def organize_belgiumTS():
     :return:
     """
 
-    import random
-
     data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_reduced.pkl', 'rb'))
 
     tr_set = data[0]
@@ -761,10 +782,6 @@ def serialize_SuperClass():
 
     :return:
     '''
-
-    from os import listdir
-    from os.path import isfile, join
-    import random
 
     tr_images = []
     tr_classes = []
@@ -882,12 +899,8 @@ def rerialize_gtsdb():
     # re-calculate the x,y of the ground truth, instead of the whole image
     # is the frame_of_reference, the region itself is the frame_of_reference
 
-    from os import listdir
-    from os.path import isfile, join
-    import csv
 
     # get the ground truth of the test data
-
     csv_data = []
     csvFileName = "D:\\_Dataset\\GTSDB\\Ground_Truth\\gt.txt"
     with open(csvFileName, newline='') as csvfile:
@@ -1145,41 +1158,6 @@ def __gtsr_get_boundaries(gt_data, image_id, superclass_type=CNN.enums.Superclas
 # region Check Database
 
 def check_database_1():
-    """
-    Loop on random sample of the images and see if their values are correct or not
-    :return:
-    """
-
-    import matplotlib.pyplot as plt
-
-    # data = pickle.load(open('D:\\_Dataset\\mnist.pkl', 'rb'))
-    # data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_normalized_28.pkl', 'rb'))
-    data = pickle.load(open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'rb'))
-
-    images = data[1][0]
-    classes = data[1][1]
-
-    del data
-
-    # get first column of the tuple (which represents the image, while second one represents the image class)
-    # then get the first image and show it
-    idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 12, dtype=int).tolist()
-    print(len(classes))
-    plt.figure(1)
-    plt.ion()
-    plt.gray()
-    plt.axis('off')
-    for i in idx:
-        photo = images[i]
-        photoReshaped = photo.reshape((28, 28))
-        c = classes[i]
-        print(c)
-        plt.imshow(photoReshaped)
-        plt.show()
-        x = 10
-
-
-def check_database_2():
     data_1 = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_shuffled.pkl', 'rb'))
     data_2 = pickle.load(open("D:\\_Dataset\\mnist.pkl", 'rb'))
 
@@ -1192,7 +1170,7 @@ def check_database_2():
     x = 10
 
 
-def check_database_3():
+def check_database_2():
     ''' Loads the dataset
 
     :type dataset: string
@@ -1225,5 +1203,125 @@ def check_database_3():
     data3 = numpy.asarray(aPhoto)
     matplotlib.pyplot.imshow(data3)
     hiThere = 10
+
+
+def check_database_3():
+    """
+    Loop on random sample of the images and see if their values are correct or not
+    :return:
+    """
+
+    import matplotlib.pyplot as plt
+    import math
+
+    # data = pickle.load(open('D:\\_Dataset\\mnist.pkl', 'rb'))
+    # data = pickle.load(open('D:\\_Dataset\\BelgiumTS\\BelgiumTS_normalized_28.pkl', 'rb'))
+    # data = pickle.load(open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'rb'))
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl', 'rb'))
+
+    images = data[0][0]
+    classes = data[0][1]
+    del data
+
+    # get first column of the tuple (which represents the image, while second one represents the image class)
+    # then get the first image and show it
+    idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 12, dtype=int).tolist()
+    print(len(classes))
+
+    plt.figure(1)
+    plt.ion()
+    plt.gray()
+    plt.axis('off')
+
+    for i in idx:
+        photo = images[i]
+        img_dim = photo.shape[0]
+        img_dim = math.sqrt(img_dim)
+        photo_reshaped = photo.reshape((img_dim, img_dim))
+        c = classes[i]
+        print(c)
+        plt.imshow(photo_reshaped)
+        plt.show()
+        x = 10
+
+
+def check_database_4():
+
+    import math
+
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl', 'rb'))
+
+    images = data[0][0]
+    classes = data[0][1]
+    del data
+
+    # get first column of the tuple (which represents the image, while second one represents the image class)
+    # then get the first image and show it
+    idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 20, dtype=int).tolist()
+    for i in idx:
+        photo = images[i]
+        img_dim = photo.shape[0]
+        img_dim = math.sqrt(img_dim)
+        photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
+        c = classes[i]
+        cv2.imwrite("D:\\_Dataset\GTSRB\\_checking\\%d_%d.png" % (i, c), photo_reshaped)
+
+
+def downscale():
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl', 'rb'))
+
+    train_images = numpy.zeros(shape=(0, 28, 28), dtype=float)
+    valid_images = numpy.zeros(shape=(0, 28, 28), dtype=float)
+    test_images = numpy.zeros(shape=(0, 28, 28), dtype=float)
+
+    all_images = [train_images, valid_images, test_images]
+
+    for i in range(0, len(data)):
+        print(i)
+        imgs = data[i][0]
+        imgs = imgs.reshape((imgs.shape[0], 80, 80))
+        for img in imgs:
+            resized = skimage.transform.resize(img, output_shape=(28, 28))
+            resized = resized.reshape((1, 28, 28))
+            all_images[i] = numpy.vstack([all_images[i], resized])
+        all_images[i] = all_images[i].reshape((all_images[i].shape[0], 28 * 28))
+
+    x = 10
+    data = ((all_images[0], data[0][1]), (all_images[1], data[1][1]), (all_images[2], data[2][1]))
+    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new.pkl', 'wb'))
+
+
+def remap_class_ids():
+    # because the ids of the data are not successive
+    # so we need to re-map them from
+    # from [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
+    # to   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new_copy.pkl', 'rb'))
+
+    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    all_classes = [train_classes, valid_classes, test_classes]
+
+    for i in range(0, len(data)):
+        classes = data[i][1]
+        classes[classes == 7] = 60
+        classes[classes == 8] = 70
+        classes[classes == 9] = 80
+        classes[classes == 10] = 90
+        classes[classes == 15] = 100
+        classes[classes == 16] = 110
+
+        classes[classes == 60] = 6
+        classes[classes == 70] = 7
+        classes[classes == 80] = 8
+        classes[classes == 90] = 9
+        classes[classes == 100] = 10
+        classes[classes == 110] = 11
+        all_classes[i] = classes
+
+    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
+    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new.pkl', 'wb'))
 
 # endregion

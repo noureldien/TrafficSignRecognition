@@ -39,8 +39,8 @@ from CNN.mlp import HiddenLayer
 import CNN.enums
 
 
-def train_28(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
-          mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
+def train_shallow(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
+                  mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
     """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
@@ -196,7 +196,7 @@ def train_28(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epoch
     # minibatches before checking the network
     # on the validation set; in this case we
     # check every epoch
-
+    print("... validation freq: %d" % validation_frequency)
     best_validation_loss = numpy.inf
     best_iter = 0
     test_score = 0.
@@ -280,8 +280,8 @@ def train_28(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epoch
     save_file.close()
 
 
-def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
-          mlp_layers=(500, 10), batch_size=500, pool_size=(2, 2)):
+def train_deep(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epochs=200, kernel_dim=(9, 7, 4), nkerns=(10, 58, 360),
+               mlp_layers=(500, 17), batch_size=100, pool_size=(2, 2)):
     """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
@@ -298,8 +298,6 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
     :param nkerns: number of kernels on each layer
     """
 
-    rng = numpy.random.RandomState(23455)
-
     datasets = CNN.utils.load_data(dataset_path)
 
     train_set_x, train_set_y = datasets[0]
@@ -307,12 +305,9 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
     test_set_x, test_set_y = datasets[2]
 
     # compute number of minibatches for training, validation and testing
-    n_train_batches = train_set_x.get_value(borrow=True).shape[0]
-    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0]
-    n_test_batches = test_set_x.get_value(borrow=True).shape[0]
-    n_train_batches /= batch_size
-    n_valid_batches /= batch_size
-    n_test_batches /= batch_size
+    n_train_batches = int(train_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_valid_batches = int(valid_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_test_batches = int(test_set_x.get_value(borrow=True).shape[0] / batch_size)
 
     # allocate symbolic variables for the data
     index = T.lscalar()  # index to a [mini]batch
@@ -320,6 +315,7 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
     # start-snippet-1
     x = T.matrix('x')  # the data is presented as rasterized images
     y = T.ivector('y')  # the labels are presented as 1D vector of [int] labels
+    rng = numpy.random.RandomState(23455)
 
     ######################
     # BUILD ACTUAL MODEL #
@@ -359,32 +355,46 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
         poolsize=pool_size
     )
 
+    # Construct the third convolutional pooling layer
+    # filtering reduces the image size to (12-5+1, 12-5+1) = (8, 8)
+    # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
+    # 4D output tensor is thus of shape (batch_size, nkerns[1], 4, 4)
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 12 in case of mnist
+    layer2_kernel_dim = kernel_dim[2]
+    layer2 = CNN.conv.ConvPoolLayer(
+        rng,
+        input=layer1.output,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        poolsize=pool_size
+    )
+
     # the HiddenLayer being fully-connected, it operates on 2D matrices of
     # shape (batch_size, num_pixels) (i.e matrix of rasterized images).
     # This will generate a matrix of shape (batch_size, nkerns[1] * 4 * 4),
     # or (500, 50 * 4 * 4) = (500, 800) with the default values.
-    layer2_input = layer1.output.flatten(2)
+    layer3_input = layer2.output.flatten(2)
 
     # construct a fully-connected sigmoidal layer
-    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)  # = 4 in case of mnist
-    layer2 = HiddenLayer(
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)  # = 4 in case of mnist
+    layer3 = HiddenLayer(
         rng,
-        input=layer2_input,
-        n_in=nkerns[1] * layer2_img_dim * layer2_img_dim,
+        input=layer3_input,
+        n_in=nkerns[2] * layer3_img_dim * layer3_img_dim,
         n_out=mlp_layers[0],
         activation=T.tanh
     )
 
     # classify the values of the fully-connected sigmoidal layer
-    layer3 = CNN.logit.LogisticRegression(input=layer2.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
+    layer4 = CNN.logit.LogisticRegression(input=layer3.output, n_in=mlp_layers[0], n_out=mlp_layers[1])
 
     # the cost we minimize during training is the NLL of the model
-    cost = layer3.negative_log_likelihood(y)
+    cost = layer4.negative_log_likelihood(y)
 
     # create a function to compute the mistakes that are made by the model
     test_model = theano.function(
         [index],
-        layer3.errors(y),
+        layer4.errors(y),
         givens={
             x: test_set_x[index * batch_size: (index + 1) * batch_size],
             y: test_set_y[index * batch_size: (index + 1) * batch_size]
@@ -393,7 +403,7 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
 
     validate_model = theano.function(
         [index],
-        layer3.errors(y),
+        layer4.errors(y),
         givens={
             x: valid_set_x[index * batch_size: (index + 1) * batch_size],
             y: valid_set_y[index * batch_size: (index + 1) * batch_size]
@@ -401,7 +411,7 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
     )
 
     # create a list of all model parameters to be fit by gradient descent
-    params = layer3.params + layer2.params + layer1.params + layer0.params
+    params = layer4.params + layer3.params + layer2.params + layer1.params + layer0.params
 
     # create a list of gradients for all model parameters
     grads = T.grad(cost, params)
@@ -438,6 +448,7 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
     # on the validation set; in this case we
     # check every epoch
 
+    print("... validation freq: %d" % validation_frequency)
     best_validation_loss = numpy.inf
     best_iter = 0
     test_score = 0.
@@ -451,7 +462,7 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
         epoch += 1
         print("... epoch: %d" % epoch)
 
-        for minibatch_index in range(int(n_train_batches)):
+        for minibatch_index in range(n_train_batches):
 
             iter = (epoch - 1) * n_train_batches + minibatch_index
 
@@ -518,6 +529,8 @@ def train_80(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epoch
     pickle.dump(layer2.b.get_value(borrow=True), save_file, -1)
     pickle.dump(layer3.W.get_value(borrow=True), save_file, -1)
     pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer4.W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer4.b.get_value(borrow=True), save_file, -1)
     save_file.close()
 
 

@@ -15,7 +15,7 @@ print('Traffic Sign Recognition')
 # img_dim_28 = 80
 
 # mnist_dataset = "D:\\_Dataset\\MNIST\\mnist.pkl"
-# mnist_dataset_28 = "D:\\_Dataset\\GTSRB\\gtsrb_normalized.pkl"
+# gtsrb_dataset_28 = "D:\\_Dataset\\GTSRB\\gtsrb_normalized.pkl"
 # belgiumTS_dataset_28 = "D:\\_Dataset\\\BelgiumTS\\BelgiumTS_normalized_28.pkl"
 # superclass_dataset_28 = "D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl"
 #
@@ -34,16 +34,16 @@ print('Traffic Sign Recognition')
 # CNN.recog.train(img_dim_28=img_dim_28, dataset_path=mnist_dataset, learning_rate=0.2, n_epochs=5, nkerns=[20, 50], batch_size=50)
 
 # train model on gtsrb database
-# CNN.recog.train(dataset_path=mnist_dataset, learning_rate=0.2, n_epochs=5, kernel_dim=(5, 5), nkerns=(100, 200), mpl_layers=(500, 10), batch_size=50)
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(20, 50), batch_size=50) # 3.73%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50) # 3.35%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(40, 100), batch_size=50) # 3.06%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50) # 2.77%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50, mlp_layers=(800, 10)) # 3.12%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(500, 10)) # 4.77%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(100, 10)) # 5.06%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(200, 10)) # 4.31%
-# CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], batch_size=50, mlp_layers=(50, 10)) # 8.00%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, kernel_dim=(5, 5), nkerns=(100, 200), mpl_layers=(500, 10), batch_size=50)
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(20, 50), batch_size=50) # 3.73%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50) # 3.35%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(40, 100), batch_size=50) # 3.06%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50) # 2.77%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50, mlp_layers=(800, 10)) # 3.12%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(500, 10)) # 4.77%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(100, 10)) # 5.06%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(200, 10)) # 4.31%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], batch_size=50, mlp_layers=(50, 10)) # 8.00%
 
 # test model on specific image
 # CNN.recog.classify_img_from_file("D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\00412.png", gtsrb_model_28)
@@ -75,17 +75,31 @@ print('Traffic Sign Recognition')
 # region Recognition (Model 80)
 
 img_dim_80 = 80
+img_dim_28 = 28
 
 gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model.pkl'
 superclass_model_80 = 'D:\\_Dataset\\SuperClass\\cnn_model_80.pkl'
 superclass_model_80_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_80_svm.pkl'
+gtsrb_dataset_80 = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl'
 
-#CNN.utils.preprocess_dataset_train(img_dim_80)
-#CNN.utils.preprocess_dataset_test(img_dim_80)
-#CNN.utils.serialize_gtsr()
+CNN.utils.preprocess_dataset_train(img_dim_28)
+# CNN.utils.preprocess_dataset_test(img_dim_80)
+# CNN.utils.serialize_gtsr(img_dim_80)
+# CNN.utils.organize_gtsr(img_dim_80)
+#CNN.utils.downscale()
+#CNN.utils.remap_class_ids()
+# CNN.utils.check_database_4()
 
 # train model on mnist database
-#CNN.recog.train(dataset_path=mnist_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50) # 2.77%
+#CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.1, n_epochs=20, kernel_dim=(13, 5, 4),
+#                     nkerns=(10, 50, 200), mlp_layers=(500, 17), batch_size=10)
+
+# just make sure that the train_deep network is working
+#CNN.recog.train_deep(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', n_epochs=5, batch_size=50, img_dim=28,
+#                     learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(10, 50, 200), mlp_layers=(200, 15), pool_size=(2, 2))
+
+#CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl',
+#                        learning_rate=0.1, n_epochs=1, nkerns=(10, 70), mlp_layers=(150, 10), batch_size=50)
 
 # endregion
 
