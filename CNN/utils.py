@@ -1,3 +1,6 @@
+import os
+from os import listdir
+from os.path import isfile, join
 import pickle
 import gzip
 import numpy
@@ -12,6 +15,7 @@ import cv2
 import CNN
 import CNN.recog
 import CNN.enums
+import CNN.consts
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
@@ -106,23 +110,43 @@ def shared_dataset(data_xy, borrow=True):
 
 # region Pre-process
 
-def preprocess_dataset():
+def preprocess_dataset_train():
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
+
+    directory1 = "D:\\_Dataset\\GTSRB\\Final_Training_Cropped\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_80\\"
+
+    prohibitory_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    for class_id in prohibitory_classes:
+        folderName = "{0:05d}\\".format(class_id)
+        subDirectory1 = directory1 + folderName
+        subDirectory2 = directory2 + folderName
+        files = [f for f in listdir(subDirectory1) if isfile(join(subDirectory1, f))]
+        print(class_id)
+        # create directory to save files in
+        if not os.path.exists(subDirectory2):
+            os.mkdir(subDirectory2)
+        for file in files:
+            # do the following steps : read -> Grayscale -> imadjust -> histeq
+            # -> adapthisteq -> ContrastStretchNorm -> resize -> write
+            filePathRead = join(subDirectory1, file)
+            filePathWrite = join(subDirectory2, file)
+            preprocess_image_(filePathRead=filePathRead, filePathWrite=filePathWrite,resize_dim=80)
+
+        print('Finish Class: ' + folderName)
+
+
+def preprocess_dataset_test():
     from os import listdir
     from os.path import isfile, join
 
     csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
 
     directory1 = "D:\\_Dataset\\GTSRB\\Final_Training_Scaled\\"
-    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_28_2\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_80\\"
 
     directory1 = "D:\\_Dataset\\GTSRB\\Final_Test_Scaled\\"
-    directory2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28_2\\"
-
-    directory1 = "D:\\_Dataset\\SuperClass\\Training_Scaled\\"
-    directory2 = "D:\\_Dataset\\SuperClass\\Training_Preprocessed\\"
-
-    # directory1 = "D:\\_Dataset\\SuperClass\\Test_Scaled\\"
-    # directory2 = "D:\\_Dataset\\SuperClass\\Test_Preprocessed\\"
+    directory2 = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_80\\"
 
     for i in range(0, 3):
         folderName = "{0:05d}\\".format(i)
@@ -134,26 +158,26 @@ def preprocess_dataset():
             # -> adapthisteq -> ContrastStretchNorm -> resize -> write
             filePathRead = join(subDirectory1, file)
             filePathWrite = join(subDirectory2, file)
-            preprocess_image()
+            preprocess_image(filePathRead, filePathWrite, 80)
 
         print('Finish Class: ' + folderName)
 
 
-def preprocess_image(filePathRead, filePathWrite):
+def preprocess_image_(filePathRead, filePathWrite, resize_dim=0):
     img = cv2.imread(filePathRead)
-    img = preprocess_image(img, False)
+    img = preprocess_image(img, resize_dim)
     img *= 255
     img = img.astype(int)
     cv2.imwrite(filePathWrite, img)
 
 
-def preprocess_image(img, resize=False):
+def preprocess_image(img, resize_dim=0):
     img_gs = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_eq = skimage.exposure.equalize_hist(img_gs)
     img_adeq = skimage.exposure.equalize_adapthist(img_eq, clip_limit=0.2, kernel_size=(8, 8))
     img_int = skimage.exposure.rescale_intensity(img_adeq, in_range=(0.1, 0.8))
-    if resize:
-        img_int = skimage.transform.resize(img_int, output_shape=(28, 28))
+    if resize_dim > 0:
+        img_int = skimage.transform.resize(img_int, output_shape=(resize_dim, resize_dim))
     return img_int
 
     plot_images = False
@@ -349,8 +373,8 @@ def serialize_gtsr():
     test_images = []
     test_classes = []
 
-    directoryTrain = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_28\\"
-    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_28\\"
+    directoryTrain = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_80\\"
+    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_80\\"
     csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test\\GT-final_test.annotated.csv"
 
     # get the training data
@@ -384,7 +408,7 @@ def serialize_gtsr():
     train_set = (train_images, train_classes)
     test_set = (test_images, test_classes)
     data = (train_set, test_set)
-    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb.pkl', 'wb'))
+    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_rerialized_80.pkl', 'wb'))
 
     print("Finish Preparing Data")
 
@@ -983,17 +1007,17 @@ def rerialize_gtsdb():
                 # add only n images per scale per image, n = 2
                 regions_negatives = __sample_true_negatives(img, window_dim, resize_dim, boundaries, 2)
                 regions = numpy.vstack([regions, regions_negatives])
-                relative_boundaries = numpy.vstack([relative_boundaries, numpy.zeros(shape=(regions_negatives.shape[0],4), dtype=int)])
+                relative_boundaries = numpy.vstack([relative_boundaries, numpy.zeros(shape=(regions_negatives.shape[0], 4), dtype=int)])
 
                 # also add relative boundaries for them as the ground truth
                 # which should only be zeros
 
                 # saving images for experimenting/debugging
-                #ss_count = 0
-                #for s in regions_negative:
-                    #ss_count += 1
-                    #filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:03d}".format(len(regions)) + "{0:02d}.png".format(ss_count)
-                    #cv2.imwrite(filePathWrite, s.reshape((resize_dim, resize_dim)) * 255)
+                # ss_count = 0
+                # for s in regions_negative:
+                # ss_count += 1
+                # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:03d}".format(len(regions)) + "{0:02d}.png".format(ss_count)
+                # cv2.imwrite(filePathWrite, s.reshape((resize_dim, resize_dim)) * 255)
 
                 # now we up_scale the window
                 window_dim = int(window_dim * up_scale_factor)
