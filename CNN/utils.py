@@ -407,7 +407,9 @@ def serialize_gtsr(img_dim):
                 all_test_classes.append(class_id)
 
     # get the test data
-    smallest_dim = img_dim / 2
+    # smallest_dim = img_dim / 2
+    smallest_dim = 0
+
     selected_test_names = []
     files = [f for f in listdir(directoryTest) if isfile(join(directoryTest, f))]
     for file in files:
@@ -916,14 +918,18 @@ def serialize_SuperClass():
 # region GTSD
 
 
-def rerialize_gtsdb():
-    # read the german traffic sign detection database
-    # for each image, create multible scales
-    # for each scale, create regions/batches around the ground truth boundary
-    # all these created regions must comprise completely the ground truth
-    # re-calculate the x,y of the ground truth, instead of the whole image
-    # is the frame_of_reference, the region itself is the frame_of_reference
-
+def serialize_gtsdb(img_dim, add_true_gegative=True):
+    """
+    read the german traffic sign detection database
+    for each image, create multible scales
+    for each scale, create regions/batches around the ground truth boundary
+    all these created regions must comprise completely the ground truth
+    re-calculate the x,y of the ground truth, instead of the whole image
+    is the frame_of_reference, the region itself is the frame_of_reference
+    :param img_dim:
+    :param add_true_gegative:
+    :return:
+    """
 
     # get the ground truth of the test data
     csv_data = []
@@ -946,14 +952,13 @@ def rerialize_gtsdb():
     # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
     # stride_factor = 2 gives more sampling than stride_factor = 1
     # don't use value smaller than 1 for stride factor
-    up_scale_factor = 1.2
-    biggest_area_factor = 3 ** 2
-    min_region_dim = 18
+    up_scale_factor = 1.15
+    biggest_area_factor = 4 ** 2
+    min_region_dim = img_dim * 2 / 3
     img_width = 1630
     img_height = 800
-    resize_dim = 28
     stride_factor = 2
-    regions = numpy.zeros(shape=(0, resize_dim * resize_dim), dtype=float)
+    regions = numpy.zeros(shape=(0, img_dim * img_dim), dtype=float)
     relative_boundaries = numpy.zeros(shape=(0, 4), dtype=int)
 
     directory = "D:\\_Dataset\\GTSDB\\Training_PNG\\"
@@ -990,11 +995,11 @@ def rerialize_gtsdb():
             window_dim = boundary_max_dim
             boundary_area = boundary_width * boundary_height
             while (window_dim ** 2 / boundary_area) <= biggest_area_factor \
-                    and (boundary_max_dim * resize_dim / window_dim) >= min_region_dim \
+                    and (boundary_max_dim * img_dim / window_dim) >= min_region_dim \
                     and window_dim <= img_height and window_dim <= img_width:
 
                 # for the current scale of the window, extract regions, start from the
-                stride = int((boundary_max_dim * resize_dim / (stride_factor * window_dim)))
+                stride = int((boundary_max_dim * img_dim / (stride_factor * window_dim)))
                 y_range = numpy.arange(start=y2 - window_dim, stop=y1 + 1, step=stride, dtype=int).tolist()
                 x_range = numpy.arange(start=x2 - window_dim, stop=x1 + 1, step=stride, dtype=int).tolist()
 
@@ -1009,7 +1014,7 @@ def rerialize_gtsdb():
 
                 # the factor used to rescale the region before saving it to the region array
                 # note that we want to rescale to 28*28 to be compatible with our CNN recognition network
-                r_factor = window_dim / resize_dim
+                r_factor = window_dim / img_dim
                 for y in y_range:
                     for x in x_range:
 
@@ -1033,19 +1038,20 @@ def rerialize_gtsdb():
                         relative_boundaries = numpy.vstack([relative_boundaries, relative_boundary])
 
                         region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
-                        region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
-                        region = region.reshape((resize_dim * resize_dim,))
+                        region = skimage.transform.resize(region, output_shape=(img_dim, img_dim))
+                        region = region.reshape((img_dim * img_dim,))
                         regions = numpy.vstack([regions, region])
 
                         # save region for experimenting/debugging
                         # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
-                        # cv2.imwrite(filePathWrite, region.reshape((resize_dim, resize_dim))* 255)
+                        # cv2.imwrite(filePathWrite, region.reshape((img_dim, img_dim))* 255)
 
-                # add some true negatives to increase variance of the machine
-                # add only n images per scale per image, n = 2
-                regions_negatives = __sample_true_negatives(img, window_dim, resize_dim, boundaries, 2)
-                regions = numpy.vstack([regions, regions_negatives])
-                relative_boundaries = numpy.vstack([relative_boundaries, numpy.zeros(shape=(regions_negatives.shape[0], 4), dtype=int)])
+                if add_true_gegative:
+                    # add some true negatives to increase variance of the machine
+                    # add only n images per scale per image, n = 2
+                    regions_negatives = __sample_true_negatives(img, window_dim, img_dim, boundaries, 2)
+                    regions = numpy.vstack([regions, regions_negatives])
+                    relative_boundaries = numpy.vstack([relative_boundaries, numpy.zeros(shape=(regions_negatives.shape[0], 4), dtype=int)])
 
                 # also add relative boundaries for them as the ground truth
                 # which should only be zeros
@@ -1064,13 +1070,22 @@ def rerialize_gtsdb():
 
     # dump the regions into a pickle file
     data = (regions, relative_boundaries)
-    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized.pkl', 'wb'))
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized_%d.pkl' % (img_dim)
+    pickle.dump(data, open(file_name, 'wb'))
 
     print("Finish sampling regions for detector")
 
 
-def organize_gtsdb():
-    data = pickle.load(open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized.pkl', 'rb'))
+def organize_gtsdb(img_dim):
+    """
+    Split the given training to training and valid
+    Also, shuffle the training and valid sets
+    :param img_dim:
+    :return:
+    """
+
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_name, 'rb'))
     regions = data[0]
     boundaries = data[1]
     del data
@@ -1113,7 +1128,8 @@ def organize_gtsdb():
 
     # now, save the training and data
     data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
-    pickle.dump(data, open('D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized.pkl', 'wb'))
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_%d.pkl' % (img_dim)
+    pickle.dump(data, open(file_name, 'wb'))
 
     print("Finish Preparing Data")
 
@@ -1315,13 +1331,14 @@ def downscale():
     pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new.pkl', 'wb'))
 
 
-def remap_class_ids():
+def remap_class_ids(img_dim):
     # because the ids of the data are not successive
     # so we need to re-map them from
     # from [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
     # to   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
-    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_copy.pkl', 'rb'))
+    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_path, 'rb'))
 
     train_classes = numpy.zeros(shape=(0, 1), dtype=int)
     valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
@@ -1346,6 +1363,6 @@ def remap_class_ids():
         all_classes[i] = classes
 
     data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
-    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', 'wb'))
+    pickle.dump(data, open(file_path, 'wb'))
 
 # endregion

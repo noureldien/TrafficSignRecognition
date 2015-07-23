@@ -66,12 +66,9 @@ def train_shallow(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     test_set_x, test_set_y = datasets[2]
 
     # compute number of minibatches for training, validation and testing
-    n_train_batches = train_set_x.get_value(borrow=True).shape[0]
-    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0]
-    n_test_batches = test_set_x.get_value(borrow=True).shape[0]
-    n_train_batches /= batch_size
-    n_valid_batches /= batch_size
-    n_test_batches /= batch_size
+    n_train_batches = int(train_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_valid_batches = int(valid_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_test_batches = int(test_set_x.get_value(borrow=True).shape[0] / batch_size)
 
     # allocate symbolic variables for the data
     index = T.lscalar()  # index to a [mini]batch

@@ -21,8 +21,8 @@ import CNN.recog
 from CNN.mlp import HiddenLayer
 
 
-def train(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=500,
-          classifier=CNN.enums.ClassifierType.logit):
+def train_shallow(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=500,
+                  classifier=CNN.enums.ClassifierType.logit):
     datasets = CNN.utils.load_data(dataset_path)
 
     train_set_x, train_set_y = datasets[0]
@@ -266,8 +266,266 @@ def train(dataset_path, recognition_model_path, detection_model_path='', learnin
     save_file.close()
 
 
+def train_deep(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=10,
+               mlp_layers=(1000, 81), classifier=CNN.enums.ClassifierType.logit):
+    datasets = CNN.utils.load_data(dataset_path)
+
+    train_set_x, train_set_y = datasets[0]
+    valid_set_x, valid_set_y = datasets[1]
+    test_set_x, test_set_y = datasets[2]
+
+    # compute number of minibatches for training, validation and testing
+    n_train_batches = int(train_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_valid_batches = int(valid_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_test_batches = int(test_set_x.get_value(borrow=True).shape[0] / batch_size)
+
+    # allocate symbolic variables for the data
+    index = T.lscalar()  # index to a [mini]batch
+    x = T.matrix('x')
+    y = T.imatrix('y')
+
+    # load model and read it's parameters
+    # the same weights of the convolutional layers will be used
+    # in training the detector
+    loaded_objects = CNN.utils.load_model(recognition_model_path)
+
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    pool_size = loaded_objects[5]
+    rng = numpy.random.RandomState(23455)
+
+    # the number of layers in the MLP classifier to train is not optional
+    # the input of the first MLP layer has to be compatible with the output of conv layers
+    # while the output of the last MLP layer has to comprise the img_dim because at the end
+    # of the day the MLP results is classes each of them represent a pixel
+    # this is the regression fashion of the MLP, each class represents the pixel, i.e what
+    # is the pixel of the predicted region
+    #mlp_layers = loaded_objects[4]
+    #mlp_layers = (mlp_layers[0], (img_dim + 1))
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+
+    # first, filter the given input images using the weights of the filters
+    # of the given class_model_path
+    # then, train a mlp as a regression model not classification
+    # then save all of the cnn_model and the regression_model into a file 'det_model_path'
+
+    layer0_img_dim = img_dim
+    layer0_kernel_dim = kernel_dim[0]
+    layer0_input = x.reshape((batch_size, 1, layer0_img_dim, layer0_img_dim))
+
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+
+    # layer 0: Conv-Pool
+    layer0 = CNN.conv.ConvPoolLayer_(
+        input=layer0_input, W=layer0_W, b=layer0_b,
+        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
+        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
+        poolsize=pool_size
+    )
+
+    # layer 1: Conv-Pool
+    layer1 = CNN.conv.ConvPoolLayer_(
+        input=layer0.output, W=layer1_W, b=layer1_b,
+        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
+        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
+        poolsize=pool_size
+    )
+
+    # layer 2: Conv-Pool
+    layer2 = CNN.conv.ConvPoolLayer_(
+        input=layer1.output, W=layer2_W, b=layer2_b,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        poolsize=pool_size
+    )
+
+    # layer 3: the HiddenLayer being fully-connected, it operates on 2D matrices
+    layer3 = HiddenLayer(
+        rng,
+        input=layer2.output.flatten(2),
+        n_in=nkerns[2] * layer3_img_dim * layer3_img_dim,
+        n_out=mlp_layers[0],
+        activation=T.tanh
+    )
+
+    # layer 4: classify the values of the fully-connected sigmoidal layer
+    layer4_n_outs = [mlp_layers[1]] * 4
+    layer4 = CNN.logit.MultiLogisticRegression(input=layer3.output, n_in=mlp_layers[0], n_outs=layer4_n_outs)
+
+    # the cost we minimize during training is the NLL of the model
+    cost = layer4.negative_log_likelihood(y)
+
+    # experimental, add L1, L2 regularization to the regressor
+    # self.L1 = (
+    #         abs(self.hiddenLayer.W).sum()
+    #         + abs(self.logRegressionLayer.W).sum()
+    #     )
+    #
+    #     # square of L2 norm ; one regularization option is to enforce
+    #     # square of L2 norm to be small
+    #     self.L2_sqr = (
+    #         (self.hiddenLayer.W ** 2).sum()
+    #         + (self.logRegressionLayer.W ** 2).sum()
+    #     )
+
+    # create a function to compute the mistakes that are made by the model
+    test_model = theano.function(
+        [index],
+        layer4.errors(y, mlp_layers[1]),
+        givens={
+            x: test_set_x[index * batch_size: (index + 1) * batch_size],
+            y: test_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
+
+    validate_model = theano.function(
+        [index],
+        layer4.errors(y, mlp_layers[1]),
+        givens={
+            x: valid_set_x[index * batch_size: (index + 1) * batch_size],
+            y: valid_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
+
+    # create a list of all model parameters to be fit by gradient descent
+    params = layer4.params + layer3.params
+
+    # create a list of gradients for all model parameters
+    grads = T.grad(cost, params)
+
+    # train_model is a function that updates the model parameters by
+    # SGD Since this model has many parameters, it would be tedious to
+    # manually create an update rule for each model parameter. We thus
+    # create the updates list by automatically looping over all
+    # (params[i], grads[i]) pairs.
+    updates = [(param_i, param_i - learning_rate * grad_i) for param_i, grad_i in zip(params, grads)]
+
+    train_model = theano.function(
+        [index],
+        cost,
+        updates=updates,
+        givens={
+            x: train_set_x[index * batch_size: (index + 1) * batch_size],
+            y: train_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
+    # end-snippet-1
+
+    ###############
+    # TRAIN MODEL #
+    ###############
+    print('... training')
+    # early-stopping parameters
+    patience = 10000  # look as this many examples regardless
+    patience_increase = 2  # wait this much longer when a new best is found
+    improvement_threshold = 0.995  # a relative improvement of this much is considered significant
+    validation_frequency = min(n_train_batches, patience / 2)
+    # go through this many
+    # minibatches before checking the network
+    # on the validation set; in this case we
+    # check every epoch
+
+    print("... validation freq: %d" % validation_frequency)
+    best_validation_loss = numpy.inf
+    best_iter = 0
+    test_score = 0.
+    start_time = time.clock()
+
+    epoch = 0
+    done_looping = False
+
+    while (epoch < n_epochs) and (not done_looping):
+
+        epoch += 1
+        print("... epoch: %d" % epoch)
+
+        for minibatch_index in range(int(n_train_batches)):
+
+            iter = (epoch - 1) * n_train_batches + minibatch_index
+
+            if iter % 100 == 0:
+                print('... training @ iter = %.0f' % iter)
+
+            # train the minibatch
+            minibatch_avg_cost = train_model(minibatch_index)
+
+            if (iter + 1) == validation_frequency:
+
+                # compute zero-one loss on validation set
+                validation_losses = [validate_model(i) for i in range(int(n_valid_batches))]
+                this_validation_loss = numpy.mean(validation_losses)
+                print('... epoch %d, minibatch %d/%d, validation error %.2f %%' % (
+                    epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
+
+                # if we got the best validation score until now
+                if this_validation_loss < best_validation_loss:
+
+                    # improve patience if loss improvement is good enough
+                    if this_validation_loss < best_validation_loss * improvement_threshold:
+                        patience = max(patience, iter * patience_increase)
+
+                    # save best validation score and iteration number
+                    best_validation_loss = this_validation_loss
+                    best_iter = iter
+
+                    # test it on the test set
+                    test_losses = [test_model(i) for i in range(int(n_test_batches))]
+                    test_score = numpy.mean(test_losses)
+                    print(('    epoch %i, minibatch %i/%i, test error of best model %.2f%%') % (
+                        epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
+
+            if patience <= iter:
+                done_looping = True
+                break
+
+    end_time = time.clock()
+    print('Optimization complete.')
+    print('Best validation score of %.2f%% obtained at iteration %i with test performance %.2f%%' % (
+        best_validation_loss * 100., best_iter + 1, test_score * 100.))
+    print('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.))
+    print(sys.stderr)
+
+    if len(detection_model_path) == 0:
+        return
+
+    # serialize the params of the model
+    # the -1 is for HIGHEST_PROTOCOL
+    # this will overwrite current contents and it triggers much more efficient storage than numpy's default
+    save_file = open(detection_model_path, 'wb')
+    pickle.dump(dataset_path, save_file, -1)
+    pickle.dump(img_dim, save_file, -1)
+    pickle.dump(kernel_dim, save_file, -1)
+    pickle.dump(nkerns, save_file, -1)
+    pickle.dump(mlp_layers, save_file, -1)
+    pickle.dump(pool_size, save_file, -1)
+    pickle.dump(layer0.W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer0.b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer1.W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer1.b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer2.W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer2.b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer3.W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer4.W.get_value(borrow=True), save_file, -1)
+    pickle.dump(layer4.b.get_value(borrow=True), save_file, -1)
+    save_file.close()
+
+
 def train_from_scatch(dataset_path, detection_model_path, learning_rate=0.1, n_epochs=10, batch_size=500,
-                      nkerns=(40, 40*9), mlp_layers=(800, 29), kernel_dim=(5, 5), img_dim=28,
+                      nkerns=(40, 40 * 9), mlp_layers=(800, 29), kernel_dim=(5, 5), img_dim=28,
                       pool_size=(2, 2), classifier=CNN.enums.ClassifierType.logit):
     datasets = CNN.utils.load_data(dataset_path)
 

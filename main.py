@@ -1,5 +1,3 @@
-__author__ = 'Noureldien'
-
 from builtins import print
 
 import CNN
@@ -74,31 +72,39 @@ print('Traffic Sign Recognition')
 
 # region Recognition (Model 80)
 
-img_dim_80 = 80
-img_dim_28 = 28
-
-gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model.pkl'
-superclass_model_80 = 'D:\\_Dataset\\SuperClass\\cnn_model_80.pkl'
-superclass_model_80_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_80_svm.pkl'
-gtsrb_dataset_80 = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl'
+# img_dim_80 = 80
+# img_dim_28 = 28
+#
+# gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
+# superclass_model_80 = 'D:\\_Dataset\\SuperClass\\cnn_model_80.pkl'
+# superclass_model_80_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_80_svm.pkl'
+# gtsrb_dataset_80 = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl'
 
 # CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)
 # CNN.utils.serialize_gtsr(img_dim_28)
 # CNN.utils.organize_gtsr(img_dim_28)
-# CNN.utils.remap_class_ids()
+# CNN.utils.remap_class_ids(img_dim_80)
 # CNN.utils.check_database_4()
 
 # train model on mnist database
-# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.1, n_epochs=20, kernel_dim=(13, 5, 4),
-#                     nkerns=(10, 50, 200), mlp_layers=(500, 17), batch_size=10)
+# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
+#                     nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
 
 # just make sure that the train_deep network is working
-# CNN.recog.train_deep(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', n_epochs=5, batch_size=50, img_dim=28,
-#                     learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(10, 50, 200), mlp_layers=(200, 15), pool_size=(2, 2))
+# d = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl'
+# CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=10, img_dim=28, learning_rate=0.01, kernel_dim=(5, 3, 3), nkerns=(10, 80, 200), mlp_layers=(500, 12), pool_size=(2, 2)) # 40.0%
+# CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=5, img_dim=28, learning_rate=0.01, kernel_dim=(5, 3, 3), nkerns=(10, 80, 200), mlp_layers=(500, 12), pool_size=(2, 2)) # 9.0%
+# CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=5, img_dim=28, learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(10, 80, 200), mlp_layers=(500, 12), pool_size=(2, 2)) # 4.0%
+# CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=20, img_dim=28, learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(20, 160, 400), mlp_layers=(800, 12), pool_size=(2, 2)) # 3.4%
 
-CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl',
-                        learning_rate=0.1, n_epochs=2, nkerns=(20, 100), mlp_layers=(300, 12), batch_size=50)
+# this one works good
+# CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28_original.pkl', img_dim=28,
+#                        learning_rate=0.1, n_epochs=2, nkerns=(20, 100), mlp_layers=(300, 10), batch_size=50)
+
+# this one does not
+# CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', img_dim=28,
+#                        learning_rate=0.1, n_epochs=2, nkerns=(20, 80), mlp_layers=(400, 12), batch_size=50)
 
 # endregion
 
@@ -108,7 +114,7 @@ CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pk
 # gtsdb_model_28 = 'D:\\_Dataset\\GTSDB\\cnn_model.pkl'
 
 # extract region images to train the detector
-# CNN.utils.rerialize_gtsdb()
+# CNN.utils.serialize_gtsdb()
 # CNN.utils.organize_gtsdb()
 
 # train the detector
@@ -126,5 +132,55 @@ CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pk
 # CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\00025.png", model_path=gtsdb_model_28)
 # CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\_img2.png", model_path=gtsdb_model_28)
 
+
+# endregion
+
+# region (Detection Model 80)
+
+img_dim_80 = 80
+
+gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
+gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
+gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\cnn_model_80.pkl'
+
+# extract region images to train the detector
+# CNN.utils.serialize_gtsdb(img_dim_80)
+# CNN.utils.organize_gtsdb(img_dim_80)
+
+# train the detector
+CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
+                     mlp_layers=(1200, 81), batch_size=5, learning_rate=0.05, n_epochs=2)  # 30.3%
+
+# train the detector from scratch
+# CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
+# CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1,
+#                            nkerns=(40, 40 * 9), mlp_layers=(800, 29), kernel_dim = (5, 5))  # 29.5%
+
+# test the detector
+# CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\00025.png", model_path=gtsdb_model_28)
+# CNN.detec.detect_img_from_file(img_path="D:\\_Dataset\\GTSDB\\Test_PNG\\_img2.png", model_path=gtsdb_model_28)
+
+
+
+
+
+
+
+
+
+img_dim_80 = 80
+
+gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
+
+# CNN.utils.preprocess_dataset_train(img_dim_80)
+# CNN.utils.preprocess_dataset_test(img_dim_80)
+# CNN.utils.serialize_gtsr(img_dim_28)
+# CNN.utils.organize_gtsr(img_dim_28)
+# CNN.utils.remap_class_ids(img_dim_80)
+# CNN.utils.check_database_4()
+
+# train model on mnist database
+# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
+#                     nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
 
 # endregion
