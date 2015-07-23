@@ -82,24 +82,23 @@ superclass_model_80 = 'D:\\_Dataset\\SuperClass\\cnn_model_80.pkl'
 superclass_model_80_svm = 'D:\\_Dataset\\SuperClass\\cnn_model_80_svm.pkl'
 gtsrb_dataset_80 = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl'
 
-CNN.utils.preprocess_dataset_train(img_dim_28)
+# CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)
-# CNN.utils.serialize_gtsr(img_dim_80)
-# CNN.utils.organize_gtsr(img_dim_80)
-#CNN.utils.downscale()
-#CNN.utils.remap_class_ids()
+# CNN.utils.serialize_gtsr(img_dim_28)
+# CNN.utils.organize_gtsr(img_dim_28)
+# CNN.utils.remap_class_ids()
 # CNN.utils.check_database_4()
 
 # train model on mnist database
-#CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.1, n_epochs=20, kernel_dim=(13, 5, 4),
+# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.1, n_epochs=20, kernel_dim=(13, 5, 4),
 #                     nkerns=(10, 50, 200), mlp_layers=(500, 17), batch_size=10)
 
 # just make sure that the train_deep network is working
-#CNN.recog.train_deep(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', n_epochs=5, batch_size=50, img_dim=28,
+# CNN.recog.train_deep(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', n_epochs=5, batch_size=50, img_dim=28,
 #                     learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(10, 50, 200), mlp_layers=(200, 15), pool_size=(2, 2))
 
-#CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl',
-#                        learning_rate=0.1, n_epochs=1, nkerns=(10, 70), mlp_layers=(150, 10), batch_size=50)
+CNN.recog.train_shallow(dataset_path='D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl',
+                        learning_rate=0.1, n_epochs=2, nkerns=(20, 100), mlp_layers=(300, 12), batch_size=50)
 
 # endregion
 

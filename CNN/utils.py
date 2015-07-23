@@ -177,7 +177,7 @@ def preprocess_dataset_test(img_dim):
 
 def preprocess_image_(filePathRead, filePathWrite, resize_dim=0):
     img = cv2.imread(filePathRead)
-    #if img.shape[0] < 40 or img.shape[1] < 40:
+    # if img.shape[0] < 40 or img.shape[1] < 40:
     #    return False
     img = preprocess_image(img, resize_dim)
     img *= 255
@@ -387,40 +387,65 @@ def serialize_gtsr(img_dim):
     train_classes = []
     test_images = []
     test_classes = []
+    all_test_names = []
+    all_test_classes = []
 
-    directoryTrain = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_%d\\" % (img_dim)
-    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed_%d\\" % (img_dim)
+    directoryTrain = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed"
+    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed"
     csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test_PNG\\GT-final_test.annotated.csv"
 
     # get the ground truth of the test data
-    test_classes = pickle.load(open("D:\\_Dataset\\GTSRB\\gtsrb_prohibitroy_classes.pkl", "rb"))
-    # prohib_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
-    # with open(csvFileName, newline='') as csvfile:
-    #     reader = csv.reader(csvfile, delimiter=';', quotechar='|')
-    #     for row in reader:
-    #         if row[7] == "ClassId":
-    #             continue
-    #         class_id = int(row[7])
-    #         if class_id in prohib_classes:
-    #             test_classes.append(class_id)
+    prohib_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    with open(csvFileName, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        for row in reader:
+            if row[7] == "ClassId":
+                continue
+            class_id = int(row[7])
+            if class_id in prohib_classes:
+                all_test_names.append(int(row[0][:-4]))
+                all_test_classes.append(class_id)
 
     # get the test data
+    smallest_dim = img_dim / 2
+    selected_test_names = []
     files = [f for f in listdir(directoryTest) if isfile(join(directoryTest, f))]
     for file in files:
         fileName = join(directoryTest, file)
-        fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
-        test_images.append(fileData)
+        fileID = int(file[:-4])
+        if not (fileID in all_test_names):
+            continue
+        img = cv2.imread(fileName, cv2.IMREAD_GRAYSCALE)
+        if img.shape[0] < smallest_dim or img.shape[1] < smallest_dim:
+            continue
+        img = skimage.transform.resize(img, output_shape=(img_dim, img_dim))
+        img = img.reshape(img_dim * img_dim, )
+        test_images.append(img)
+        selected_test_names.append(int(file[:-4]))
+
+    # now, loop on all the class_ids of the test
+    # and only choose the class_ids of the images resized
+    for name in selected_test_names:
+        index = all_test_names.index(name)
+        test_classes.append(all_test_classes[index])
 
     # get the training data
     sub_directories = [d for d in listdir(directoryTrain) if os.path.isdir(join(directoryTrain, d))]
     for d in sub_directories:
+        directoryID = int(d)
+        if not (int(d) in prohib_classes):
+            continue
         sub_directory = join(directoryTrain, d)
         onlyfiles = [f for f in listdir(sub_directory) if isfile(join(sub_directory, f))]
         for file in onlyfiles:
             fileName = join(sub_directory, file)
-            fileData = numpy.asarray(PIL.Image.open(fileName).getdata())
-            train_images.append(fileData)
-            train_classes.append(int(d))
+            img = cv2.imread(fileName, cv2.IMREAD_GRAYSCALE)
+            if img.shape[0] < smallest_dim or img.shape[1] < smallest_dim:
+                continue
+            img = skimage.transform.resize(img, output_shape=(img_dim, img_dim))
+            img = img.reshape(img_dim * img_dim, )
+            train_images.append(img)
+            train_classes.append(directoryID)
 
     # now, save the training and data
     train_set = (train_images, train_classes)
@@ -551,11 +576,11 @@ def organize_gtsr(img_dim):
 
     # change array to numpy
     # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
-    train_images = numpy.asarray(train_images_shuffled, dtype=float) / 255
+    train_images = numpy.asarray(train_images_shuffled, dtype=float)
     train_classes = numpy.asarray(train_classes_shuffled)
-    valid_images = numpy.asarray(valid_images_shuffled, dtype=float) / 255
+    valid_images = numpy.asarray(valid_images_shuffled, dtype=float)
     valid_classes = numpy.asarray(valid_classes_shuffled)
-    test_images = numpy.asarray(data[1][0], dtype=float) / 255
+    test_images = numpy.asarray(data[1][0], dtype=float)
     test_classes = numpy.asarray(data[1][1])
 
     # now, save the training and data
@@ -1246,13 +1271,12 @@ def check_database_3():
 
 
 def check_database_4():
-
     import math
 
     data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl', 'rb'))
 
-    images = data[0][0]
-    classes = data[0][1]
+    images = data[2][0]
+    classes = data[2][1]
     del data
 
     # get first column of the tuple (which represents the image, while second one represents the image class)
@@ -1297,7 +1321,7 @@ def remap_class_ids():
     # from [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
     # to   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
-    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new_copy.pkl', 'rb'))
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_copy.pkl', 'rb'))
 
     train_classes = numpy.zeros(shape=(0, 1), dtype=int)
     valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
@@ -1322,6 +1346,6 @@ def remap_class_ids():
         all_classes[i] = classes
 
     data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
-    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new.pkl', 'wb'))
+    pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28.pkl', 'wb'))
 
 # endregion
