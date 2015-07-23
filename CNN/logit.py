@@ -275,14 +275,11 @@ class MultiLogisticRegression(object):
                                name='b')
 
         self.h = T.dot(input, self.W) + self.b
-        self.p_y_given_x = []
         self.y_pred = []
         t = 0
         for idx in range(n_groups):
-            p_y_given_x = T.nnet.softmax(self.h[:, t:t + n_outs[idx]])
-            y_pred = T.argmax(p_y_given_x, axis=1)
+            y_pred = T.nnet.softmax(self.h[:, t:t + n_outs[idx]])
             t += n_outs[idx]
-            self.p_y_given_x.append(p_y_given_x)
             self.y_pred.append(y_pred)
 
             # parameters of the model
@@ -316,7 +313,13 @@ class MultiLogisticRegression(object):
         # i.e., the mean log-likelihood across the minibatch.
         cost = 0
         for idx in range(0, self.n_groups):
-            cost += -T.mean(T.log(self.p_y_given_x[idx])[T.arange(ys[:, idx].shape[0]), ys[:, idx]])
+            cost += -T.mean(T.log(self.y_pred[idx])[T.arange(ys[:, idx].shape[0]), ys[:, idx]])
+        return cost
+
+    def cost(self, ys):
+        cost = 0
+        for idx in range(0, self.n_groups):
+            cost += T.sum(T.pow(self.y_pred[idx] - ys[:, idx], 2))
         return cost
 
     def errors(self, ys, n_classes):
@@ -333,8 +336,8 @@ class MultiLogisticRegression(object):
                 # the error should be how close the predicted to the truth
                 # in other words, we will draw the predicted region and the original region
                 # and see how much is the difference
-                error = T.mean(T.neq(self.y_pred[idx], ys[:, idx]))
-                # error = T.mean(T.abs_(self.y_pred[idx] - ys[:, idx])) / n_classes
+                # error = T.mean(T.neq(self.y_pred[idx], ys[:, idx]))
+                error = T.mean(T.abs_(self.y_pred[idx] - ys[:, idx])) / n_classes
                 errs.append(error)
             else:
                 raise NotImplementedError()

@@ -23,6 +23,9 @@ References:
 import os
 import sys
 import time
+import cv2
+import PIL
+import PIL.Image
 
 import numpy
 
@@ -776,10 +779,26 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     save_file.close()
 
 
-def classify_img_from_file(img_path, model_path, classifier=CNN.enums.ClassifierType.logit, img_dim=28, is_rgb=False):
+def classify_imgs_from_files(imgs_pathes, model_path, classifier=CNN.enums.ClassifierType.logit, img_dim=28, is_rgb=False):
+    imgs = []
+    for path in imgs_pathes:
+        img = []
+        if is_rgb:
+            img = CNN.utils.rgb_to_gs(path)
+            img = img.astype(dtype='float64') / 255.0
+        else:
+            img = PIL.Image.open(path)
+            img = numpy.asarray(img, dtype='float64') / 255.0
+        imgs.append(img)
+
+    n = imgs.shape[1]
+    imgs = numpy.asarray(imgs.shape[0], n * n)
+    classify_batch(imgs, model_path, classifier)
+
+
+def classify_img_from_file(img_path, img_dim, model_path, model_type=CNN.enums.ModelType._01_conv2_mlp2,
+                           classifier=CNN.enums.ClassifierType.logit, is_rgb=False):
     # this is how to prepare an image to be used by the CNN model
-    import PIL
-    import PIL.Image
 
     img = []
     if is_rgb:
@@ -790,7 +809,7 @@ def classify_img_from_file(img_path, model_path, classifier=CNN.enums.Classifier
         img = numpy.asarray(img, dtype='float64') / 255.0
 
     img4D = img.reshape(1, 1, img_dim, img_dim)
-    return __classify_img(img4D, model_path, classifier)
+    return __classify_img(img4D, model_path, model_type, classifier)
 
 
 def classify_img_from_dataset(dataset_path, model_path, index, classifier=CNN.enums.ClassifierType.logit, img_dim=28):
@@ -943,8 +962,17 @@ def classify_batch_step_by_step(batch, model_path, classifier=CNN.enums.Classifi
     return c_result, c_prob, duration
 
 
-def __classify_img(img4D, model_path, classifier=CNN.enums.ClassifierType.logit):
-    loaded_objects = CNN.utils.load_model(model_path)
+def __classify_img(img4D, model_path, model_type=CNN.enums.ModelType._01_conv2_mlp2, classifier=CNN.enums.ClassifierType.logit):
+    if model_type == CNN.enums.ModelType._01_conv2_mlp2:
+        return __classify_img_shallow_model(img4D, model_path, classifier)
+    elif model_type == CNN.enums.ModelType._02_conv3_mlp2:
+        return __classify_img_deep_model(img4D, model_path, classifier)
+    else:
+        raise Exception("Unknown model type")
+
+
+def __classify_img_shallow_model(img4D, model_path, classifier=CNN.enums.ClassifierType.logit):
+    loaded_objects = CNN.utils.load_model(model_path, CNN.enums.ModelType._01_conv2_mlp2)
 
     img_dim = loaded_objects[1]
     kernel_dim = loaded_objects[2]
@@ -1001,6 +1029,97 @@ def __classify_img(img4D, model_path, classifier=CNN.enums.ClassifierType.logit)
                                                    hidden_output=hiddenLayer.output,
                                                    filters=layer1_filters, W=layer3_W,
                                                    b=layer3_b)
+    else:
+        raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
+
+    end_time = time.clock()
+
+    # that's because we only classified one image
+    c_result = c_result[0]
+    c_prob = c_prob[0]
+    c_duration = end_time - start_time
+
+    # __plot_filters_1(img4D, 1)
+    # __plot_filters_1(layer0_filters, 2)
+    # __plot_filters_1(layer1_filters, 3)
+    # __plot_filters_2(loaded_objects[6], 4)
+    # __plot_filters_2(loaded_objects[8], 5)
+
+    print('Classification result: %d in %f sec.' % (c_result, c_duration))
+    print('Classification confidence: %s' % (CNN.utils.numpy_to_string(c_prob)))
+
+    return c_result, c_prob, c_duration
+
+
+def __classify_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierType.logit):
+    loaded_objects = CNN.utils.load_model(model_path, CNN.enums.ModelType._02_conv3_mlp2)
+
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    mlp_layers = loaded_objects[4]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+    layer3_W = theano.shared(loaded_objects[12], borrow=True)
+    layer3_b = theano.shared(loaded_objects[13], borrow=True)
+    layer4_W = theano.shared(loaded_objects[14], borrow=True)
+    layer4_b = theano.shared(loaded_objects[15], borrow=True)
+
+    layer0_img_dim = img_dim
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+
+    start_time = time.clock()
+
+    # layer 0: Conv-Pool
+    filter_shape = (nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim)
+    image_shape = (1, 1, layer0_img_dim, layer0_img_dim)
+    (layer0_filters, layer0_output) = CNN.conv.filter_image(img=img4D, W=layer0_W, b=layer0_b, image_shape=image_shape,
+                                                            filter_shape=filter_shape, pool_size=pool_size)
+
+    # layer 1: Conv-Pool
+    filter_shape = (nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim)
+    image_shape = (1, nkerns[0], layer1_img_dim, layer1_img_dim)
+    (layer1_filters, layer1_output) = CNN.conv.filter_image(img=layer0_filters, W=layer1_W, b=layer1_b,
+                                                            image_shape=image_shape, filter_shape=filter_shape,
+                                                            pool_size=pool_size)
+
+    # layer 2: Conv-Pool
+    filter_shape = (nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim)
+    image_shape = (1, nkerns[1], layer2_img_dim, layer2_img_dim)
+    (layer2_filters, layer2_output) = CNN.conv.filter_image(img=layer1_filters, W=layer2_W, b=layer2_b,
+                                                            image_shape=image_shape, filter_shape=filter_shape,
+                                                            pool_size=pool_size)
+
+    # layer 3: hidden layer
+    hidden_n_in = nkerns[1] * layer3_img_dim * layer3_img_dim
+    layer2_output_flattened = layer2_output.flatten(2)
+    hiddenLayer = CNN.mlp.HiddenLayer(input=layer2_output_flattened, W=layer3_W, b=layer3_b, n_in=hidden_n_in,
+                                      n_out=mlp_layers[0], activation=T.tanh, rng=0)
+
+    # layer 4: logit (logistic regression) or SVM
+    c_result = []
+    c_prob = []
+    if classifier == CNN.enums.ClassifierType.logit:
+        c_result, c_prob = CNN.logit.classify_images(input_flatten=layer2_output_flattened,
+                                                     hidden_output=hiddenLayer.output,
+                                                     filters=layer2_filters, W=layer4_W,
+                                                     b=layer4_b)
+    elif classifier == CNN.enums.ClassifierType.svm:
+        c_result, c_prob = CNN.svm.classify_images(input_flatten=layer2_output_flattened,
+                                                   hidden_output=hiddenLayer.output,
+                                                   filters=layer2_filters, W=layer4_W,
+                                                   b=layer4_b)
     else:
         raise TypeError('Unknown classifier type, should be either logit or svm', ('classifier:', classifier))
 

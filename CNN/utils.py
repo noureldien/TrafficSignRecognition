@@ -25,7 +25,8 @@ import random
 # region Misc
 
 def numpy_to_string(arr):
-    return ", ".join(format(x, ".3f") for x in arr.tolist())
+    arr *= 100
+    return ", ".join(format(x, ".0f") + "%" for x in arr.tolist())
 
 
 # endregion
@@ -74,10 +75,17 @@ def load_data(dataset):
     return rval
 
 
-def load_model(model_path):
+def load_model(model_path, model_type=CNN.enums.ModelType._01_conv2_mlp2):
+    n = 0
+    if model_type == CNN.enums.ModelType._01_conv2_mlp2:
+        n = 14
+    elif model_type == CNN.enums.ModelType._02_conv3_mlp2:
+        n = 16
+    else:
+        raise Exception("Unknown model type")
     save_file = open(model_path, 'rb')
     loaded_objects = []
-    for i in range(14):
+    for i in range(n):
         loaded_objects.append(pickle.load(save_file))
     save_file.close()
     return loaded_objects
@@ -1003,6 +1011,8 @@ def serialize_gtsdb(img_dim, add_true_gegative=True):
                 y_range = numpy.arange(start=y2 - window_dim, stop=y1 + 1, step=stride, dtype=int).tolist()
                 x_range = numpy.arange(start=x2 - window_dim, stop=x1 + 1, step=stride, dtype=int).tolist()
 
+                # print("Window: %d, Stride: %d" %(window_dim, stride))
+
                 # if last x in x_range don't make the sliding window reach the end of the region
                 # then add one more x to the x_range to satisfy this
                 x_r_len = len(x_range)
@@ -1022,7 +1032,6 @@ def serialize_gtsdb(img_dim, add_true_gegative=True):
                         if x < 0 or y < 0 or (x + window_dim) > img_width or (y + window_dim) > img_height:
                             continue
 
-                        # TODO
                         # if using the extra-stride in the range makes the region get out of the window
                         # then rebound the window so we can take the last region before exiting the loop
 
@@ -1043,8 +1052,8 @@ def serialize_gtsdb(img_dim, add_true_gegative=True):
                         regions = numpy.vstack([regions, region])
 
                         # save region for experimenting/debugging
-                        # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
-                        # cv2.imwrite(filePathWrite, region.reshape((img_dim, img_dim))* 255)
+                        filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
+                        cv2.imwrite(filePathWrite, region.reshape((img_dim, img_dim)) * 255)
 
                 if add_true_gegative:
                     # add some true negatives to increase variance of the machine
@@ -1059,9 +1068,9 @@ def serialize_gtsdb(img_dim, add_true_gegative=True):
                 # saving images for experimenting/debugging
                 # ss_count = 0
                 # for s in regions_negative:
-                # ss_count += 1
-                # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:03d}".format(len(regions)) + "{0:02d}.png".format(ss_count)
-                # cv2.imwrite(filePathWrite, s.reshape((resize_dim, resize_dim)) * 255)
+                #     ss_count += 1
+                #     filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:03d}".format(len(regions)) + "{0:02d}.png".format(ss_count)
+                #     cv2.imwrite(filePathWrite, s.reshape((resize_dim, resize_dim)) * 255)
 
                 # now we up_scale the window
                 window_dim = int(window_dim * up_scale_factor)
