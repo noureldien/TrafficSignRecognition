@@ -188,7 +188,6 @@ class MLP(object):
         # end-snippet-3
 
 
-
 def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, dataset='mnist.pkl.gz', batch_size=20,
              n_hidden=500):
     """
@@ -234,8 +233,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, data
 
     # allocate symbolic variables for the data
     index = T.lscalar()  # index to a [mini]batch
-    x = T.matrix('x')    # the data is presented as rasterized images
-    y = T.ivector('y')   # the labels are presented as 1D vector of [int] labels
+    x = T.matrix('x')  # the data is presented as rasterized images
+    y = T.ivector('y')  # the labels are presented as 1D vector of [int] labels
 
     rng = numpy.random.RandomState(1234)
 

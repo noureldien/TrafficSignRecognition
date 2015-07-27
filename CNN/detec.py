@@ -366,7 +366,7 @@ def train_deep(dataset_path, recognition_model_path, detection_model_path='', le
     layer4 = CNN.logit.MultiLogisticRegression(input=layer3.output, n_in=mlp_layers[0], n_outs=layer4_n_outs)
 
     # the cost we minimize during training is the NLL of the model
-    cost = layer4.negative_log_likelihood(y)
+    cost = layer4.cost(y)
 
     # experimental, add L1, L2 regularization to the regressor
     # self.L1 = (

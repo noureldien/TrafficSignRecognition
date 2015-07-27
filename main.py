@@ -9,19 +9,21 @@ import numpy
 
 print('Traffic Sign Recognition')
 
-#import facial_keypoints
-#facial_keypoints.serialize_data()
-#facial_keypoints.train()
+# import facial_keypoints
+# facial_keypoints.serialize_data()
+# facial_keypoints.train()
 
-#import l_tutorial
-#l_tutorial.main(10)
+# import l_tutorial
+# l_tutorial.main(10)
 
 # region Recognition (Model 28)
 
 # img_dim_28 = 80
 
-# mnist_dataset = "D://_Dataset//MNIST//mnist.pkl"
-# gtsrb_dataset_28 = "D://_Dataset//GTSRB//gtsrb_normalized.pkl"
+mnist_dataset = "D://_Dataset//MNIST//mnist.pkl"
+CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.01, n_epochs=10, mlp_layers=(500, 1), nkerns=(10, 20), batch_size=100)
+
+# gtsrb_dataset_28 = "D://_Dataset//GTSRB//gtsrb_organized_28.pkl"
 # belgiumTS_dataset_28 = "D://_Dataset///BelgiumTS//BelgiumTS_normalized_28.pkl"
 # superclass_dataset_28 = "D://_Dataset//SuperClass//SuperClass_normalized.pkl"
 #
@@ -41,15 +43,15 @@ print('Traffic Sign Recognition')
 
 # train model on gtsrb database
 # CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, kernel_dim=(5, 5), nkerns=(100, 200), mpl_layers=(500, 10), batch_size=50)
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(20, 50), batch_size=50) # 3.73%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50) # 3.35%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(40, 100), batch_size=50) # 3.06%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50) # 2.77%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), batch_size=50, mlp_layers=(800, 10)) # 3.12%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(500, 10)) # 4.77%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(100, 10)) # 5.06%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), batch_size=50, mlp_layers=(200, 10)) # 4.31%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], batch_size=50, mlp_layers=(50, 10)) # 8.00%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50)  # 3.73%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50) # 3.35%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.1, n_epochs=5, nkerns=(40, 100), mlp_layers=(500, 12), batch_size=50) # 3.06%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), mlp_layers=(500, 12), batch_size=50) # 2.77%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=5, nkerns=(40, 100), mlp_layers=(500, 12), batch_size=50, mlp_layers=(800, 10)) # 3.12%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50, mlp_layers=(500, 10)) # 4.77%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50, mlp_layers=(100, 10)) # 5.06%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50, mlp_layers=(200, 10)) # 4.31%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], mlp_layers=(500, 12), batch_size=50, mlp_layers=(50, 10)) # 8.00%
 
 # test model on specific image
 # CNN.recog.classify_img_from_file("D://_Dataset//GTSRB//Final_Test_Preprocessed_28//00412.png", gtsrb_model_28)
@@ -143,17 +145,17 @@ print('Traffic Sign Recognition')
 
 # img_dim_80 = 80
 
-gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
-gtsdb_dataset_80 = 'D://_Dataset//GTSDB//gtsdb_prohibitory_organized_80.pkl'
-gtsdb_model_80 = 'D://_Dataset//GTSDB//cnn_model_80.pkl'
+# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
+# gtsdb_dataset_80 = 'D://_Dataset//GTSDB//gtsdb_prohibitory_organized_80.pkl'
+# gtsdb_model_80 = 'D://_Dataset//GTSDB//cnn_model_80.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True)
 # CNN.utils.organize_gtsdb(img_dim_80)
 
 # train the detector
-CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
-                    mlp_layers=(1200, 81), batch_size=5, learning_rate=0.01, n_epochs=1)  # 30.3% - 1.56%
+# CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
+#                     mlp_layers=(1200, 81), batch_size=5, learning_rate=0.01, n_epochs=1)  # 30.3% - 1.56%
 
 # train the detector from scratch
 # CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
