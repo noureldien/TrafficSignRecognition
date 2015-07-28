@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/detec.py" afterPath="$PROJECT_DIR$/CNN/detec.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/lasagne_experiment.py" afterPath="$PROJECT_DIR$/lasagne_experiment.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/logit.py" afterPath="$PROJECT_DIR$/CNN/logit.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/recog.py" afterPath="$PROJECT_DIR$/CNN/recog.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-    </list>
+    <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="" />
     <ignored path="hello_world.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -46,8 +39,8 @@
       <file leaf-file-name="recog.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CNN/recog.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.3258786">
-              <caret line="45" column="83" selection-start-line="45" selection-start-column="83" selection-end-line="45" selection-end-column="83" />
+            <state vertical-scroll-proportion="0.1086262">
+              <caret line="41" column="16" selection-start-line="41" selection-start-column="16" selection-end-line="41" selection-end-column="16" />
               <folding>
                 <element signature="e#0#921#1" expanded="false" />
                 <element signature="e#1432#11171#0" expanded="false" />
@@ -666,13 +659,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/numpy/lib/function_base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33009708">
-          <caret line="2977" column="72" selection-start-line="2977" selection-start-column="20" selection-end-line="2977" selection-end-column="72" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/skimage/util/shape.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.8930818">
@@ -927,18 +913,6 @@
         <state vertical-scroll-proportion="0.33206108">
           <caret line="448" column="30" selection-start-line="448" selection-start-column="30" selection-end-line="448" selection-end-column="30" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/facial_keypoints.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="127" column="18" selection-start-line="127" selection-start-column="8" selection-end-line="127" selection-end-column="18" />
-          <folding>
-            <element signature="e#438#1274#0" expanded="false" />
-            <element signature="e#649#1274#0" expanded="false" />
-            <element signature="e#2648#2676#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1558,23 +1532,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lasagne_mnist_tutorial.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.3458333">
-          <caret line="85" column="48" selection-start-line="85" selection-start-column="48" selection-end-line="85" selection-end-column="48" />
-          <folding>
-            <element signature="e#400#1202#0" expanded="false" />
-            <element signature="e#1323#2410#0" expanded="false" />
-            <element signature="e#1323#1652#1" expanded="false" />
-            <element signature="e#2640#4359#0" expanded="false" />
-            <element signature="e#2640#2733#1" expanded="false" />
-            <element signature="e#4421#5566#0" expanded="false" />
-            <element signature="e#4421#4540#1" expanded="false" />
-            <element signature="e#5606#6564#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/lasagne/layers/base.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1747,21 +1704,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lasagne_mnist_classification.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="116" column="30" selection-start-line="116" selection-start-column="30" selection-end-line="116" selection-end-column="30" />
-          <folding>
-            <element signature="e#188#1235#0" expanded="false" />
-            <element signature="e#1563#3229#0" expanded="false" />
-            <element signature="e#3346#4558#0" expanded="false" />
-            <element signature="e#4596#6448#0" expanded="false" />
-            <element signature="e#7133#7540#0" expanded="false" />
-            <element signature="e#7830#12503#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1826,54 +1768,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/kfkd.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="2.4285715">
-          <caret line="318" column="56" selection-start-line="318" selection-start-column="56" selection-end-line="318" selection-end-column="56" />
-          <folding>
-            <element signature="e#0#409#1" expanded="false" />
-            <element signature="e#1205#1233#0" expanded="false" />
-            <element signature="e#1273#2358#0" expanded="false" />
-            <element signature="e#1273#1438#1" expanded="false" />
-            <element signature="e#2400#2482#0" expanded="false" />
-            <element signature="e#2518#2674#0" expanded="false" />
-            <element signature="e#2708#3005#0" expanded="false" />
-            <element signature="e#3052#3884#0" expanded="false" />
-            <element signature="e#3259#3884#0" expanded="false" />
-            <element signature="e#3921#4361#0" expanded="false" />
-            <element signature="e#3979#4062#0" expanded="false" />
-            <element signature="e#4115#4361#0" expanded="false" />
-            <element signature="e#4397#5226#0" expanded="false" />
-            <element signature="e#4439#4563#0" expanded="false" />
-            <element signature="e#4616#5226#0" expanded="false" />
-            <element signature="e#6694#6799#0" expanded="false" />
-            <element signature="e#8422#9622#0" expanded="false" />
-            <element signature="e#9686#10630#0" expanded="false" />
-            <element signature="e#10661#10956#0" expanded="false" />
-            <element signature="e#11033#12431#0" expanded="false" />
-            <element signature="e#12449#12569#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lasagne_mnist_regression.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="2.3354633">
-          <caret line="301" column="13" selection-start-line="0" selection-start-column="0" selection-end-line="341" selection-end-column="0" />
-          <folding>
-            <element signature="e#228#1275#0" expanded="false" />
-            <element signature="e#1304#2516#0" expanded="false" />
-            <element signature="e#2539#2567#0" expanded="false" />
-            <element signature="e#2896#4851#0" expanded="false" />
-            <element signature="e#4877#6181#0" expanded="false" />
-            <element signature="e#6865#7272#0" expanded="false" />
-            <element signature="e#7550#11650#0" expanded="false" />
-            <element signature="e#11683#12443#0" expanded="false" />
-            <element signature="e#12464#13788#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1887,27 +1781,28 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lasagne_experiment.py">
+    <entry file="file://$PROJECT_DIR$/read_minst_db.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6517572">
-          <caret line="30" column="12" selection-start-line="30" selection-start-column="12" selection-end-line="30" selection-end-column="12" />
+        <state vertical-scroll-proportion="0.21086262">
+          <caret line="8" column="10" selection-start-line="8" selection-start-column="10" selection-end-line="8" selection-end-column="10" />
           <folding>
-            <element signature="e#664#692#0" expanded="false" />
-            <element signature="e#712#2585#0" expanded="false" />
-            <element signature="e#2622#3062#0" expanded="false" />
-            <element signature="e#2680#2763#0" expanded="false" />
-            <element signature="e#2816#3062#0" expanded="false" />
-            <element signature="e#3098#3927#0" expanded="false" />
-            <element signature="e#3140#3264#0" expanded="false" />
-            <element signature="e#3317#3927#0" expanded="false" />
+            <element signature="e#142#518#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/theano_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.2715655">
+          <caret line="7" column="59" selection-start-line="7" selection-start-column="59" selection-end-line="7" selection-end-column="59" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CNN/recog.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3258786">
-          <caret line="45" column="83" selection-start-line="45" selection-start-column="83" selection-end-line="45" selection-end-column="83" />
+        <state vertical-scroll-proportion="0.1086262">
+          <caret line="41" column="16" selection-start-line="41" selection-start-column="16" selection-end-line="41" selection-end-column="16" />
           <folding>
             <element signature="e#0#921#1" expanded="false" />
             <element signature="e#1432#11171#0" expanded="false" />
