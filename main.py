@@ -9,19 +9,6 @@ import numpy
 
 print('Traffic Sign Recognition')
 
-# import facial_keypoints
-# facial_keypoints.serialize_data()
-# facial_keypoints.train()
-
-# import l_tutorial
-# l_tutorial.main(10)
-
-import CodeSnippets.lasagne_mnist_regression
-# CodeSnippets.lasagne_mnist_regression.train_2()
-# CodeSnippets.lasagne_mnist_regression.test_2()
-# CodeSnippets.lasagne_mnist_regression.main_1()
-CodeSnippets.lasagne_mnist_regression.train_3()
-
 # region Recognition (Model 28)
 
 # img_dim_28 = 80
@@ -152,22 +139,19 @@ CodeSnippets.lasagne_mnist_regression.train_3()
 
 # img_dim_80 = 80
 
-# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
-# gtsdb_dataset_80 = 'D://_Dataset//GTSDB//gtsdb_prohibitory_organized_80.pkl'
-# gtsdb_model_80 = 'D://_Dataset//GTSDB//cnn_model_80.pkl'
+gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
+gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
+gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_80.pkl'
+# gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\cnn_model_80.pkl'
+
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True)
 # CNN.utils.organize_gtsdb(img_dim_80)
 
 # train the detector
-# CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
-#                     mlp_layers=(1200, 81), batch_size=5, learning_rate=0.01, n_epochs=1)  # 30.3% - 1.56%
-
-# train the detector from scratch
-# CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
-# CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1,
-#                            nkerns=(40, 40 * 9), mlp_layers=(800, 29), kernel_dim = (5, 5))  # 29.5%
+CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
+                     mlp_layers=(7200, 4), batch_size=200, n_epochs=20, learning_rate=0.01, momentum=0.9)
 
 # test the detector
 # CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00025.png", model_path=gtsdb_model_80)
@@ -196,5 +180,15 @@ CodeSnippets.lasagne_mnist_regression.train_3()
 # train model on mnist database
 # CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
 #                     nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
+
+# endregion
+
+# region Lasagne Training Classification/Regression
+
+# import CodeSnippets.lasagne_mnist_regression
+# CodeSnippets.lasagne_mnist_regression.train_1()
+# CodeSnippets.lasagne_mnist_regression.train_3()
+# CodeSnippets.lasagne_mnist_regression.train_2()
+# CodeSnippets.lasagne_mnist_regression.test_2()
 
 # endregion

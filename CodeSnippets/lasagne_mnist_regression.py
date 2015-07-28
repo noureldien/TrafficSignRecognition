@@ -320,15 +320,18 @@ def train_3():
         for batch in iterate_minibatches(X_train, y_train, 500):
             inputs, targets = batch
             network.fit(inputs, targets)
-            pred = network.predict(inputs).reshape(-1, )
-            pred -= np.min(pred)
-            pred *= 9.0 / (np.max(pred))
-            targets = targets.reshape(-1, )
-            targets = (targets + 1) * 9 / 2
-            error = np.mean(np.abs(pred - targets)) * 100 / 9.0
-            train_err += error
-            train_batches += 1
-            print("... epoch: %d/%d, mini-batch: %d, error: %f" % (epoch + 1, num_epochs, train_batches, error))
+            # no need to do predictions for the mini-batch
+            # if you set verbous option in the network, it will
+            # print the RMSE after fitting each mini-batch
+            # pred = network.predict(inputs).reshape(-1, )
+            # pred -= np.min(pred)
+            # pred *= 9.0 / (np.max(pred))
+            # targets = targets.reshape(-1, )
+            # targets = (targets + 1) * 9 / 2
+            # error = np.mean(np.abs(pred - targets)) * 100 / 9.0
+            # train_err += error
+            # train_batches += 1
+            # print("... epoch: %d/%d, mini-batch: %d, error: %f" % (epoch + 1, num_epochs, train_batches, error))
 
     print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
     model_path = "D:\\_Dataset\\GTSRB\\las_model_mnist_28_2.pkl"

@@ -9,6 +9,11 @@ import skimage.transform
 import numpy
 import theano
 import theano.tensor as T
+
+import nolearn
+import nolearn.lasagne
+import lasagne
+
 import pickle
 import CNN
 import CNN.svm
@@ -267,8 +272,146 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
     save_file.close()
 
 
-def train_deep(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=10,
-               mlp_layers=(1000, 4), classifier=CNN.enums.ClassifierType.logit):
+def train_deep(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, momentum=0.9,
+               n_epochs=10, batch_size=500, mlp_layers=(1000, 4)):
+    # do all the cov+pool computation using theano
+    # while train the regressor of the detector using nolearn and lasagne
+    # don't forget to operate on batches becuase:
+    # 1. you can't convolve all the training image in once shot
+    # 2. to train better regressor
+
+    # load model and read it's parameters
+    # the same weights of the convolutional layers will be used
+    # in training the detector
+    loaded_objects = CNN.utils.load_model(recognition_model_path, CNN.enums.ModelType._02_conv3_mlp2)
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    old_mlp_layers = loaded_objects[4]
+    pool_size = loaded_objects[5]
+    rng = numpy.random.RandomState(23455)
+
+    # load the data and normalize the target to be from range [-1, 1]
+    print('... loading data')
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    train_x, train_y_int = dataset[0]
+    valid_x, valid_y_int = dataset[1]
+    test_x, test_y_int = dataset[2]
+    train_y = ((train_y_int * 2) - img_dim).astype("float32") / img_dim
+    valid_y = ((valid_y_int * 2) - img_dim).astype("float32") / img_dim
+    test_y = ((test_y_int * 2) - img_dim).astype("float32") / img_dim
+
+    # first, filter the given input images using the weights of the filters
+    # of the given class_model_path
+    # then, train a mlp as a regression model not classification
+    # then save all of the cnn_model and the regression_model into a file 'det_model_path'
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+
+    layer0_input = T.tensor4('input')
+    layer0_img_dim = img_dim
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+    layer3_input_shape = (batch_size, nkerns[2] * layer3_img_dim * layer3_img_dim)
+
+    # layer 0, 1, 2: Conv-Pool
+    layer0_output = CNN.conv.convpool_layer(
+        input=layer0_input, W=layer0_W, b=layer0_b,
+        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
+        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
+        pool_size=pool_size
+    )
+    layer1_output = CNN.conv.convpool_layer(
+        input=layer0_output, W=layer1_W, b=layer1_b,
+        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
+        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
+        pool_size=pool_size
+    )
+    layer2_output = CNN.conv.convpool_layer(
+        input=layer1_output, W=layer2_W, b=layer2_b,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        pool_size=pool_size
+    )
+    # do the filtering using 3 layers of Conv+Pool
+    conv_fn = theano.function([layer0_input], layer2_output)
+
+    #########################################
+    #       Build the regression model      #
+    #########################################
+    print("... building the regression model")
+    nn_regression = nolearn.lasagne.NeuralNet(
+        layers=[
+            ('input', lasagne.layers.InputLayer),
+            ('hidden1', lasagne.layers.DenseLayer),
+            ('dropout1', lasagne.layers.DropoutLayer),
+            ('hidden2', lasagne.layers.DenseLayer),
+            ('output', lasagne.layers.DenseLayer),
+        ],
+        input_shape=layer3_input_shape,
+        hidden1_num_units=mlp_layers[0],
+        dropout1_p=0.5,
+        hidden2_num_units=int(mlp_layers[0] / 2),
+        output_num_units=mlp_layers[1], output_nonlinearity=None,
+        update_learning_rate=theano.shared(CNN.utils.float32(learning_rate)),
+        update_momentum=theano.shared(CNN.utils.float32(momentum)),
+        batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
+        eval_size=0.0,
+        regression=True,
+        max_epochs=1,
+        verbose=1,
+    )
+
+    ##############################
+    # Train The Regression Model #
+    ##############################
+    n_minibatches = int(train_y.shape[0] / batch_size)
+    # Finally, launch the training loop.
+    print("... training the regression model")
+    print("... in total, %d samples in training" % (train_y.shape[0]))
+    print("... since we have batch size of %d" % (batch_size))
+    print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
+    start_time = time.clock()
+    # We iterate over epochs:
+    for epoch in range(n_epochs):
+        # In each epoch, we do a full pass over the training data:
+        train_err = 0
+        train_batches = 0
+        start_time = time.time()
+        for batch in CNN.utils.iterate_minibatches(train_x, train_y, batch_size):
+            train_batches += 1
+            inputs, targets = batch
+            inputs_reshaped = inputs.reshape(-1, 1, layer0_img_dim, layer0_img_dim)
+            filters = conv_fn(inputs_reshaped)
+            filters = filters.reshape(layer3_input_shape).astype("float32")
+            nn_regression.fit(filters, targets)
+            print("... epoch: %d/%d, mini-batch: %d/%d" % (epoch + 1, n_epochs, train_batches, n_minibatches))
+
+        # for more tuning, decrease learning rate and increase momentum
+        # after every epoch
+        # nn_regression.set_params()
+        momentum *= 1.05
+        learning_rate *= 0.95
+
+    end_time = time.clock()
+    duration = (end_time - start_time) / 60.0
+    print("... finish training the model, total time consumed: %f" % (duration))
+    model_path = "D:\\_Dataset\\GTSDB\\las_model_80.pkl"
+    with open(model_path, "wb") as f:
+        pickle.dump(nn_regression, f, -1)
+
+
+def train_deep_old(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=10,
+                   mlp_layers=(1000, 4), classifier=CNN.enums.ClassifierType.logit):
     datasets = CNN.utils.load_data(dataset_path)
 
     train_set_x, train_set_y = datasets[0]

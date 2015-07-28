@@ -173,7 +173,7 @@ def train_linear_classifier(dataset_path, model_path='', img_dim=28, learning_ra
     # updates = [(param_i, param_i - learning_rate * grad_i) for param_i, grad_i in zip(params, grads)]
     updates = []
     i = 0
-    l_rate_slow = 0.1
+    l_rate_slow = 0.01
     l_rate_fast = 0.1
     for param_i, grad_i in zip(params, grads):
         l_rate = l_rate_slow if i == 0 else l_rate_fast
