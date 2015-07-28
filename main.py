@@ -16,12 +16,16 @@ print('Traffic Sign Recognition')
 # import l_tutorial
 # l_tutorial.main(10)
 
+import lasagne_mnist_regression
+#lasagne_mnist_regression.main_2(10)
+lasagne_mnist_regression.test_2()
+
 # region Recognition (Model 28)
 
 # img_dim_28 = 80
 
-mnist_dataset = "D://_Dataset//MNIST//mnist.pkl"
-CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.01, n_epochs=10, mlp_layers=(500, 1), nkerns=(10, 20), batch_size=100)
+#mnist_dataset = "D://_Dataset//MNIST//mnist.pkl"
+#CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.1, n_epochs=10, mlp_layers=(500, 1), nkerns=(10, 20), batch_size=100)
 
 # gtsrb_dataset_28 = "D://_Dataset//GTSRB//gtsrb_organized_28.pkl"
 # belgiumTS_dataset_28 = "D://_Dataset///BelgiumTS//BelgiumTS_normalized_28.pkl"
@@ -116,18 +120,19 @@ CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.01
 
 # region Detection (Model 28)
 
-# gtsdb_dataset_28 = 'D://_Dataset//GTSDB//gtsdb_prohibitory_organized.pkl'
-# gtsdb_model_28 = 'D://_Dataset//GTSDB//cnn_model.pkl'
+# gtsrb_model_28 = 'D://_Dataset//GTSRB//cnn_model_28.pkl'
+# gtsdb_dataset_28 = 'D://_Dataset//GTSDB//gtsdb_prohibitory_organized_28.pkl'
+# gtsdb_model_28 = 'D://_Dataset//GTSDB//cnn_model_28.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb()
 # CNN.utils.organize_gtsdb()
 
 # train the detector
-# CNN.detec.train(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, detection_model_path=gtsdb_model_28, batch_size=500, learning_rate=0.01, n_epochs=1) # 10.01%
-# CNN.detec.train(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, detection_model_path=gtsdb_model_28, batch_size=100, learning_rate=0.1, n_epochs=1) # 7.48%
-# CNN.detec.train(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
-# CNN.detec.train(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1)
+# CNN.detec.train_shallow(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, detection_model_path=gtsdb_model_28, batch_size=500, learning_rate=0.01, n_epochs=1) # 10.01%
+# CNN.detec.train_shallow(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.005, n_epochs=1) # 7.48%
+# CNN.detec.train_shallow(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
+# CNN.detec.train_shallow(dataset_path=gtsdb_dataset_28, recognition_model_path=gtsrb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1)
 
 # train the detector from scratch
 # CNN.detec.train_from_scatch(dataset_path=gtsdb_dataset_28, detection_model_path=gtsdb_model_28, batch_size=10, learning_rate=0.1, n_epochs=1) # 29.5 %
@@ -175,9 +180,9 @@ CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.01
 
 
 
-img_dim_80 = 80
+#img_dim_80 = 80
 
-gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
+#gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
 
 # CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)

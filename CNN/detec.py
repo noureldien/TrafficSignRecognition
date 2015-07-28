@@ -98,7 +98,7 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
     )
 
     # Layer 2: the HiddenLayer being fully-connected, it operates on 2D matrices
-    layer2 = HiddenLayer(
+    layer2 = CNN.mlp.HiddenLayer(
         rng,
         input=layer1.output.flatten(2),
         n_in=nkerns[1] * layer2_img_dim * layer2_img_dim,
@@ -107,11 +107,11 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
     )
 
     # Layer 3: classify the values of the fully-connected sigmoidal layer
-    layer3_n_outs = [mlp_layers[1]] * 4
-    layer3 = CNN.logit.MultiLogisticRegression(input=layer2.output, n_in=mlp_layers[0], n_outs=layer3_n_outs)
+    layer3_n_outs = [1] * 4
+    layer3 = CNN.logit.MultiLinearRegression(input=layer2.output, n_in=mlp_layers[0], n_outs=layer3_n_outs)
 
     # the cost we minimize during training is the NLL of the model
-    cost = layer3.negative_log_likelihood(y)
+    cost = layer3.cost(y)
 
     # experimental, add L1, L2 regularization to the regressor
     # self.L1 = (
@@ -183,6 +183,7 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
     # on the validation set; in this case we
     # check every epoch
 
+    print("... validation freq: %d" % validation_frequency)
     best_validation_loss = numpy.inf
     best_iter = 0
     test_score = 0.
@@ -267,7 +268,7 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
 
 
 def train_deep(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=10,
-               mlp_layers=(1000, 81), classifier=CNN.enums.ClassifierType.logit):
+               mlp_layers=(1000, 4), classifier=CNN.enums.ClassifierType.logit):
     datasets = CNN.utils.load_data(dataset_path)
 
     train_set_x, train_set_y = datasets[0]
@@ -363,7 +364,7 @@ def train_deep(dataset_path, recognition_model_path, detection_model_path='', le
 
     # layer 4: classify the values of the fully-connected sigmoidal layer
     layer4_n_outs = [mlp_layers[1]] * 4
-    layer4 = CNN.logit.MultiLogisticRegression(input=layer3.output, n_in=mlp_layers[0], n_outs=layer4_n_outs)
+    layer4 = CNN.logit.MultiLinearRegression(input=layer3.output, n_in=mlp_layers[0], n_outs=layer4_n_outs)
 
     # the cost we minimize during training is the NLL of the model
     cost = layer4.cost(y)

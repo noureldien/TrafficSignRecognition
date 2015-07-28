@@ -43,7 +43,7 @@ import CNN.enums
 
 
 def train_linear_classifier(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
-          mlp_layers=(500, 10), batch_size=50, pool_size=(2, 2)):
+                            mlp_layers=(500, 10), batch_size=50, pool_size=(2, 2)):
     """ Demonstrates cnn on the given dataset
 
     :type learning_rate: float
@@ -170,7 +170,15 @@ def train_linear_classifier(dataset_path, model_path='', img_dim=28, learning_ra
     # manually create an update rule for each model parameter. We thus
     # create the updates list by automatically looping over all
     # (params[i], grads[i]) pairs.
-    updates = [(param_i, param_i - learning_rate * grad_i) for param_i, grad_i in zip(params, grads)]
+    # updates = [(param_i, param_i - learning_rate * grad_i) for param_i, grad_i in zip(params, grads)]
+    updates = []
+    i = 0
+    l_rate_slow = 0.1
+    l_rate_fast = 0.1
+    for param_i, grad_i in zip(params, grads):
+        l_rate = l_rate_slow if i == 0 else l_rate_fast
+        updates.append((param_i, param_i - l_rate * grad_i))
+        i += 1
 
     train_model = theano.function(
         [index],

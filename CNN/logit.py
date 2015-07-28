@@ -49,8 +49,8 @@ class LinearRegression(object):
         # x is a matrix where row-j  represents input training sample-j
         # b is a vector where element-k represent the free parameter of hyper
         # plain-k
-        self.p_y_given_x = T.dot(input, self.W) + self.b
-        self.y_pred = self.p_y_given_x[:, 0]
+        p_y_given_x = T.dot(input, self.W) + self.b
+        self.y_pred = p_y_given_x[:, 0]
 
         # parameters of the model
         self.params = [self.W, self.b]
@@ -60,7 +60,11 @@ class LinearRegression(object):
         # cost = T.sum(T.pow(prediction-y,2))
         # cost = T.sum(T.sqr(y - self.y_pred))
         # cost = T.sum(T.sqr(y - self.y_pred))
-        cost = T.mean(T.sqr(y - self.y_pred))
+        # cost = T.mean(T.sqr(y - self.y_pred))
+        # cost = T.sum(T.sqr((y - self.y_pred) ** 2))
+        # cost = T.mean(T.sqr(T.abs_(y - self.y_pred)))
+        # cost = T.mean((y - self.y_pred) ** 2)
+        cost = T.mean(T.abs_(y - self.y_pred))
         return cost
 
     def errors(self, y):
@@ -86,7 +90,9 @@ class LinearRegression(object):
             # error = T.mean(T.neq(self.y_pred, y))
             # error = T.sqr(T.mean(T.pow(self.y_pred - y, 2)))
             # error = T.sum(T.sqr(y - self.y_pred))
-            error = T.mean(T.sqr(y - self.y_pred))
+            # error = T.mean(T.sqr(y - self.y_pred))
+            # error = T.sum(T.sqr((y - self.y_pred) ** 2))
+            error = T.sum(T.sqr(T.abs_(y - self.y_pred)))
             return error
         else:
             raise NotImplementedError()
@@ -133,7 +139,7 @@ class MultiLinearRegression(object):
         self.y_pred = []
         t = 0
         for idx in range(n_groups):
-            p_y_given_x = T.dot(self.h[:, t:t + n_outs[idx]])
+            p_y_given_x = self.h[:, t:t + n_outs[idx]]
             y_pred = p_y_given_x[:, 0]
             t += n_outs[idx]
             self.p_y_given_x.append(p_y_given_x)
