@@ -16,16 +16,18 @@ print('Traffic Sign Recognition')
 # import l_tutorial
 # l_tutorial.main(10)
 
-import lasagne_mnist_regression
-#lasagne_mnist_regression.main_2(10)
-lasagne_mnist_regression.test_2()
+import CodeSnippets.lasagne_mnist_regression
+# CodeSnippets.lasagne_mnist_regression.train_2()
+# CodeSnippets.lasagne_mnist_regression.test_2()
+# CodeSnippets.lasagne_mnist_regression.main_1()
+CodeSnippets.lasagne_mnist_regression.train_3()
 
 # region Recognition (Model 28)
 
 # img_dim_28 = 80
 
-#mnist_dataset = "D://_Dataset//MNIST//mnist.pkl"
-#CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.1, n_epochs=10, mlp_layers=(500, 1), nkerns=(10, 20), batch_size=100)
+# mnist_dataset = "D://_Dataset//MNIST//mnist.pkl"
+# CNN.recog.train_linear_classifier(dataset_path=mnist_dataset, learning_rate=0.1, n_epochs=10, mlp_layers=(500, 1), nkerns=(10, 20), batch_size=100)
 
 # gtsrb_dataset_28 = "D://_Dataset//GTSRB//gtsrb_organized_28.pkl"
 # belgiumTS_dataset_28 = "D://_Dataset///BelgiumTS//BelgiumTS_normalized_28.pkl"
@@ -180,9 +182,9 @@ lasagne_mnist_regression.test_2()
 
 
 
-#img_dim_80 = 80
+# img_dim_80 = 80
 
-#gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
+# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
 
 # CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)

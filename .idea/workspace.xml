@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="" />
+    <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/facial_keypoints.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/kfkd.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/lasagne_experiment.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/lasagne_mnist_classification.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/lasagne_mnist_regression.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/lasagne_mnist_tutorial.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/read_minst_db.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CodeSnippets/theano_test.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="hello_world.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -25,21 +36,40 @@
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="20" column="33" selection-start-line="20" selection-start-column="33" selection-end-line="20" selection-end-column="33" />
+              <caret line="22" column="45" selection-start-line="22" selection-start-column="38" selection-end-line="22" selection-end-column="45" />
               <folding>
-                <element signature="e#393#424#0" expanded="false" />
-                <element signature="e#5437#5468#0" expanded="false" />
-                <element signature="e#7383#7412#0" expanded="false" />
-                <element signature="e#9145#9174#0" expanded="false" />
+                <element signature="e#531#562#0" expanded="false" />
+                <element signature="e#5577#5608#0" expanded="false" />
+                <element signature="e#7523#7552#0" expanded="false" />
+                <element signature="e#9285#9314#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="recog.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="lasagne_mnist_regression.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_mnist_regression.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.21726191">
+              <caret line="328" column="30" selection-start-line="328" selection-start-column="30" selection-end-line="328" selection-end-column="30" />
+              <folding>
+                <element signature="e#228#1275#0" expanded="false" />
+                <element signature="e#1304#2574#0" expanded="false" />
+                <element signature="e#2597#2625#0" expanded="false" />
+                <element signature="e#2954#4909#0" expanded="false" />
+                <element signature="e#4935#6262#0" expanded="false" />
+                <element signature="e#6946#7353#0" expanded="false" />
+                <element signature="e#7620#11898#0" expanded="false" />
+                <element signature="e#11920#12454#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="recog.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CNN/recog.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.1086262">
+            <state vertical-scroll-proportion="0.0">
               <caret line="41" column="16" selection-start-line="41" selection-start-column="16" selection-end-line="41" selection-end-column="16" />
               <folding>
                 <element signature="e#0#921#1" expanded="false" />
@@ -140,8 +170,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/../hello_world/learn_python.py" />
-        <option value="$PROJECT_DIR$/../hello_world/learn_classes.py" />
         <option value="$PROJECT_DIR$/../hello_world/learn_types.py" />
         <option value="$PROJECT_DIR$/../hello_world/read_minst_db.py" />
         <option value="$PROJECT_DIR$/../hello_world/learn_generators.py" />
@@ -189,8 +217,10 @@
         <option value="$USER_HOME$/Anaconda3/Lib/site-packages/theano/tensor/signal/downsample.py" />
         <option value="$PROJECT_DIR$/lasagne_mnist.py" />
         <option value="$PROJECT_DIR$/kfkd.py" />
-        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/lasagne_mnist_regression.py" />
+        <option value="$USER_HOME$/Anaconda3/Lib/site-packages/nolearn/lasagne/base.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/CodeSnippets/lasagne_mnist_regression.py" />
       </list>
     </option>
   </component>
@@ -597,7 +627,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3048576" sideWeight="0.49702382" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -607,11 +637,11 @@
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.400335" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3283082" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20163691" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20163691" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.67504185" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5029762" order="11" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.42881072" sideWeight="0.48363096" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.39028475" sideWeight="0.48363096" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -637,13 +667,6 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$USER_HOME$/Anaconda3/Lib/site-packages/nolearn/lasagne/base.py</url>
-          <line>399</line>
-          <option name="timeStamp" value="1135" />
-        </line-breakpoint>
-      </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
@@ -654,7 +677,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="1152" />
+      <option name="time" value="1164" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -1712,9 +1735,50 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/nolearn/lasagne/base.py">
+    <entry file="file://$PROJECT_DIR$/CNN/recog.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
+          <caret line="41" column="16" selection-start-line="41" selection-start-column="16" selection-end-line="41" selection-end-column="16" />
+          <folding>
+            <element signature="e#0#921#1" expanded="false" />
+            <element signature="e#1432#11171#0" expanded="false" />
+            <element signature="e#1432#1903#1" expanded="false" />
+            <element signature="e#11381#20880#0" expanded="false" />
+            <element signature="e#11381#11852#1" expanded="false" />
+            <element signature="e#21092#31390#0" expanded="false" />
+            <element signature="e#21092#21563#1" expanded="false" />
+            <element signature="e#31600#41360#0" expanded="false" />
+            <element signature="e#31600#32071#1" expanded="false" />
+            <element signature="e#41491#41922#0" expanded="false" />
+            <element signature="e#42119#42528#0" expanded="false" />
+            <element signature="e#42654#43000#0" expanded="false" />
+            <element signature="e#43089#46236#0" expanded="false" />
+            <element signature="e#46338#49757#0" expanded="false" />
+            <element signature="e#49893#50207#0" expanded="false" />
+            <element signature="e#50310#54147#0" expanded="false" />
+            <element signature="e#54247#58711#0" expanded="false" />
+            <element signature="e#58761#59095#0" expanded="false" />
+            <element signature="e#59145#59479#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="22" column="45" selection-start-line="22" selection-start-column="38" selection-end-line="22" selection-end-column="45" />
+          <folding>
+            <element signature="e#531#562#0" expanded="false" />
+            <element signature="e#5577#5608#0" expanded="false" />
+            <element signature="e#7523#7552#0" expanded="false" />
+            <element signature="e#9285#9314#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/nolearn/lasagne/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.50209206">
           <caret line="144" column="31" selection-start-line="144" selection-start-column="31" selection-end-line="144" selection-end-column="31" />
           <folding>
             <element signature="e#931#935#0" expanded="false" />
@@ -1768,61 +1832,19 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
+    <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_mnist_regression.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="20" column="33" selection-start-line="20" selection-start-column="33" selection-end-line="20" selection-end-column="33" />
+        <state vertical-scroll-proportion="0.21726191">
+          <caret line="328" column="30" selection-start-line="328" selection-start-column="30" selection-end-line="328" selection-end-column="30" />
           <folding>
-            <element signature="e#393#424#0" expanded="false" />
-            <element signature="e#5437#5468#0" expanded="false" />
-            <element signature="e#7383#7412#0" expanded="false" />
-            <element signature="e#9145#9174#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/read_minst_db.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.21086262">
-          <caret line="8" column="10" selection-start-line="8" selection-start-column="10" selection-end-line="8" selection-end-column="10" />
-          <folding>
-            <element signature="e#142#518#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/theano_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.2715655">
-          <caret line="7" column="59" selection-start-line="7" selection-start-column="59" selection-end-line="7" selection-end-column="59" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CNN/recog.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.1086262">
-          <caret line="41" column="16" selection-start-line="41" selection-start-column="16" selection-end-line="41" selection-end-column="16" />
-          <folding>
-            <element signature="e#0#921#1" expanded="false" />
-            <element signature="e#1432#11171#0" expanded="false" />
-            <element signature="e#1432#1903#1" expanded="false" />
-            <element signature="e#11381#20880#0" expanded="false" />
-            <element signature="e#11381#11852#1" expanded="false" />
-            <element signature="e#21092#31390#0" expanded="false" />
-            <element signature="e#21092#21563#1" expanded="false" />
-            <element signature="e#31600#41360#0" expanded="false" />
-            <element signature="e#31600#32071#1" expanded="false" />
-            <element signature="e#41491#41922#0" expanded="false" />
-            <element signature="e#42119#42528#0" expanded="false" />
-            <element signature="e#42654#43000#0" expanded="false" />
-            <element signature="e#43089#46236#0" expanded="false" />
-            <element signature="e#46338#49757#0" expanded="false" />
-            <element signature="e#49893#50207#0" expanded="false" />
-            <element signature="e#50310#54147#0" expanded="false" />
-            <element signature="e#54247#58711#0" expanded="false" />
-            <element signature="e#58761#59095#0" expanded="false" />
-            <element signature="e#59145#59479#0" expanded="false" />
+            <element signature="e#228#1275#0" expanded="false" />
+            <element signature="e#1304#2574#0" expanded="false" />
+            <element signature="e#2597#2625#0" expanded="false" />
+            <element signature="e#2954#4909#0" expanded="false" />
+            <element signature="e#4935#6262#0" expanded="false" />
+            <element signature="e#6946#7353#0" expanded="false" />
+            <element signature="e#7620#11898#0" expanded="false" />
+            <element signature="e#11920#12454#0" expanded="false" />
           </folding>
         </state>
       </provider>
