@@ -1,6 +1,7 @@
 import os
 from os import listdir
 from os.path import isfile, join
+import time
 import csv
 import pickle
 import gzip
@@ -17,6 +18,7 @@ import CNN
 import CNN.recog
 import CNN.enums
 import CNN.consts
+import CNN.conv
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
@@ -28,8 +30,10 @@ def numpy_to_string(arr):
     arr *= 100
     return ", ".join(format(x, ".0f") + "%" for x in arr.tolist())
 
+
 def float32(k):
     return numpy.cast['float32'](k)
+
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     """
@@ -50,14 +54,58 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
     assert len(inputs) == len(targets)
     if shuffle:
-        indices = np.arange(len(inputs))
-        np.random.shuffle(indices)
+        indices = numpy.arange(len(inputs))
+        numpy.random.shuffle(indices)
     for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
         if shuffle:
             excerpt = indices[start_idx:start_idx + batchsize]
         else:
             excerpt = slice(start_idx, start_idx + batchsize)
         yield inputs[excerpt], targets[excerpt]
+
+
+# endregion
+
+
+# region nolearn helping classes
+
+
+class AdjustVariable(object):
+    def __init__(self, name, start=0.03, stop=0.001):
+        self.name = name
+        self.start, self.stop = start, stop
+        self.ls = None
+
+    def __call__(self, nn, train_history):
+        if self.ls is None:
+            self.ls = numpy.linspace(self.start, self.stop, nn.max_epochs)
+
+        epoch = train_history[-1]['epoch']
+        new_value = numpy.cast['float32'](self.ls[epoch - 1])
+        getattr(nn, self.name).set_value(new_value)
+
+
+class EarlyStopping(object):
+    def __init__(self, patience=100):
+        self.patience = patience
+        self.best_valid = numpy.inf
+        self.best_valid_epoch = 0
+        self.best_weights = None
+
+    def __call__(self, nn, train_history):
+        current_valid = train_history[-1]['valid_loss']
+        current_epoch = train_history[-1]['epoch']
+        if current_valid < self.best_valid:
+            self.best_valid = current_valid
+            self.best_valid_epoch = current_epoch
+            self.best_weights = nn.get_all_params_values()
+        elif self.best_valid_epoch + self.patience < current_epoch:
+            print("Early stopping.")
+            print("Best valid loss was {:.6f} at epoch {}.".format(
+                self.best_valid, self.best_valid_epoch))
+            nn.load_params_from(self.best_weights)
+            raise StopIteration()
+
 
 # endregion
 
@@ -1171,6 +1219,111 @@ def organize_gtsdb(img_dim):
     pickle.dump(data, open(file_name, 'wb'))
 
     print("Finish Preparing Data")
+
+
+def convolve_gtsdb(recognition_model_path):
+    # do all the cov+pool computation using theano
+    # while train the regressor of the detector using nolearn and lasagne
+    # don't forget to operate on batches becuase:
+    # 1. you can't convolve all the training image in once shot
+    # 2. to train better regressor
+
+    # load model and read it's parameters
+    # the same weights of the convolutional layers will be used
+    # in training the detector
+    loaded_objects = load_model(recognition_model_path, CNN.enums.ModelType._02_conv3_mlp2)
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    pool_size = loaded_objects[5]
+
+    # load the data and concatenate all the images together
+    print('... loading data')
+    dataset_path = "D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl"
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    # concatenate validation and training sets
+    n_train = dataset[0][1].shape[0]
+    n_valid = dataset[1][1].shape[0]
+    n_test = dataset[2][1].shape[0]
+    n_total = n_train + n_valid + n_test
+    images = numpy.vstack([dataset[0][0], dataset[1][0], dataset[2][0]])
+    n_batches = 10
+    batch_size = int(n_total / n_batches)
+
+    # use the weights of the filters of the given recognition_model_path
+    # to filter (convolving+downsample) the given input images
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+
+    layer0_input = theano.tensor.tensor4('input')
+    layer0_img_dim = img_dim
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+    layer3_input_shape = (batch_size, nkerns[2] * layer3_img_dim * layer3_img_dim)
+
+    # layer 0, 1, 2: Conv-Pool
+    layer0_output = CNN.conv.convpool_layer(
+        input=layer0_input, W=layer0_W, b=layer0_b,
+        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
+        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
+        pool_size=pool_size
+    )
+    layer1_output = CNN.conv.convpool_layer(
+        input=layer0_output, W=layer1_W, b=layer1_b,
+        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
+        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
+        pool_size=pool_size
+    )
+    layer2_output = CNN.conv.convpool_layer(
+        input=layer1_output, W=layer2_W, b=layer2_b,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        pool_size=pool_size
+    )
+    # do the filtering using 3 layers of Conv+Pool
+    conv_fn = theano.function([layer0_input], layer2_output)
+
+    ##############################
+    # Train The Regression Model #
+    ##############################
+    # Finally, launch the training loop.
+    print("... convolving the data")
+    start_time = time.clock()
+    all_filters = numpy.zeros(shape=(0, layer3_input_shape[1]), dtype="float32")
+    batch_count = 0
+    for start_idx in range(0, images.shape[0] - batch_size + 1, batch_size):
+        excerpt = slice(start_idx, start_idx + batch_size)
+        images_reshaped = images[excerpt].reshape(-1, 1, layer0_img_dim, layer0_img_dim)
+        filters = conv_fn(images_reshaped)
+        filters = filters.reshape(layer3_input_shape).astype("float32")
+        all_filters = numpy.vstack([all_filters, filters])
+        batch_count += 1
+        print("... finish convolving batch %d / %d" % (batch_count, n_batches))
+
+    dataset_path = "D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl"
+    new_n_test = n_test - (n_total - n_batches * batch_size)
+    train_x = all_filters[0:n_train]
+    valid_x = all_filters[n_train:n_train + n_valid]
+    test_x = all_filters[n_train + n_valid:n_total]
+    train_y = dataset[0][1][0:n_train]
+    valid_y = dataset[1][1][0:n_valid]
+    test_y = dataset[2][1][0: new_n_test]
+    dataset = ((train_x, train_y), (valid_x, valid_y), (test_x, test_y))
+    with open(dataset_path, "wb") as f:
+        pickle.dump(dataset, f)
+
+    end_time = time.clock()
+    duration = (end_time - start_time) / 60.0
+    print("... finish convolving ans saving the images, total time consumed: %f" % (duration))
 
 
 def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count):

@@ -137,39 +137,35 @@ print('Traffic Sign Recognition')
 
 # region Detection (Model 80)
 
-# img_dim_80 = 80
+img_dim_80 = 80
 
 gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
-gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
 gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_80.pkl'
-# gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\cnn_model_80.pkl'
-
+gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
+gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True)
 # CNN.utils.organize_gtsdb(img_dim_80)
+# CNN.utils.convolve_gtsdb(gtsrb_model_80)
 
 # train the detector
-CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
-                     mlp_layers=(7200, 4), batch_size=200, n_epochs=20, learning_rate=0.01, momentum=0.9)
+# CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
+#                     mlp_layers=(7200, 4), batch_size=500, n_epochs=20, learning_rate=0.01, momentum=0.9)
+
+# train only the regressor
+CNN.detec.train_regressor(dataset_path=gtsdb_dataset_conv_80, detection_model_path=gtsdb_model_80)
+
+# test the detector
+# CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
 # CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00025.png", model_path=gtsdb_model_80)
-# CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img2.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
-#                               model_path=gtsdb_model_80, img_dim=img_dim_80)
-
-
-
-
-
-
-
-
+# CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img3.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+#                              recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
 
 # img_dim_80 = 80
-
 # gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
-
 # CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)
 # CNN.utils.serialize_gtsr(img_dim_28)
