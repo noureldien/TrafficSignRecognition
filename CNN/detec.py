@@ -416,9 +416,10 @@ def train_regressor(dataset_path, detection_model_path='', learning_rate=0.02, m
     print('... loading data')
     with open(dataset_path, 'rb') as f:
         dataset = pickle.load(f)
-    # concatenate validation and training sets
-    train_x = numpy.concatenate((dataset[0][0], dataset[1][0]))
-    train_y = numpy.concatenate((dataset[0][1], dataset[1][1])).astype("float32")
+    # concatenate all subsets in one set as the nolearn will use them
+    # to train and validate
+    train_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
+    train_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1])).astype("float32")
     train_y = ((train_y * 2) - img_dim) / img_dim
 
     n_batches = 10
@@ -443,7 +444,7 @@ def train_regressor(dataset_path, detection_model_path='', learning_rate=0.02, m
         update_learning_rate=theano.shared(CNN.utils.float32(learning_rate)),
         update_momentum=theano.shared(CNN.utils.float32(momentum)),
         batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
-        eval_size=0.0,
+        eval_size=0.1,
         regression=True,
         max_epochs=n_epochs,
         verbose=1,
@@ -470,7 +471,7 @@ def train_regressor(dataset_path, detection_model_path='', learning_rate=0.02, m
 
     end_time = time.clock()
     duration = (end_time - start_time) / 60.0
-    print("... finish training the model, total time consumed: %f" % (duration))
+    print("... finish training the model, total time consumed: %f min" % (duration))
     with open(detection_model_path, "wb") as f:
         pickle.dump(nn_regression, f, -1)
 

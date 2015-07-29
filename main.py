@@ -154,15 +154,15 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl
 #                     mlp_layers=(7200, 4), batch_size=500, n_epochs=20, learning_rate=0.01, momentum=0.9)
 
 # train only the regressor
-CNN.detec.train_regressor(dataset_path=gtsdb_dataset_conv_80, detection_model_path=gtsdb_model_80)
+# CNN.detec.train_regressor(dataset_path=gtsdb_dataset_conv_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
 # CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
 # CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00025.png", model_path=gtsdb_model_80)
-# CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img3.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
-#                              recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
+CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img5.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+                               recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
 
 # img_dim_80 = 80
 # gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
