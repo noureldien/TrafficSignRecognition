@@ -76,12 +76,11 @@ print('Traffic Sign Recognition')
 # region Recognition (Model 80)
 
 # img_dim_80 = 80
-# img_dim_28 = 28
-#
-# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
+# gtsrb_model_80 = 'D://_Dataset//GTSRB//lsn_model_80.pkl'
+# gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_80.pkl'
+
 # superclass_model_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
 # superclass_model_80_svm = 'D://_Dataset//SuperClass//cnn_model_80_svm.pkl'
-# gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_80.pkl'
 
 # CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)
@@ -91,8 +90,12 @@ print('Traffic Sign Recognition')
 # CNN.utils.check_database_4()
 
 # train model on GTSRB 80 database
-# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
-#                     nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
+# CNN.recog.train_deep_lasagne(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
+#                      nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
+
+# train model on GTSRB 80 database using lasagne
+# CNN.recog.train_deep_las(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rates=(0.05, 0.005), momentums=(0.9, 9.95),
+#                          kernel_dim=(13, 5, 4), nkerns=(10, 50, 200), img_dim=img_dim_80, mlp_layers=(500, 200, 12), pool_size=(2, 2), batch_size=1000, n_epochs=50)
 
 # just make sure that the train_deep network is working
 # d = 'D://_Dataset//GTSRB//gtsrb_organized_28.pkl'
@@ -137,12 +140,11 @@ print('Traffic Sign Recognition')
 
 # region Detection (Model 80)
 
-img_dim_80 = 80
-
-gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
-gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_80.pkl'
-gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
-gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl'
+# img_dim_80 = 80
+# gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
+# gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_80.pkl'
+# gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
+# gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True)
@@ -160,22 +162,8 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl
 # CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
-# CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00025.png", model_path=gtsdb_model_80)
-CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img5.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
-                               recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
-
-# img_dim_80 = 80
-# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_80.pkl'
-# CNN.utils.preprocess_dataset_train(img_dim_80)
-# CNN.utils.preprocess_dataset_test(img_dim_80)
-# CNN.utils.serialize_gtsr(img_dim_28)
-# CNN.utils.organize_gtsr(img_dim_28)
-# CNN.utils.remap_class_ids(img_dim_80)
-# CNN.utils.check_database_4()
-
-# train model on mnist database
-# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
-#                     nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
+# CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img7.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+#                               recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
 
 # endregion
 

@@ -69,12 +69,17 @@ class ConvPoolLayer(object):
         self.params = [self.W, self.b]
 
 
-class ConvPoolLayer_(object):
+class ConvPoolLayerTrained(object):
+    """
+    Convolutional and maxpooling layer. Accepts th
+    """
+
     def __init__(self, input, W, b, filter_shape, image_shape, poolsize=(2, 2)):
         assert image_shape[1] == filter_shape[1]
         self.input = input
         self.W = W
         self.b = b
+        conv.conv2d()
         conv_out = conv.conv2d(input=input, filters=self.W, filter_shape=filter_shape, image_shape=image_shape)
         pooled_out = downsample.max_pool_2d(input=conv_out, ds=poolsize, ignore_border=True)
         self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))

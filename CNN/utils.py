@@ -66,7 +66,6 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
 # endregion
 
-
 # region nolearn helping classes
 
 

@@ -85,7 +85,7 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
 
     # layer 0: Conv-Pool
     layer0_input = x.reshape((batch_size, 1, layer0_img_dim, layer0_img_dim))
-    layer0 = CNN.conv.ConvPoolLayer_(
+    layer0 = CNN.conv.ConvPoolLayerTrained(
         input=layer0_input, W=layer0_W, b=layer0_b,
         image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
         filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
@@ -95,7 +95,7 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
     # layer 1: Conv-Pool
     layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)  # = 12 in case of mnist
     layer1_kernel_dim = kernel_dim[1]
-    layer1 = CNN.conv.ConvPoolLayer_(
+    layer1 = CNN.conv.ConvPoolLayerTrained(
         input=layer0.output, W=layer1_W, b=layer1_b,
         image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
         filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
@@ -361,7 +361,7 @@ def train_deep(dataset_path, recognition_model_path, detection_model_path='', le
         update_learning_rate=theano.shared(CNN.utils.float32(learning_rate)),
         update_momentum=theano.shared(CNN.utils.float32(momentum)),
         batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
-        eval_size=0.0,
+        train_split=nolearn.lasagne.TrainSplit(eval_size=0.0),
         regression=True,
         max_epochs=1,
         verbose=1,
@@ -444,7 +444,7 @@ def train_regressor(dataset_path, detection_model_path='', learning_rate=0.02, m
         update_learning_rate=theano.shared(CNN.utils.float32(learning_rate)),
         update_momentum=theano.shared(CNN.utils.float32(momentum)),
         batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
-        eval_size=0.1,
+        train_split=nolearn.lasagne.TrainSplit(eval_size=0.1),
         regression=True,
         max_epochs=n_epochs,
         verbose=1,

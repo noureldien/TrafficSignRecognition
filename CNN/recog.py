@@ -31,6 +31,11 @@ import numpy
 
 import theano
 import theano.tensor as T
+
+import lasagne
+import nolearn
+import nolearn.lasagne
+
 import pickle
 import CNN
 import CNN.svm
@@ -779,6 +784,92 @@ def train_deep(dataset_path, model_path='', img_dim=80, learning_rate=0.1, n_epo
     pickle.dump(layer4.W.get_value(borrow=True), save_file, -1)
     pickle.dump(layer4.b.get_value(borrow=True), save_file, -1)
     save_file.close()
+
+
+def train_deep_las(dataset_path, model_path='', img_dim=80, learning_rates=(0.02, 0.005), momentums=(0.9, 0.95),
+                       n_epochs=100, kernel_dim=(13, 5, 4), nkerns=(10, 50, 200),
+                       mlp_layers=(500, 200, 12), batch_size=400, pool_size=(2, 2)):
+    """
+    Train classification model using nolearn lasagne
+    """
+
+    # load the data and concatenate all subsets in one set
+    # as the nolearn will use them to train and validate
+    print('... loading data')
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    data_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
+    data_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1]))
+    data_x = data_x.reshape(data_x.shape[0], 1, img_dim, img_dim)
+    data_x = data_x.astype("float32")
+
+    eval_split = 0.2
+    n_minibatches = 100
+    n_total = len(data_y)
+    n_train = int(n_total * (1 - eval_split))
+    batch_size = int(n_train / n_minibatches)
+
+    nn_recognition = nolearn.lasagne.NeuralNet(
+        layers=[
+            ('input', lasagne.layers.InputLayer),
+            ('conv1', lasagne.layers.Conv2DLayer),
+            ('pool1', lasagne.layers.MaxPool2DLayer),
+            ('dropout1', lasagne.layers.DropoutLayer),
+            ('conv2', lasagne.layers.Conv2DLayer),
+            ('pool2', lasagne.layers.MaxPool2DLayer),
+            ('dropout2', lasagne.layers.DropoutLayer),
+            ('conv3', lasagne.layers.Conv2DLayer),
+            ('pool3', lasagne.layers.MaxPool2DLayer),
+            ('dropout3', lasagne.layers.DropoutLayer),
+            ('hidden4', lasagne.layers.DenseLayer),
+            ('dropout4', lasagne.layers.DropoutLayer),
+            ('hidden5', lasagne.layers.DenseLayer),
+            ('output', lasagne.layers.DenseLayer),
+        ],
+        input_shape=(None, 1, img_dim, img_dim),
+        conv1_num_filters=nkerns[0], conv1_filter_size=(kernel_dim[0], kernel_dim[0]), pool1_pool_size=pool_size,
+        dropout1_p=0.1,
+        conv2_num_filters=nkerns[1], conv2_filter_size=(kernel_dim[1], kernel_dim[1]), pool2_pool_size=pool_size,
+        dropout2_p=0.2,
+        conv3_num_filters=nkerns[2], conv3_filter_size=(kernel_dim[2], kernel_dim[2]), pool3_pool_size=pool_size,
+        dropout3_p=0.3,
+        hidden4_num_units=mlp_layers[0],
+        dropout4_p=0.5,
+        hidden5_num_units=mlp_layers[1],
+        output_num_units=mlp_layers[2],
+        output_nonlinearity=lasagne.nonlinearities.softmax,
+        update_learning_rate=theano.shared(CNN.utils.float32(learning_rates[0])),
+        update_momentum=theano.shared(CNN.utils.float32(momentums[0])),
+        train_split=nolearn.lasagne.TrainSplit(eval_size=eval_split),
+        batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
+        max_epochs=n_epochs,
+        verbose=1,
+        on_epoch_finished=[
+            CNN.utils.AdjustVariable('update_learning_rate', start=learning_rates[0], stop=learning_rates[1]),
+            CNN.utils.AdjustVariable('update_momentum', start=momentums[0], stop=momentums[1]),
+            CNN.utils.EarlyStopping(patience=200),
+        ])
+
+    ##############################
+    # Train The Regression Model #
+    ##############################
+    # Finally, launch the training loop.
+    print("... training the recognition model")
+    print("... in total, %d samples in training" % (n_train))
+    print("... since we have batch size of %d" % (batch_size))
+    print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
+    start_time = time.clock()
+    # no need to iterate on epochs or mini-baches because fitting a nolearn network
+    # takes care of all of that if configured correctly
+    nn_recognition.fit(data_x, data_y)
+
+    end_time = time.clock()
+    duration = (end_time - start_time) / 60.0
+    print("... finish training the model, total time consumed: %f min" % (duration))
+
+    if len(model_path) > 0:
+        with open(model_path, "wb") as f:
+            pickle.dump(nn_recognition, f, -1)
 
 
 def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5),
