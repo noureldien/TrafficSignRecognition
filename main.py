@@ -162,7 +162,7 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl
 # CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
-CNN.detec.detect_img_from_file_course_to_fine(img_path="D://_Dataset//GTSDB//Test_PNG//_img7.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img2.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
                                recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
 
 # endregion
