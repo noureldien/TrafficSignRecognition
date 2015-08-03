@@ -881,13 +881,16 @@ def detect_img_from_file_all_scales(img_path, recognition_model_path, detection_
     # don't forget that stride of sliding the window is dynamic
 
     down_scale_factor = 0.9
-    window_dim = 120
+    window_dim = 160
     stride_factor = 10
     img_shape = img.shape
     img_width = img_shape[1]
     img_height = img_shape[0]
 
     s_count = 0
+
+    # regions predicted from the previous scale
+    previous_regions = []
 
     # scale_down until you reach the min window
     # instead of scaling up the image itself, we scale down the sliding window
@@ -977,8 +980,8 @@ def detect_img_from_file_all_scales(img_path, recognition_model_path, detection_
             filters = filters.reshape(layer3_input_shape).astype("float32")
             batch_pred = nn_regression.predict(filters)
             pred.append(batch_pred)
-            t2 = time.clock();
-            print("... batch: %i, time (min): %f" % (i, (t2 - t1) / 60))
+            t2 = time.clock()
+            print("... batch: %i/%i, time(sec.): %f" % (i, n_batches, t2 - t1))
 
         # after getting all the predictions, remove the padding
         pred = numpy.vstack(pred)
@@ -993,11 +996,11 @@ def detect_img_from_file_all_scales(img_path, recognition_model_path, detection_
         duration = (end_time - start_time) / 60
 
         # now, after getting the predictions, construct the probability map and show it/ save it
-        t1 = time.clock()
-        __probability_map(pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
-        t2 = time.clock()
-        print("... prob. map time (min): %f" % ((t2 - t1) / 60))
+        map, previous_regions = __probability_map(pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
         print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, duration))
+
+        # now since we're working on couse to fine fashion, so for the next scale,
+        # we'll only explore the regions detected in the current scale
 
     x = 10
 
@@ -1099,7 +1102,7 @@ def detect_img_from_file_course_to_fine(img_path, recognition_model_path, detect
     # don't forget that stride of sliding the window is dynamic
 
     down_scale_factor = 0.9
-    window_dim = 120
+    window_dim = 160
     stride_factor = 10
     img_shape = img.shape
     img_width = img_shape[1]
@@ -1199,7 +1202,7 @@ def detect_img_from_file_course_to_fine(img_path, recognition_model_path, detect
             batch_pred = nn_regression.predict(filters)
             pred.append(batch_pred)
             t2 = time.clock()
-            print("... batch: %i, time (min): %f" % (i, (t2 - t1) / 60))
+            print("... batch: %i/%i, time(sec.): %f" % (i, n_batches, t2 - t1))
 
         # after getting all the predictions, remove the padding
         pred = numpy.vstack(pred)
@@ -1591,8 +1594,8 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
 def __probability_map(predictions, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, count):
     # parameters of the algorithm
     min_dim = img_dim / 2
-    overlap_thresh = 0.25
-    min_overlap = 5
+    overlap_thresh = 0.3
+    min_overlap = 10
 
     r_factor = window_dim / img_dim
     n = x_count * y_count
@@ -1636,14 +1639,15 @@ def __probability_map(predictions, locations, window_dim, x_count, y_count, img_
     #     y = loc[1] + int((loc[3] - loc[1]) / 2)
     #     if img[y, x, 1] >= min_overlap:
     #         strong_locations.append(loc)
-    #strong_locations = suppressed_locations
+    # strong_locations = suppressed_locations
 
     # normalize image before drawing
     img_original = img_original * 255 / (img_original.max() - img_original.min())
     red_color = (0, 0, 255)
+    yellow_color = (84, 212, 255)
     blue_color = (255, 0, 0)
     for loc in suppressed_locations:
-        cv2.rectangle(img_original, (loc[0], loc[1]), (loc[2], loc[3]), blue_color, 1)
+        cv2.rectangle(img_original, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
     for loc in strong_locations:
         cv2.rectangle(img_original, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
 
