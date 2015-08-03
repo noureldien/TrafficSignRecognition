@@ -2,10 +2,14 @@
 import numpy as np
 
 # Malisiewicz et al.
-def non_max_suppression_fast(boxes, overlap_thresh):
+def non_max_suppression_fast(boxes, overlap_thresh, min_overlap):
     # if there are no boxes, return an empty list
     if len(boxes) == 0:
         return []
+
+    # cast as numpy if needed
+    if isinstance(boxes, list):
+        boxes = np.asarray(boxes)
 
     # if the bounding boxes integers, convert them to floats --
     # this is important since we'll be doing a bunch of divisions
@@ -14,6 +18,7 @@ def non_max_suppression_fast(boxes, overlap_thresh):
 
     # initialize the list of picked indexes
     pick = []
+    strong_pick = []
 
     # grab the coordinates of the bounding boxes
     x1 = boxes[:, 0]
@@ -51,8 +56,13 @@ def non_max_suppression_fast(boxes, overlap_thresh):
         overlap = (w * h) / area[idxs[:last]]
 
         # delete all indexes from the index list that have
-        idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlap_thresh)[0])))
+        deleted_idx = np.concatenate(([last], np.where(overlap > overlap_thresh)[0]))
+        idxs = np.delete(idxs, deleted_idx)
+
+        # for strong suppression, only pick regions with many neighbours
+        if deleted_idx.shape[0] >= min_overlap:
+            strong_pick.append(i)
 
     # return only the bounding boxes that were picked using the
     # integer data type
-    return boxes[pick].astype("int")
+    return boxes[pick].astype("int"), boxes[strong_pick].astype("int")
