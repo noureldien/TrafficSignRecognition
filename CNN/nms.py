@@ -38,15 +38,15 @@ def non_max_suppression(boxes, overlap_thresh, min_overlap):
         # index value to the list of picked indexes
         last = len(idxs) - 1
         i = idxs[last]
-        pick.append(i)
+        ii = idxs[:last]
 
         # find the largest (x, y) coordinates for the start of
         # the bounding box and the smallest (x, y) coordinates
         # for the end of the bounding box
-        xx1 = np.maximum(x1[i], x1[idxs[:last]])
-        yy1 = np.maximum(y1[i], y1[idxs[:last]])
-        xx2 = np.minimum(x2[i], x2[idxs[:last]])
-        yy2 = np.minimum(y2[i], y2[idxs[:last]])
+        xx1 = np.maximum(x1[i], x1[ii])
+        yy1 = np.maximum(y1[i], y1[ii])
+        xx2 = np.minimum(x2[i], x2[ii])
+        yy2 = np.minimum(y2[i], y2[ii])
 
         # compute the width and height of the bounding box
         w = np.maximum(0, xx2 - xx1 + 1)
@@ -62,6 +62,8 @@ def non_max_suppression(boxes, overlap_thresh, min_overlap):
         # for strong suppression, only pick regions with many neighbours
         if deleted_idx.shape[0] >= min_overlap:
             strong_pick.append(i)
+        else:
+            pick.append(i)
 
     # return only the bounding boxes that were picked using the
     # integer data type
@@ -122,18 +124,23 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
         # compute the ratio of overlap
         overlap = (w * h) / area[idxs[:last]]
 
-        # delete all indexes from the index list that have
-        deleted_idx = np.concatenate(([last], np.where(overlap > overlap_thresh)[0]))
-        idxs = np.delete(idxs, deleted_idx)
+        # get the indexes that need to be deleted
+        deleted_i = np.concatenate(([last], np.where(overlap > overlap_thresh)[0]))
 
-        # for strong suppression, only pick regions with many neighbours
-        if deleted_idx.shape[0] >= min_overlap:
-            # instead of picking up the base box of the suppressed boxes
-            # we might want instead to pick up their means
-            strong_pick.append(np.mean(boxes[deleted_idx], axis=0))
+        # instead of picking up the base box of the suppressed boxes
+        # we might want instead to pick up their means
+        mean_box = np.mean(boxes[idxs[deleted_i]], axis=0)
+
+        # for if we have many neighbours, then it's strong suppression
+        # else, it's week one
+        if deleted_i.shape[0] >= min_overlap:
+            strong_pick.append(mean_box)
         else:
-            pick.append(i)
+            pick.append(mean_box)
+
+        # delete all indexes from the index list that have
+        idxs = np.delete(idxs, deleted_i)
 
     # return only the bounding boxes that were picked using the
     # integer data type
-    return boxes[pick].astype("int"), np.asarray(strong_pick, dtype=int)
+    return np.asarray(pick, dtype=int), np.asarray(strong_pick, dtype=int)

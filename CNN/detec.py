@@ -881,7 +881,7 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
     # don't forget that stride of sliding the window is dynamic
 
     down_scale_factor = 0.9
-    window_dim = 120
+    window_dim = 160
     stride_factor = 10
     img_shape = img.shape
     img_width = img_shape[1]
@@ -890,8 +890,9 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
     s_count = 0
 
     # regions predicted from the previous scale
-    suppressed_regions = []
+    weak_regions = []
     strong_regions = []
+    scale_regions = []
 
     # scale_down until you reach the min window
     # instead of scaling up the image itself, we scale down the sliding window
@@ -999,11 +1000,15 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         # after getting the predictions, construct the probability map and show it/ save it
         # since we're working on course-to-fine fashion, so for the next scale,
         # we'll only explore the regions detected in the current scale
-        map, suppressed_regions, strong_regions = __probability_map(img, pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
+        map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
+        if strong_regions.shape[0] > 0:
+            scale_regions.append(strong_regions)
         print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, duration))
 
-    # just to mark end of function
-    x = 10
+    # now, after we finished scanning at all the levels, we should make the final verdict
+    # by suppressing all the strong_regions that we extracted on different scales
+    scale_regions = numpy.vstack(scale_regions)
+    __confidence_map(img, img_width, img_height, scale_regions, s_count)
 
 
 def detect_img_from_file_slow(img_path, recognition_model_path, detection_model_path, img_dim, model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
@@ -1374,7 +1379,7 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
 def __probability_map(img, predictions, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, count):
     # parameters of the algorithm
     min_dim = img_dim / 2
-    overlap_thresh = 0.3
+    overlap_thresh = 0.35
     min_overlap = 8
 
     r_factor = window_dim / img_dim
@@ -1405,13 +1410,13 @@ def __probability_map(img, predictions, locations, window_dim, x_count, y_count,
         map[y1:y2, x1:x2] += 1
 
     # suppress the new regions and raw them with red color
-    suppressed_regions, strong_regions = CNN.nms.non_max_suppression_accurate(new_regions, overlap_thresh, min_overlap)
+    weak_regions, strong_regions = CNN.nms.non_max_suppression_accurate(new_regions, overlap_thresh, min_overlap)
 
     # normalize image before drawing
     map = map * 255 / (map.max() - map.min())
     img_normalized = img * 255
 
-    # we also may want to plend the image and the probability map
+    # we also may want to blend the image and the probability map
     blend_value = 0.25
     map_blend = cv2.addWeighted(img_normalized, blend_value, map, 1 - blend_value, 0.0)
     map_blend = map_blend.astype(int)
@@ -1424,15 +1429,15 @@ def __probability_map(img, predictions, locations, window_dim, x_count, y_count,
     red_color = (0, 0, 255)
     yellow_color = (84, 212, 255)
     blue_color = (255, 0, 0)
-    for loc in suppressed_regions:
+    for loc in weak_regions:
         cv2.rectangle(map_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
     for loc in strong_regions:
         cv2.rectangle(map_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
 
-    cv2.imwrite("D:\\_Dataset\\GTSDB\\\Test_Regions\\" + "{0:05d}.png".format(count), map_color)
+    cv2.imwrite("D:\\_Dataset\\GTSDB\\Test_Regions\\" + "{0:05d}.png".format(count), map_color)
 
     # return the map to be exploited later by the detector, for the next scale
-    return map, suppressed_regions, strong_regions
+    return map, weak_regions, strong_regions
 
     # now, plot the image
     # plot original image and first and second components of output
@@ -1445,3 +1450,25 @@ def __probability_map(img, predictions, locations, window_dim, x_count, y_count,
     # plt.imshow(map, interpolation='nearest')
     # plt.show()
     # dummy_var = 10
+
+
+def __confidence_map(img, img_width, img_height, scale_regions, scale_count):
+    weak_regions, strong_regions = CNN.nms.non_max_suppression_accurate(scale_regions, 0.5, 3)
+
+    # normalize the image
+    img_normalized = img * 255
+
+    # convert to RGB before drawing colored boxes
+    map_color = numpy.zeros(shape=(img_height, img_width, 3))
+    for i in range(3):
+        map_color[:, :, i] = img_normalized
+
+    red_color = (0, 0, 255)
+    yellow_color = (84, 212, 255)
+    blue_color = (255, 0, 0)
+    for loc in weak_regions:
+        cv2.rectangle(map_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
+    for loc in strong_regions:
+        cv2.rectangle(map_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
+
+    cv2.imwrite("D:\\_Dataset\\GTSDB\\Test_Regions\\" + "{0:05d}.png".format(scale_count + 1), map_color)
