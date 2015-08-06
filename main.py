@@ -148,9 +148,12 @@ gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl'
 gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl'
 
 # extract region images to train the detector
-# CNN.utils.serialize_gtsdb(img_dim_80, True)
+CNN.utils.serialize_gtsdb(img_dim_80, True, True)
 # CNN.utils.organize_gtsdb(img_dim_80)
 # CNN.utils.convolve_gtsdb(gtsrb_model_80)
+
+# detection proposals
+# CNN.prop.detection_proposal_and_save(img_path="D://_Dataset//GTSDB//Test_PNG//00028.png", min_dim=16, max_dim=160)
 
 # train the detector
 # CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
@@ -163,11 +166,9 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl
 # CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
-CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img1.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img12.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
                                recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
 
-
-# CNN.prop.detection_proposal_and_save(img_path="D://_Dataset//GTSDB//Test_PNG//00028.png", min_dim=16, max_dim=160)
 
 # endregion
 

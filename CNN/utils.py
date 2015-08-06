@@ -1003,7 +1003,7 @@ def serialize_SuperClass():
 # region GTSD
 
 
-def serialize_gtsdb(img_dim, add_true_gegative=True):
+def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
     """
     read the german traffic sign detection database
     for each image, create multible scales
@@ -1012,7 +1012,7 @@ def serialize_gtsdb(img_dim, add_true_gegative=True):
     re-calculate the x,y of the ground truth, instead of the whole image
     is the frame_of_reference, the region itself is the frame_of_reference
     :param img_dim:
-    :param add_true_gegative:
+    :param add_true_negative:
     :return:
     """
 
@@ -1125,14 +1125,21 @@ def serialize_gtsdb(img_dim, add_true_gegative=True):
 
                         region = numpy.copy(img[y:y + window_dim, x:x + window_dim])
                         region = skimage.transform.resize(region, output_shape=(img_dim, img_dim))
+
+                        # pre-process the region if needed
+                        if pre_processing:
+                            region = skimage.exposure.equalize_hist(region)
+                            region = skimage.exposure.rescale_intensity(region, in_range=(0.1, 0.8))
+
+                        # append the region
                         region = region.reshape((img_dim * img_dim,))
                         regions = numpy.vstack([regions, region])
 
                         # save region for experimenting/debugging
-                        filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
-                        cv2.imwrite(filePathWrite, region.reshape((img_dim, img_dim)) * 255)
+                        # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
+                        # cv2.imwrite(filePathWrite, region.reshape((img_dim, img_dim)) * 255)
 
-                if add_true_gegative:
+                if add_true_negative:
                     # add some true negatives to increase variance of the machine
                     # add only n images per scale per image, n = 2
                     regions_negatives = __sample_true_negatives(img, window_dim, img_dim, boundaries, 2)
