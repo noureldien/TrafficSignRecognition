@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/detec.py" afterPath="$PROJECT_DIR$/CNN/detec.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/nms.py" afterPath="$PROJECT_DIR$/CNN/nms.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="hello_world.iws" />
@@ -30,39 +28,25 @@
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="165" column="127" selection-start-line="165" selection-start-column="127" selection-end-line="165" selection-end-column="127" />
+              <caret line="168" column="78" selection-start-line="168" selection-start-column="38" selection-end-line="168" selection-end-column="78" />
               <folding>
-                <element signature="e#156#187#0" expanded="false" />
-                <element signature="e#5202#5233#0" expanded="false" />
-                <element signature="e#7493#7522#0" expanded="false" />
-                <element signature="e#10594#10645#0" expanded="false" />
+                <element signature="e#0#26#0" expanded="true" />
+                <element signature="e#172#203#0" expanded="false" />
+                <element signature="e#5218#5249#0" expanded="false" />
+                <element signature="e#7509#7538#0" expanded="false" />
+                <element signature="e#10692#10743#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="detec.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/CNN/detec.py">
+      <file leaf-file-name="prop.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/CNN/prop.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33908045">
-              <caret line="1010" column="72" selection-start-line="1010" selection-start-column="72" selection-end-line="1010" selection-end-column="72" />
+            <state vertical-scroll-proportion="0.50268817">
+              <caret line="11" column="41" selection-start-line="11" selection-start-column="41" selection-end-line="11" selection-end-column="41" />
               <folding>
-                <element signature="e#577#10538#0" expanded="false" />
-                <element signature="e#10723#16657#0" expanded="false" />
-                <element signature="e#16813#19916#0" expanded="false" />
-                <element signature="e#20144#28539#0" expanded="false" />
-                <element signature="e#28631#32624#0" expanded="false" />
-                <element signature="e#32797#42820#0" expanded="false" />
-                <element signature="e#32797#33108#1" expanded="false" />
-                <element signature="e#42998#48075#0" expanded="false" />
-                <element signature="e#42998#43309#1" expanded="false" />
-                <element signature="e#48230#48600#0" expanded="false" />
-                <element signature="e#48734#51576#0" expanded="false" />
-                <element signature="e#51695#52005#0" expanded="false" />
-                <element signature="e#52106#55907#0" expanded="false" />
-                <element signature="e#56005#59806#0" expanded="false" />
-                <element signature="e#59934#62487#0" expanded="false" />
-                <element signature="e#62572#63328#0" expanded="false" />
+                <element signature="e#393#2034#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -86,7 +70,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/../hello_world/learn_generators.py" />
         <option value="$PROJECT_DIR$/../hello_world/DeepLearningTutorials/logistic_cg.py" />
         <option value="$PROJECT_DIR$/../hello_world/DeepLearningTutorials/convolutional_mlp_.py" />
         <option value="$PROJECT_DIR$/../hello_world/learn_cnn.py" />
@@ -135,8 +118,9 @@
         <option value="$USER_HOME$/Anaconda3/Lib/site-packages/nolearn/lasagne/base.py" />
         <option value="$PROJECT_DIR$/CNN/recog.py" />
         <option value="$PROJECT_DIR$/CNN/nms.py" />
-        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/CNN/detec.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/CNN/prop.py" />
       </list>
     </option>
   </component>
@@ -172,16 +156,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope">
-        <subPane subId="Project Files">
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -212,6 +186,16 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="CNN" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
+      <pane id="Scope">
+        <subPane subId="Project Files">
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
@@ -608,7 +592,13 @@
       <option name="project" value="LOCAL" />
       <updated>1438644206578</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="Commit">
+      <created>1438726611303</created>
+      <option name="number" value="00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1438726611303</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TodoView">
@@ -624,26 +614,47 @@
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
     <editor active="false" />
     <layout>
+      <window_info id="Project" active="true" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19717261" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3048576" sideWeight="0.49702382" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37018424" sideWeight="0.5223214" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37018424" sideWeight="0.52529764" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2847571" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36515912" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.400335" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.20163691" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.6113903" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36515912" sideWeight="0.4940476" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3400335" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5029762" order="11" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.37018424" sideWeight="0.47767857" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32998326" sideWeight="0.4747024" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.6113903" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
+    <layout-to-restore>
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3048576" sideWeight="0.49702382" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37018424" sideWeight="0.52529764" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2847571" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36515912" sideWeight="0.4940476" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3400335" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.19940476" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.6113903" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5029762" order="11" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.31658292" sideWeight="0.4747024" order="2" side_tool="false" content_ui="tabs" />
+    </layout-to-restore>
   </component>
   <component name="Vcs.Log.UiProperties">
     <option name="RECENTLY_FILTERED_USER_GROUPS">
@@ -672,57 +683,11 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="1263" />
+      <option name="time" value="1303" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/CNN/detec.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#577#10538#0" expanded="false" />
-            <element signature="e#10723#16657#0" expanded="false" />
-            <element signature="e#16813#19916#0" expanded="false" />
-            <element signature="e#20144#28539#0" expanded="false" />
-            <element signature="e#28631#32624#0" expanded="false" />
-            <element signature="e#32797#42820#0" expanded="false" />
-            <element signature="e#32797#33108#1" expanded="false" />
-            <element signature="e#42998#48075#0" expanded="false" />
-            <element signature="e#42998#43309#1" expanded="false" />
-            <element signature="e#48230#48600#0" expanded="false" />
-            <element signature="e#48734#51576#0" expanded="false" />
-            <element signature="e#51695#52005#0" expanded="false" />
-            <element signature="e#52106#55907#0" expanded="false" />
-            <element signature="e#56005#59806#0" expanded="false" />
-            <element signature="e#59934#62487#0" expanded="false" />
-            <element signature="e#62572#63328#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/skimage/util/shape.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.8930818">
-          <caret line="263" column="18" selection-start-line="263" selection-start-column="18" selection-end-line="263" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/skimage/exposure/_adapthist.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.05629139">
-          <caret line="91" column="4" selection-start-line="91" selection-start-column="4" selection-end-line="91" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd_file_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.55987054">
-          <caret line="314" column="0" selection-start-line="314" selection-start-column="0" selection-end-line="314" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/autodiff/symbolic.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.265625">
@@ -1360,10 +1325,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="213" column="1" selection-start-line="174" selection-start-column="0" selection-end-line="213" selection-end-column="1" />
-          <folding>
-            <element signature="e#3921#4361#0" expanded="false" />
-            <element signature="e#4397#5226#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1441,29 +1402,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.6023622">
           <caret line="788" column="18" selection-start-line="788" selection-start-column="18" selection-end-line="788" selection-end-column="18" />
-          <folding>
-            <element signature="e#0#921#1" expanded="false" />
-            <element signature="e#1487#11227#0" expanded="false" />
-            <element signature="e#1487#1958#1" expanded="false" />
-            <element signature="e#11437#20936#0" expanded="false" />
-            <element signature="e#11437#11908#1" expanded="false" />
-            <element signature="e#21148#31446#0" expanded="false" />
-            <element signature="e#21148#21619#1" expanded="false" />
-            <element signature="e#31733#35534#0" expanded="false" />
-            <element signature="e#31733#31797#1" expanded="false" />
-            <element signature="e#35744#45504#0" expanded="false" />
-            <element signature="e#35744#36215#1" expanded="false" />
-            <element signature="e#45635#46066#0" expanded="false" />
-            <element signature="e#46263#46672#0" expanded="false" />
-            <element signature="e#46798#47144#0" expanded="false" />
-            <element signature="e#47233#50380#0" expanded="false" />
-            <element signature="e#50482#53901#0" expanded="false" />
-            <element signature="e#54037#54351#0" expanded="false" />
-            <element signature="e#54454#58291#0" expanded="false" />
-            <element signature="e#58391#62855#0" expanded="false" />
-            <element signature="e#62905#63239#0" expanded="false" />
-            <element signature="e#63289#63623#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1471,14 +1409,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-1.6111112">
           <caret line="3194" column="10" selection-start-line="3194" selection-start-column="9" selection-end-line="3194" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.9444444">
-          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1560,30 +1490,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.41087613">
           <caret line="73" column="4" selection-start-line="73" selection-start-column="4" selection-end-line="73" selection-end-column="4" />
-          <folding>
-            <element signature="e#138#2335#0" expanded="false" />
-            <element signature="e#2455#4927#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="165" column="127" selection-start-line="165" selection-start-column="127" selection-end-line="165" selection-end-column="127" />
-          <folding>
-            <element signature="e#156#187#0" expanded="false" />
-            <element signature="e#5202#5233#0" expanded="false" />
-            <element signature="e#7493#7522#0" expanded="false" />
-            <element signature="e#10594#10645#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CNN/detec.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33908045">
-          <caret line="1010" column="72" selection-start-line="1010" selection-start-column="72" selection-end-line="1010" selection-end-column="72" />
+        <state vertical-scroll-proportion="0.59753954">
+          <caret line="784" column="0" selection-start-line="784" selection-start-column="0" selection-end-line="784" selection-end-column="0" />
           <folding>
             <element signature="e#577#10538#0" expanded="false" />
             <element signature="e#10723#16657#0" expanded="false" />
@@ -1601,6 +1514,96 @@
             <element signature="e#56005#59806#0" expanded="false" />
             <element signature="e#59934#62487#0" expanded="false" />
             <element signature="e#62572#63328#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/skimage/util/dtype.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.41827768">
+          <caret line="16" column="41" selection-start-line="16" selection-start-column="41" selection-end-line="16" selection-end-column="41" />
+          <folding>
+            <element signature="e#1076#1492#0" expanded="false" />
+            <element signature="e#1076#1384#1" expanded="false" />
+            <element signature="e#1559#9472#0" expanded="false" />
+            <element signature="e#1559#3111#1" expanded="false" />
+            <element signature="e#3549#3689#0" expanded="false" />
+            <element signature="e#3720#3823#0" expanded="false" />
+            <element signature="e#3868#4009#0" expanded="false" />
+            <element signature="e#4060#4295#0" expanded="false" />
+            <element signature="e#4341#6000#0" expanded="false" />
+            <element signature="e#9522#10041#0" expanded="false" />
+            <element signature="e#9522#9991#1" expanded="false" />
+            <element signature="e#10090#10556#0" expanded="false" />
+            <element signature="e#10090#10507#1" expanded="false" />
+            <element signature="e#10604#11147#0" expanded="false" />
+            <element signature="e#10604#11099#1" expanded="false" />
+            <element signature="e#11197#11666#0" expanded="false" />
+            <element signature="e#11197#11618#1" expanded="false" />
+            <element signature="e#11715#12218#0" expanded="false" />
+            <element signature="e#11715#12170#1" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/skimage/_shared/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.5377856">
+          <caret line="145" column="45" selection-start-line="145" selection-start-column="45" selection-end-line="145" selection-end-column="45" />
+          <folding>
+            <element signature="e#261#373#0" expanded="false" />
+            <element signature="e#261#364#1" expanded="false" />
+            <element signature="e#406#2091#0" expanded="false" />
+            <element signature="e#406#814#1" expanded="false" />
+            <element signature="e#880#937#0" expanded="false" />
+            <element signature="e#978#2091#0" expanded="false" />
+            <element signature="e#1264#1807#0" expanded="false" />
+            <element signature="e#2129#2246#0" expanded="false" />
+            <element signature="e#2129#2177#1" expanded="false" />
+            <element signature="e#2286#4453#0" expanded="false" />
+            <element signature="e#2286#3789#1" expanded="false" />
+            <element signature="e#4506#5078#0" expanded="false" />
+            <element signature="e#4506#4820#1" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.46875">
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="168" column="78" selection-start-line="168" selection-start-column="38" selection-end-line="168" selection-end-column="78" />
+          <folding>
+            <element signature="e#0#26#0" expanded="true" />
+            <element signature="e#172#203#0" expanded="false" />
+            <element signature="e#5218#5249#0" expanded="false" />
+            <element signature="e#7509#7538#0" expanded="false" />
+            <element signature="e#10692#10743#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/site-packages/skimage/color/colorconv.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.33251232">
+          <caret line="717" column="4" selection-start-line="717" selection-start-column="4" selection-end-line="717" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CNN/prop.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.50268817">
+          <caret line="11" column="41" selection-start-line="11" selection-start-column="41" selection-end-line="11" selection-end-column="41" />
+          <folding>
+            <element signature="e#393#2034#0" expanded="false" />
           </folding>
         </state>
       </provider>

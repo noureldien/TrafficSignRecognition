@@ -5,6 +5,7 @@ import CNN.utils
 import CNN.recog
 import CNN.detec
 import CNN.enums
+import CNN.prop
 import numpy
 
 print('Traffic Sign Recognition')
@@ -164,6 +165,8 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl
 # test the detector
 #CNN.detec.detect_img_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img12.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
 #                               recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80)
+
+CNN.prop.detection_proposal(img_path="D://_Dataset//GTSDB//Test_PNG//_img1.png")
 
 # endregion
 
