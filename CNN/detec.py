@@ -787,7 +787,8 @@ def detect_from_dataset(dataset_path, recognition_model_path, detection_model_pa
     print("... finish training the model, total time consumed: %f min." % (duration))
 
 
-def detect_img_from_file(img_path, recognition_model_path, detection_model_path, img_dim, model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def detect_img_from_file(img_path, recognition_model_path, detection_model_path, pre_process=True,
+                         model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -952,6 +953,12 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
                 region = img[y:y + window_dim, x:x + window_dim]
                 region_shape = region.shape
                 region = skimage.transform.resize(region, output_shape=(img_dim, img_dim))
+
+                # pre-process the region if needed
+                if pre_process:
+                    region = skimage.exposure.equalize_hist(region)
+                    region = skimage.exposure.rescale_intensity(region, in_range=(0.2, 0.75))
+
                 # we only need to store the region, it's top-left corner and sliding window dim
                 regions.append(region)
                 locations.append([x, y])
@@ -1020,14 +1027,15 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         # since we're working on course-to-fine fashion, so for the next scale,
         # we'll only explore the regions detected in the current scale
         map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, img_width, img_height, img_dim, s_count)
-        if strong_regions.shape[0] > 0:
+        if len(strong_regions) > 0:
             scale_regions.append(strong_regions)
         print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, duration))
 
     # now, after we finished scanning at all the levels, we should make the final verdict
     # by suppressing all the strong_regions that we extracted on different scales
-    scale_regions = numpy.vstack(scale_regions)
-    __confidence_map(img, img_width, img_height, scale_regions, s_count)
+    if len(scale_regions) > 0:
+        scale_regions = numpy.vstack(scale_regions)
+        __confidence_map(img, img_width, img_height, scale_regions, s_count)
 
 
 def detect_img_from_file_slow(img_path, recognition_model_path, detection_model_path, img_dim, model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
@@ -1427,6 +1435,13 @@ def __probability_map(img, predictions, locations, window_dim, img_width, img_he
         new_regions.append([x1, y1, x2, y2])
 
         map[y1:y2, x1:x2] += 1
+
+    # check if no region found
+    if len(new_regions) == 0:
+        map = []
+        weak_regions = []
+        strong_regions = []
+        return map, weak_regions, strong_regions
 
     # suppress the new regions and raw them with red color
     weak_regions, strong_regions = CNN.nms.non_max_suppression_accurate(new_regions, overlap_thresh, min_overlap)
