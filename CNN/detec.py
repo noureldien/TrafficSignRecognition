@@ -5,6 +5,7 @@ import time
 import cv2
 import skimage
 import skimage.transform
+import skimage.exposure
 
 import numpy
 import theano
@@ -866,9 +867,11 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
     # initial dimension defines what is the biggest traffic sign to recognise
     # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
 
+    # pre-process image by: equalize histogram and stretch intensity
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = img.astype(float) / 255.0
+    img = skimage.exposure.equalize_hist(img)
+    img = skimage.exposure.rescale_intensity(img, in_range=(0.2, 0.75))
 
     # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
     # that means, we'll start with a window with initial size 320*320
