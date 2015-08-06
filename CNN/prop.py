@@ -28,7 +28,7 @@ def detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
     img = skimage.exposure.equalize_hist(img)
     img = skimage.exposure.rescale_intensity(img, in_range=(0.2, 0.75))
 
-    regions_weak, regions_strong = detection_proposal(img, min_dim, max_dim)
+    regions_weak, regions_strong, map = detection_proposal(img, min_dim, max_dim)
 
     # draw and save the result, for testing purposes
     red_color = (255, 0, 0)
@@ -64,10 +64,6 @@ def detection_proposal(img_preprocessed, min_dim, max_dim):
         accums.extend(h[peaks[:, 0], peaks[:, 1]])
         radii.extend([radius] * num_peaks)
 
-    # if any of the regions exceeded the image dimensions
-    img_width = img.shape[1]
-    img_height = img.shape[0]
-
     # don't consider circles with accum value less than the threshold
     idx_sorted = np.argsort(accums)[::-1]
     accum_threshold = 0.3
@@ -87,11 +83,22 @@ def detection_proposal(img_preprocessed, min_dim, max_dim):
         regions.append([x1, y1, x2, y2])
 
     # suppress the regions to extract the strongest ones
-    min_overlap = 3
-    overlap_thresh = 0.7
-    regions_weak, regions_strong = CNN.nms.non_max_suppression_accurate(regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
+    if len(regions) > 0:
+        min_overlap = 3
+        overlap_thresh = 0.7
+        regions_weak, regions_strong = CNN.nms.non_max_suppression_accurate(boxes=regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
 
-    return regions_weak, regions_strong
+        # create binary map using only the strong regions
+        img_shape = img_preprocessed.shape
+        map = np.zeros(shape=(img_shape[0], img_shape[1]), dtype=bool)
+        for r in regions_strong:
+            map[r[1]:r[3], r[0]:r[2]] = True
+    else:
+        regions_weak = []
+        regions_strong = []
+        map = []
+
+    return regions_weak, regions_strong, map
 
 
 def __hough_circle_detection(img_path, min_dim=40, max_dim=60, step=1):

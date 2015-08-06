@@ -25,6 +25,8 @@ import CNN.conv
 import CNN.enums
 import CNN.recog
 import CNN.nms
+import CNN.prop
+
 from CNN.mlp import HiddenLayer
 
 
@@ -870,8 +872,9 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
     # pre-process image by: equalize histogram and stretch intensity
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = skimage.exposure.equalize_hist(img)
-    img = skimage.exposure.rescale_intensity(img, in_range=(0.2, 0.75))
+    img_proc = skimage.exposure.equalize_hist(img)
+    img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
+    img = img.astype(float) / 255.0
 
     # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
     # that means, we'll start with a window with initial size 320*320
@@ -917,19 +920,32 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         r_count = 0
 
         # for the current scale of the window, extract regions, start from the
-        # y_range = numpy.arange(start=0, stop=img_height, step=stride, dtype=int).tolist()
-        # x_range = numpy.arange(start=0, stop=img_width, step=stride, dtype=int).tolist()
         y = 0
         x_count = 0
         y_count = 0
         region_shape = []
+
+        # important, instead of naively add every sliding window, we'll only add
+        # windows that covers the strong detection proposals
+        proposals_weak, proposals_strong, proposals_map = CNN.prop.detection_proposal(img_proc, min_dim=int(window_dim / 2), max_dim=window_dim)
+        if len(proposals_strong) == 0:
+            print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, 0))
+            window_dim = int(window_dim * down_scale_factor)
+            continue
+
         while y <= img_height:
             x = 0
             x_count = 0
             while x <= img_width:
+
+                if not numpy.any(proposals_map[y:y + window_dim, x:x + window_dim]):
+                    x += stride
+                    region_shape = (window_dim, window_dim)
+                    continue
+
                 # - add region to the region list
                 # - adjust the position of the ground_truth to be relative to the window
-                #   not relative to the image (i.e relative frame of reference)
+                #   relative frame of reference (i.e not relative to the image)
                 # - don't forget to re_scale the extracted/sampled region to be 28*28
                 #   hence, multiply the relative position with this scaling accordingly
                 # - also, the image needs to be preprocessed so it can be ready for the CNN
@@ -1003,7 +1019,7 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         # after getting the predictions, construct the probability map and show it/ save it
         # since we're working on course-to-fine fashion, so for the next scale,
         # we'll only explore the regions detected in the current scale
-        map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
+        map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, img_width, img_height, img_dim, s_count)
         if strong_regions.shape[0] > 0:
             scale_regions.append(strong_regions)
         print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, duration))
@@ -1086,7 +1102,7 @@ def detect_img_from_file_slow(img_path, recognition_model_path, detection_model_
             while x <= img_width:
                 # - add region to the region list
                 # - adjust the position of the ground_truth to be relative to the window
-                #   not relative to the image (i.e relative frame of reference)
+                #   relative frame of reference (i.e not relative to the image)
                 # - don't forget to re_scale the extracted/sampled region to be 28*28
                 #   hence, multiply the relative position with this scaling accordingly
                 # - also, the image needs to be preprocessed so it can be ready for the CNN
@@ -1124,7 +1140,7 @@ def detect_img_from_file_slow(img_path, recognition_model_path, detection_model_
         d_pred, d_duration = __detect_batch(batch, recognition_model_path, detection_model_path, model_type, classifier)
 
         # now, after getting the predictions, construct the probability map and show it
-        map = __probability_map(d_pred, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, s_count)
+        map = __probability_map(d_pred, locations, window_dim, img_width, img_height, img_dim, s_count)
         print("Scale: %d, stride: %d, window_dim: %d, regions: %d" % (s_count, stride, window_dim, r_count))
 
     x = 10
@@ -1379,16 +1395,16 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
     return c_result, c_prob, c_duration
 
 
-def __probability_map(img, predictions, locations, window_dim, x_count, y_count, img_width, img_height, img_dim, count):
+def __probability_map(img, predictions, locations, window_dim, img_width, img_height, img_dim, count):
     # parameters of the algorithm
     min_dim = img_dim / 2
     overlap_thresh = 0.35
     min_overlap = 8
 
     r_factor = window_dim / img_dim
-    n = x_count * y_count
     locations = numpy.asarray(locations)
     predictions = numpy.asarray(predictions)
+    n = predictions.shape[0]
 
     # create an image
     map = numpy.zeros(shape=(img_height, img_width))
