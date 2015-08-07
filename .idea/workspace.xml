@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CNN/sview.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/detec.py" afterPath="$PROJECT_DIR$/CNN/detec.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/utils.py" afterPath="$PROJECT_DIR$/CNN/utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="hello_world.iws" />
@@ -30,12 +30,12 @@
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="168" column="77" selection-start-line="168" selection-start-column="77" selection-end-line="168" selection-end-column="77" />
+              <caret line="168" column="73" selection-start-line="168" selection-start-column="73" selection-end-line="168" selection-end-column="73" />
               <folding>
                 <element signature="e#172#203#0" expanded="false" />
                 <element signature="e#5218#5249#0" expanded="false" />
                 <element signature="e#7509#7538#0" expanded="false" />
-                <element signature="e#10866#10917#0" expanded="false" />
+                <element signature="e#10858#10909#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -44,23 +44,28 @@
       <file leaf-file-name="detec.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CNN/detec.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33333334">
-              <caret line="1035" column="64" selection-start-line="1035" selection-start-column="64" selection-end-line="1035" selection-end-column="64" />
+            <state vertical-scroll-proportion="1.3033333">
+              <caret line="790" column="96" selection-start-line="790" selection-start-column="96" selection-end-line="790" selection-end-column="96" />
               <folding>
                 <element signature="e#618#10579#0" expanded="false" />
                 <element signature="e#10764#16698#0" expanded="false" />
                 <element signature="e#16854#19957#0" expanded="false" />
                 <element signature="e#20185#28580#0" expanded="false" />
                 <element signature="e#28672#32665#0" expanded="false" />
-                <element signature="e#32888#33199#1" expanded="false" />
-                <element signature="e#44505#49564#0" expanded="false" />
-                <element signature="e#44505#44816#1" expanded="false" />
-                <element signature="e#49719#50089#0" expanded="false" />
-                <element signature="e#50223#53065#0" expanded="false" />
-                <element signature="e#53184#53494#0" expanded="false" />
-                <element signature="e#53595#57396#0" expanded="false" />
-                <element signature="e#57494#61295#0" expanded="false" />
-                <element signature="e#63936#64758#0" expanded="false" />
+                <element signature="e#32871#40688#0" expanded="false" />
+                <element signature="e#32871#33182#1" expanded="false" />
+                <element signature="e#40917#52356#0" expanded="false" />
+                <element signature="e#40917#41228#1" expanded="false" />
+                <element signature="e#52532#57591#0" expanded="false" />
+                <element signature="e#52532#52843#1" expanded="false" />
+                <element signature="e#57693#62479#0" expanded="false" />
+                <element signature="e#62634#63004#0" expanded="false" />
+                <element signature="e#63138#65980#0" expanded="false" />
+                <element signature="e#66099#66409#0" expanded="false" />
+                <element signature="e#66510#70311#0" expanded="false" />
+                <element signature="e#70409#74210#0" expanded="false" />
+                <element signature="e#74320#76766#0" expanded="false" />
+                <element signature="e#76851#77673#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -648,7 +653,13 @@
       <option name="project" value="LOCAL" />
       <updated>1438889605823</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="Commit">
+      <created>1438939397146</created>
+      <option name="number" value="00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1438939397146</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="TodoView">
@@ -664,7 +675,6 @@
     <frame x="-8" y="-8" width="1382" height="754" extended-state="6" />
     <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19717261" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3048576" sideWeight="0.49702382" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37018424" sideWeight="0.52529764" order="7" side_tool="true" content_ui="tabs" />
@@ -672,16 +682,17 @@
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2847571" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36515912" sideWeight="0.4940476" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.36348408" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="true" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.19717261" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.6113903" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5029762" order="11" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.42211056" sideWeight="0.4747024" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.45058626" sideWeight="0.4747024" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.6113903" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -712,7 +723,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="1340" />
+      <option name="time" value="1345" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -1503,14 +1514,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.84011626">
-          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CNN/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.5692771">
@@ -1587,38 +1590,51 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="168" column="77" selection-start-line="168" selection-start-column="77" selection-end-line="168" selection-end-column="77" />
+          <caret line="168" column="73" selection-start-line="168" selection-start-column="73" selection-end-line="168" selection-end-column="73" />
           <folding>
             <element signature="e#172#203#0" expanded="false" />
             <element signature="e#5218#5249#0" expanded="false" />
             <element signature="e#7509#7538#0" expanded="false" />
-            <element signature="e#10866#10917#0" expanded="false" />
+            <element signature="e#10858#10909#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CNN/detec.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33333334">
-          <caret line="1035" column="64" selection-start-line="1035" selection-start-column="64" selection-end-line="1035" selection-end-column="64" />
+        <state vertical-scroll-proportion="1.3033333">
+          <caret line="790" column="96" selection-start-line="790" selection-start-column="96" selection-end-line="790" selection-end-column="96" />
           <folding>
             <element signature="e#618#10579#0" expanded="false" />
             <element signature="e#10764#16698#0" expanded="false" />
             <element signature="e#16854#19957#0" expanded="false" />
             <element signature="e#20185#28580#0" expanded="false" />
             <element signature="e#28672#32665#0" expanded="false" />
-            <element signature="e#32888#33199#1" expanded="false" />
-            <element signature="e#44505#49564#0" expanded="false" />
-            <element signature="e#44505#44816#1" expanded="false" />
-            <element signature="e#49719#50089#0" expanded="false" />
-            <element signature="e#50223#53065#0" expanded="false" />
-            <element signature="e#53184#53494#0" expanded="false" />
-            <element signature="e#53595#57396#0" expanded="false" />
-            <element signature="e#57494#61295#0" expanded="false" />
-            <element signature="e#63936#64758#0" expanded="false" />
+            <element signature="e#32871#40688#0" expanded="false" />
+            <element signature="e#32871#33182#1" expanded="false" />
+            <element signature="e#40917#52356#0" expanded="false" />
+            <element signature="e#40917#41228#1" expanded="false" />
+            <element signature="e#52532#57591#0" expanded="false" />
+            <element signature="e#52532#52843#1" expanded="false" />
+            <element signature="e#57693#62479#0" expanded="false" />
+            <element signature="e#62634#63004#0" expanded="false" />
+            <element signature="e#63138#65980#0" expanded="false" />
+            <element signature="e#66099#66409#0" expanded="false" />
+            <element signature="e#66510#70311#0" expanded="false" />
+            <element signature="e#70409#74210#0" expanded="false" />
+            <element signature="e#74320#76766#0" expanded="false" />
+            <element signature="e#76851#77673#0" expanded="false" />
           </folding>
         </state>
       </provider>

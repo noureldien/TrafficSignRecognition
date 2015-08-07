@@ -787,8 +787,188 @@ def detect_from_dataset(dataset_path, recognition_model_path, detection_model_pa
     print("... finish training the model, total time consumed: %f min." % (duration))
 
 
-def detect_img_from_file(img_path, recognition_model_path, detection_model_path, pre_process=True, proposals=True,
-                         model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def detect_from_file(img_path, recognition_model_path, detection_model_path, img_dim, proposals=True,
+                     model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+    """
+    detect a traffic sign form the given natural image
+    detected signs depend on the given model, for example if it is a prohibitory detection model
+    we'll only detect prohibitory traffic signs
+    :param img_path:
+    :param model_path:
+    :param classifier:
+    :param img_dim:
+    :return:
+    """
+
+    ##############################
+    # Extract and detect regions #
+    ##############################
+
+    # stride represents how dense to sample regions around the ground truth traffic signs
+    # also down_scaling factor affects the sampling
+    # initial dimension defines what is the biggest traffic sign to recognise
+    # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
+
+    # pre-process image by: equalize histogram and stretch intensity
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_proc = skimage.exposure.equalize_hist(img)
+    img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
+    img = img.astype(float) / 255.0
+
+    # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
+    # that means, we'll start with a window with initial size 320*320
+    # for each ground_truth boundary, extract regions in such that:
+    # 1. each region fully covers the boundary
+    # 2. the boundary must not be smaller than the 1/5 of the region
+    # ie. according to initial window size, the boundary must not be smaller than 80*80
+    # but sure we will recognize smaller ground truth because we down_scale the window every step
+    # boundary is x1, y1, x2, y2 => (x1,y1) top left, (x2, y2) bottom right
+    # don't forget that stride of sliding the window is dynamic
+
+    down_scale_factor = 0.9
+    window_dim = 160
+    stride_factor = 10
+    img_shape = img.shape
+    img_width = img_shape[1]
+    img_height = img_shape[0]
+
+    s_count = 0
+    r_count = 0
+
+    # regions predicted from the previous scale
+    scale_regions = []
+    scale_locations = []
+
+    # scale_down until you reach the min window
+    # instead of scaling up the image itself, we scale down the sliding window
+    while window_dim >= img_dim:
+
+        # locations are the x,y position (top left) of the sliding-windows
+        # regions are the extracted sliding windows from the image, passed
+        # later to the detector to predict the location of the traffic sign with-in each one
+        regions = []
+        locations = []
+
+        # stride is dynamic, smaller strides for smaller scales
+        # this means that stride is equivialant to 2 pixels
+        # when the window is resized to the img_dim (required for CNN)
+        r_factor = window_dim / img_dim
+        stride = int(stride_factor * int(r_factor))
+
+        s_count += 1
+        r_count = 0
+
+        # for the current scale of the window, extract regions, start from the
+        y = 0
+        x_count = 0
+        y_count = 0
+        region_shape = []
+
+        # check if option of using proposal is enabled
+        if proposals:
+            # important, instead of naively add every sliding window, we'll only add
+            # windows that covers the strong detection proposals
+            proposals_weak, proposals_strong, proposals_map = CNN.prop.detection_proposal(img_proc, min_dim=int(window_dim / 2), max_dim=window_dim)
+            if len(proposals_strong) == 0:
+                print("Scale: %d, stride: %d, window_dim: %d, regions: %d" % (s_count, stride, window_dim, r_count))
+                window_dim = int(window_dim * down_scale_factor)
+                scale_regions.append([])
+                scale_locations.append([])
+                continue
+
+        while y <= img_height:
+            x = 0
+            x_count = 0
+            while x <= img_width:
+
+                # check if option of using proposal is enabled
+                if proposals:
+                    # if the current region does not intersect with the proposal, then ignore it
+                    if not numpy.any(proposals_map[y:y + window_dim, x:x + window_dim]):
+                        x += stride
+                        region_shape = (window_dim, window_dim)
+                        continue
+
+                # - add region to the region list
+                # - adjust the position of the ground_truth to be relative to the window
+                #   relative frame of reference (i.e not relative to the image)
+                # - don't forget to re_scale the extracted/sampled region to be 28*28
+                #   hence, multiply the relative position with this scaling accordingly
+                # - also, the image needs to be preprocessed so it can be ready for the CNN
+                region = img[y:y + window_dim, x:x + window_dim]
+                region_shape = region.shape
+                region = skimage.transform.resize(region, output_shape=(img_dim, img_dim))
+
+                # pre-process the region if needed
+                region = skimage.exposure.equalize_hist(region)
+
+                # we only need to store the region, it's top-left corner and sliding window dim
+                regions.append(region)
+                locations.append([x, y])
+
+                r_count += 1
+
+                # # # save region for experiemnt
+                # filePathWrite = "D:\\_Dataset\\GTSDB\\Test_Regions\\%s_%s.png" % ("{0:03d}".format(s_count), "{0:03d}".format(r_count))
+                # img_save = region * 255
+                # img_save = img_save.astype(int)
+                # cv2.imwrite(filePathWrite, img_save)
+
+                x_count += 1
+                x += stride
+                if region_shape[1] < window_dim:
+                    break
+
+            y_count += 1
+            if region_shape[0] < window_dim:
+                break
+            y += stride
+
+        # append all the regions extracted from the current scale
+        # we'll only do detection after we collect all the regions
+        # from all the scales
+        scale_regions.append(regions)
+        scale_locations.append(locations)
+
+        print("Scale: %d, stride: %d, window_dim: %d, regions: %d" % (s_count, stride, window_dim, r_count))
+
+        # now we want to re_scale, instead of down_scaling the whole image, we down_scale the window
+        # don't forget to recalculate the window area
+        window_dim = int(window_dim * down_scale_factor)
+
+    # run the detector on the regions
+    start_time = time.clock()
+
+    # after we collected all the regions from all the scales, send them to be detected
+    scale_pred = __detect_from_scales_regions(recognition_model_path, detection_model_path, scale_regions)
+
+    end_time = time.clock()
+    duration = (end_time - start_time) / 60.0
+    scale_strong_regions = []
+
+    print("... detection regions: %d, duration(min.): %f" % (r_count, duration))
+
+    # construct the probability map for each scale and show it/ save it
+    s_count = 0
+    for pred, locations in zip(scale_pred, scale_locations):
+        s_count += 1
+        map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, img_width, img_height, img_dim, s_count)
+        if len(strong_regions) > 0:
+            scale_strong_regions.append(strong_regions)
+            print("Scale: %d, stride: %d, window_dim: %d, regions: %d, strong regions detected" % (s_count, stride, window_dim, r_count))
+        else:
+            print("Scale: %d, stride: %d, window_dim: %d, regions: %d, no regions detected" % (s_count, stride, window_dim, r_count))
+
+    # now, after we finished scanning at all the levels, we should make the final verdict
+    # by suppressing all the strong_regions that we extracted on different scales
+    if len(scale_strong_regions) > 0:
+        scale_regions = numpy.vstack(scale_strong_regions)
+        __confidence_map(img, img_width, img_height, scale_regions, s_count)
+
+
+def detect_from_file_slow_1(img_path, recognition_model_path, detection_model_path, pre_process=True, proposals=True,
+                            model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -1044,7 +1224,7 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         __confidence_map(img, img_width, img_height, scale_regions, s_count)
 
 
-def detect_img_from_file_slow(img_path, recognition_model_path, detection_model_path, img_dim, model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def detect_from_file_slow_2(img_path, recognition_model_path, detection_model_path, img_dim, model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -1158,6 +1338,124 @@ def detect_img_from_file_slow(img_path, recognition_model_path, detection_model_
         print("Scale: %d, stride: %d, window_dim: %d, regions: %d" % (s_count, stride, window_dim, r_count))
 
     x = 10
+
+
+def __detect_from_scales_regions(recognition_model_path, detection_model_path, scale_regions):
+    ##############################
+    # Build the detector         #
+    ##############################
+
+    loaded_objects = CNN.utils.load_model(model_path=recognition_model_path, model_type=CNN.enums.ModelType._02_conv3_mlp2)
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    pool_size = loaded_objects[5]
+
+    # since we don't know that batch size in advance, let's say 500
+    # and whatever regions we extract from the image we're going to split
+    # them to batches and if the remainder is not zero, we're going to zero-pad
+    # the remainder. For example the batch size is 500 and we've 600 regions
+    # then pad the regions to be 1000 images and split into 2 patches
+    batch_size = 500
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+
+    layer0_input = T.tensor4(name='input')
+    layer0_img_dim = img_dim
+    layer0_img_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+    layer3_input_shape = (batch_size, nkerns[2] * layer3_img_dim * layer3_img_dim)
+
+    # layer 0, 1, 2: Conv-Pool
+    layer0_output = CNN.conv.convpool_layer(
+        input=layer0_input, W=layer0_W, b=layer0_b,
+        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
+        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
+        pool_size=pool_size
+    )
+    layer1_output = CNN.conv.convpool_layer(
+        input=layer0_output, W=layer1_W, b=layer1_b,
+        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
+        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
+        pool_size=pool_size
+    )
+    layer2_output = CNN.conv.convpool_layer(
+        input=layer1_output, W=layer2_W, b=layer2_b,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        pool_size=pool_size
+    )
+    # do the filtering using 3 layers of Conv+Pool
+    conv_fn = theano.function([layer0_input], layer2_output)
+
+    # load the regression model
+    with open(detection_model_path, 'rb') as f:
+        nn_regression = pickle.load(f)
+
+    ##############################
+    # Start detection            #
+    ##############################
+
+    # stack the regions of all the scales in one array
+    # please note that a scale can have no regions, so using vstack wouldn't work
+    # remove the scales with empty regions then use vstack
+    regions = []
+    for r in scale_regions:
+        if len(r) > 0:
+            regions.append(r)
+    regions = numpy.vstack(regions)
+
+    # split them to batches first, zero-pad them if needed
+    n_regions = regions.shape[0]
+    if n_regions % batch_size != 0:
+        n_remaining = batch_size - (n_regions % batch_size)
+        regions_padding = numpy.zeros(shape=(n_remaining, img_dim, img_dim), dtype=float)
+        regions = numpy.vstack((regions, regions_padding))
+
+    # loop on the batches of the regions
+    n_batches = int(regions.shape[0] / batch_size)
+    pred = []
+    for i in range(n_batches):
+        t1 = time.clock()
+        # prediction: CNN filtering then MLP regression
+        batch = regions[i * batch_size: (i + 1) * batch_size]
+        batch = batch.reshape(layer0_img_shape)
+        filters = conv_fn(batch)
+        filters = filters.reshape(layer3_input_shape).astype("float32")
+        batch_pred = nn_regression.predict(filters)
+        pred.append(batch_pred)
+        t2 = time.clock()
+        print("... batch: %i/%i, time(sec.): %f" % ((i + 1), n_batches, t2 - t1))
+
+    # after getting all the predictions, remove the padding
+    pred = numpy.vstack(pred)
+    pred = pred[0:n_regions]
+
+    # scale-back the the predicted values to it's original scale
+    pred = numpy.rint(((pred * img_dim) + img_dim) / 2).astype(int)
+    pred[pred > img_dim - 1] = img_dim - 1
+    pred[pred < 0] = 0
+
+    # split the predictions to their scales
+    # i.e. re-arrange the pred to scale_pred
+    scale_pred = []
+    r_count = 0
+    for r in scale_regions:
+        n = len(r)
+        scale_pred.append(pred[r_count:r_count + n])
+        r_count += n
+
+    return scale_pred
 
 
 def __detect_batch(batch, recognition_model_path, detection_model_path, model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
@@ -1413,7 +1711,7 @@ def __probability_map(img, predictions, locations, window_dim, img_width, img_he
     # parameters of the algorithm
     min_dim = img_dim / 2
     overlap_thresh = 0.4
-    min_overlap = 8
+    min_overlap = 5
 
     r_factor = window_dim / img_dim
     locations = numpy.asarray(locations)
@@ -1482,7 +1780,7 @@ def __probability_map(img, predictions, locations, window_dim, img_width, img_he
 
 def __confidence_map(img, img_width, img_height, scale_regions, scale_count):
     overlap_thresh = 0.5
-    min_overlap = 2
+    min_overlap = 3
     weak_regions, strong_regions = CNN.nms.non_max_suppression_accurate(scale_regions, overlap_thresh, min_overlap)
 
     # normalize the image
