@@ -787,7 +787,7 @@ def detect_from_dataset(dataset_path, recognition_model_path, detection_model_pa
     print("... finish training the model, total time consumed: %f min." % (duration))
 
 
-def detect_img_from_file(img_path, recognition_model_path, detection_model_path, pre_process=True,
+def detect_img_from_file(img_path, recognition_model_path, detection_model_path, pre_process=True, proposals=True,
                          model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
     """
     detect a traffic sign form the given natural image
@@ -926,23 +926,28 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         y_count = 0
         region_shape = []
 
-        # important, instead of naively add every sliding window, we'll only add
-        # windows that covers the strong detection proposals
-        proposals_weak, proposals_strong, proposals_map = CNN.prop.detection_proposal(img_proc, min_dim=int(window_dim / 2), max_dim=window_dim)
-        if len(proposals_strong) == 0:
-            print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, 0))
-            window_dim = int(window_dim * down_scale_factor)
-            continue
+        # check if option of using proposal is enabled
+        if proposals:
+            # important, instead of naively add every sliding window, we'll only add
+            # windows that covers the strong detection proposals
+            proposals_weak, proposals_strong, proposals_map = CNN.prop.detection_proposal(img_proc, min_dim=int(window_dim / 2), max_dim=window_dim)
+            if len(proposals_strong) == 0:
+                print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, 0))
+                window_dim = int(window_dim * down_scale_factor)
+                continue
 
         while y <= img_height:
             x = 0
             x_count = 0
             while x <= img_width:
 
-                if not numpy.any(proposals_map[y:y + window_dim, x:x + window_dim]):
-                    x += stride
-                    region_shape = (window_dim, window_dim)
-                    continue
+                # check if option of using proposal is enabled
+                if proposals:
+                    # if the current region does not intersect with the proposal, then ignore it
+                    if not numpy.any(proposals_map[y:y + window_dim, x:x + window_dim]):
+                        x += stride
+                        region_shape = (window_dim, window_dim)
+                        continue
 
                 # - add region to the region list
                 # - adjust the position of the ground_truth to be relative to the window
@@ -957,7 +962,6 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
                 # pre-process the region if needed
                 if pre_process:
                     region = skimage.exposure.equalize_hist(region)
-                    region = skimage.exposure.rescale_intensity(region, in_range=(0.2, 0.75))
 
                 # we only need to store the region, it's top-left corner and sliding window dim
                 regions.append(region)
@@ -965,7 +969,7 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
 
                 r_count += 1
 
-                # save region for experiemnt
+                # # # save region for experiemnt
                 # filePathWrite = "D:\\_Dataset\\GTSDB\\Test_Regions\\%s_%s.png" % ("{0:03d}".format(s_count), "{0:03d}".format(r_count))
                 # img_save = region * 255
                 # img_save = img_save.astype(int)
@@ -1009,7 +1013,7 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
             batch_pred = nn_regression.predict(filters)
             pred.append(batch_pred)
             t2 = time.clock()
-            print("... batch: %i/%i, time(sec.): %f" % (i, n_batches, t2 - t1))
+            print("... batch: %i/%i, time(sec.): %f" % ((i + 1), n_batches, t2 - t1))
 
         # after getting all the predictions, remove the padding
         pred = numpy.vstack(pred)
@@ -1029,7 +1033,9 @@ def detect_img_from_file(img_path, recognition_model_path, detection_model_path,
         map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, img_width, img_height, img_dim, s_count)
         if len(strong_regions) > 0:
             scale_regions.append(strong_regions)
-        print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, duration))
+            print("Scale: %d, stride: %d, window_dim: %d, regions: %d, duration(min.): %f" % (s_count, stride, window_dim, r_count, duration))
+        else:
+            print("Scale: %d, stride: %d, window_dim: %d, regions: %d, no regions detected" % (s_count, stride, window_dim, r_count))
 
     # now, after we finished scanning at all the levels, we should make the final verdict
     # by suppressing all the strong_regions that we extracted on different scales
@@ -1406,7 +1412,7 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
 def __probability_map(img, predictions, locations, window_dim, img_width, img_height, img_dim, count):
     # parameters of the algorithm
     min_dim = img_dim / 2
-    overlap_thresh = 0.35
+    overlap_thresh = 0.4
     min_overlap = 8
 
     r_factor = window_dim / img_dim
@@ -1473,21 +1479,11 @@ def __probability_map(img, predictions, locations, window_dim, img_width, img_he
     # return the map to be exploited later by the detector, for the next scale
     return map, weak_regions, strong_regions
 
-    # now, plot the image
-    # plot original image and first and second components of output
-    import matplotlib.pyplot as plt
-
-    # plt.figure()
-    # plt.gray()
-    # plt.ion()
-    # plt.axis('off')
-    # plt.imshow(map, interpolation='nearest')
-    # plt.show()
-    # dummy_var = 10
-
 
 def __confidence_map(img, img_width, img_height, scale_regions, scale_count):
-    weak_regions, strong_regions = CNN.nms.non_max_suppression_accurate(scale_regions, 0.5, 3)
+    overlap_thresh = 0.5
+    min_overlap = 2
+    weak_regions, strong_regions = CNN.nms.non_max_suppression_accurate(scale_regions, overlap_thresh, min_overlap)
 
     # normalize the image
     img_normalized = img * 255

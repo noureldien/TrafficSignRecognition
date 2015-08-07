@@ -1037,12 +1037,13 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
     # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
     # stride_factor = 2 gives more sampling than stride_factor = 1
     # don't use value smaller than 1 for stride factor
-    up_scale_factor = 1.15
+    up_scale_factor = 1.2
+    up_scale_increment = 10
     biggest_area_factor = 4 ** 2
     min_region_dim = img_dim * 2 / 3
     img_width = 1630
     img_height = 800
-    stride_factor = 2
+    stride_factor = 10
     regions = numpy.zeros(shape=(0, img_dim * img_dim), dtype=float)
     relative_boundaries = numpy.zeros(shape=(0, 4), dtype=int)
 
@@ -1051,7 +1052,10 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
 
     for file in files:
         file_id = int(file[:-4])
-        print(file_id)
+
+        # print for debugging
+        print("... file: %d, regions: %d" % (file_id, regions.shape[0]))
+
         file_path = join(directory, file)
         img = cv2.imread(file_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -1083,15 +1087,20 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
                     and (boundary_max_dim * img_dim / window_dim) >= min_region_dim \
                     and window_dim <= img_height and window_dim <= img_width:
 
-                # for the current scale of the window, extract regions, start from the
-                stride = int((boundary_max_dim * img_dim / (stride_factor * window_dim)))
+                # for the current scale of the window, extract regions
+                # please don't change this sentence, it's magic
+                # it means that the stride is boundary size independent (boundary_max_dim / img_dim)
+                # also, it means the stride gets bigger when the ratio of boundary to window gets smaller (window_dim / boundary_max_dim)
+                # stride = int(stride_factor * (boundary_max_dim / img_dim) * (window_dim / boundary_max_dim))
+                stride = int(stride_factor * window_dim / img_dim)
                 y_range = numpy.arange(start=y2 - window_dim, stop=y1 + 1, step=stride, dtype=int).tolist()
                 x_range = numpy.arange(start=x2 - window_dim, stop=x1 + 1, step=stride, dtype=int).tolist()
 
-                # print("Window: %d, Stride: %d" %(window_dim, stride))
+                # for debugging
+                # print("stride: %d, boundary: %d, window: %d" % (stride, boundary_max_dim, window_dim))
 
                 # if last x in x_range don't make the sliding window reach the end of the region
-                # then add one more x to the x_range to satisfy this
+                # then add one more x   to the x_range to satisfy this
                 x_r_len = len(x_range)
                 y_r_len = len(y_range)
                 if int((x1 - x_range[x_r_len - 1]) * boundary_width / window_dim) > 1:
@@ -1129,35 +1138,38 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
                         # pre-process the region if needed
                         if pre_processing:
                             region = skimage.exposure.equalize_hist(region)
-                            region = skimage.exposure.rescale_intensity(region, in_range=(0.1, 0.8))
+                            # region = skimage.exposure.rescale_intensity(region, in_range=(0.1, 0.8))
 
                         # append the region
                         region = region.reshape((img_dim * img_dim,))
                         regions = numpy.vstack([regions, region])
 
-                        # save region for experimenting/debugging
+                        # # save region for experimenting/debugging
                         # filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:05d}.png".format(len(regions))
                         # cv2.imwrite(filePathWrite, region.reshape((img_dim, img_dim)) * 255)
 
                 if add_true_negative:
                     # add some true negatives to increase variance of the machine
                     # add only n images per scale per image, n = 2
-                    regions_negatives = __sample_true_negatives(img, window_dim, img_dim, boundaries, 2)
+                    regions_negatives = __sample_true_negatives(img, window_dim, img_dim, boundaries, 4, pre_processing)
                     regions = numpy.vstack([regions, regions_negatives])
                     relative_boundaries = numpy.vstack([relative_boundaries, numpy.zeros(shape=(regions_negatives.shape[0], 4), dtype=int)])
 
                 # also add relative boundaries for them as the ground truth
                 # which should only be zeros
 
-                # saving images for experimenting/debugging
+                # # saving images for experimenting/debugging
                 # ss_count = 0
-                # for s in regions_negative:
+                # for s in regions_negatives:
                 #     ss_count += 1
                 #     filePathWrite = "D:\\_Dataset\\GTSDB\\Training_Regions\\" + file[:-4] + "_" + "{0:03d}".format(len(regions)) + "{0:02d}.png".format(ss_count)
-                #     cv2.imwrite(filePathWrite, s.reshape((resize_dim, resize_dim)) * 255)
+                #     cv2.imwrite(filePathWrite, s.reshape((img_dim, img_dim)) * 255)
 
                 # now we up_scale the window
-                window_dim = int(window_dim * up_scale_factor)
+                # instead of scaling up by factor, scale up by fixed increment
+                # window_dim = int(window_dim * up_scale_factor)
+                # please don't change this expression, it's magic
+                window_dim += int(up_scale_increment * boundary_max_dim / min_region_dim)
 
             dummy_variable_end_file_loop = 10
 
@@ -1166,6 +1178,7 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
     file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized_%d.pkl' % (img_dim)
     pickle.dump(data, open(file_name, 'wb'))
 
+    print("Total number of regions: %d" % (regions.shape[0]))
     print("Finish sampling regions for detector")
 
 
@@ -1332,7 +1345,7 @@ def convolve_gtsdb(recognition_model_path):
     print("... finish convolving ans saving the images, total time consumed: %f" % (duration))
 
 
-def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count):
+def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count, pre_processing):
     img_h = img.shape[0]
     img_w = img.shape[1]
     n_boundary = len(boundaries)
@@ -1347,8 +1360,7 @@ def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count):
         x1 = random.randint(0, img_w - window_dim)
         x2 = x1 + window_dim
 
-        # now, check if any of the boundaries intersect
-        # with the region
+        # now, check if any of the boundaries intersect with the region
         n_conditions = 0
         for boundary in boundaries:
             b_x1 = boundary[0]
@@ -1362,6 +1374,12 @@ def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count):
         if n_conditions == n_boundary:
             region = numpy.copy(img[y1:y2, x1:x2])
             region = skimage.transform.resize(region, output_shape=(resize_dim, resize_dim))
+
+            # pre-process the region if needed
+            if pre_processing:
+                region = skimage.exposure.equalize_hist(region)
+                # region = skimage.exposure.rescale_intensity(region, in_range=(0.1, 0.8))
+
             region = region.reshape((resize_dim * resize_dim,))
             regions = numpy.vstack([regions, region])
 
