@@ -53,34 +53,17 @@ def span_google_street_view():
 
     # decode the polyline of the direction to get the points
     points = polyline.codec.PolylineCodec().decode(direction_result[0]["overview_polyline"]["points"])
-    __plot_points_on_map(points, False)
-
-    # get the steps of the direction
-    steps = direction_result[0]["legs"][0]["steps"]
-    locations = __convert_steps_to_locations(steps)
+    locations = __convert_points_to_locations(points)
+    locations = __calculate_heading(locations)
     __plot_points_on_map(locations)
 
-    # do the first snap
-    snap_result = googlemaps.client.snap_to_roads(client, locations, interpolate=True)
-    locations = __snap_result_to_locations(snap_result)
-    __plot_points_on_map(locations)
+    # missing steps
+    # generate more points, adjust the pace, then calculate the heading
 
-    # generate more steps in the direction
-    # if you decrease this number, you move faster
-    frames_per_meter = 0.04
-    locations = __recode_path(steps, frames_per_meter)
-
-    # draw these steps on the map
-    snap_result = googlemaps.client.snap_to_roads(client, locations, interpolate=True)
-    locations = __snap_result_to_locations(snap_result)
-    __plot_points_on_map(locations)
-
-    # now, snap these points to the road
+    __show_street_view_images(locations, api_key)
 
     x = 10
     return
-
-    __show_street_view_images(many_locations, api_key)
 
 
     # since we interpolated points in the direction, these generated points might not be on
@@ -116,7 +99,7 @@ def __recode_path(direction_steps, frames_per_meter=1):
     :return:
     """
 
-    way_points = []
+    locations = []
     for i in range(0, len(direction_steps) - 1):
         step = direction_steps[i]
         distance = step["distance"]["value"]
@@ -128,23 +111,17 @@ def __recode_path(direction_steps, frames_per_meter=1):
         lat2 = point2["lat"]
         lng2 = point2["lng"]
         interpolated = __interpolate_path(lat1, lng1, lat2, lng2, frames)
-        way_points.append(interpolated)
+        locations.append(interpolated)
 
     # update the directions so that when at a waypoint you're looking
     # towards the next
-    way_points = numpy.hstack(way_points)
-    heading = 0
-    n_way_points = way_points.shape[0]
-    for i in range(0, n_way_points):
-        way_point = way_points[i]
-        if i < n_way_points - 1:
-            heading = __compute_direction(way_point, way_points[i + 1])
-        way_point["heading"] = heading
+    locations = numpy.hstack(locations)
+    locations = __calculate_heading(locations)
 
-    return way_points
+    return locations
 
 
-def __ajdust_pace(locations):
+def __adjust_pace(locations):
     """
     For the given locations, check if the distance between each one is near to the give
     pace, if not either add or remove locations to adjust the pace
@@ -182,6 +159,24 @@ def __interpolate_path(lat1, lng1, lat2, lng2, frames):
         points.append(point)
 
     return points
+
+
+def __calculate_heading(locations):
+    """
+    For the given list of locations, calculate and add the heading for each of them
+    :param locations:
+    :return:
+    """
+
+    heading = 0
+    n = len(locations)
+    for i in range(0, n):
+        loc = locations[i]
+        if i < n - 1:
+            heading = __compute_direction(loc, locations[i + 1])
+        loc["heading"] = heading
+
+    return locations
 
 
 def __compute_direction(point1, point2):
@@ -275,6 +270,14 @@ def __convert_locations_to_points(locations):
     for loc in locations:
         points.append((loc["lat"], loc["lng"]))
     return points
+
+
+def __convert_points_to_locations(points):
+    locations = []
+    for p in points:
+        location = {"lat": p[0], "lng": p[1]}
+        locations.append(location)
+    return locations
 
 
 def __pseudo_color(val, minval, maxval):

@@ -809,13 +809,6 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
     # initial dimension defines what is the biggest traffic sign to recognise
     # actually stride should be dynamic, i.e. smaller strides for smaller window size and vice versa
 
-    # pre-process image by: equalize histogram and stretch intensity
-    img = cv2.imread(img_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img_proc = skimage.exposure.equalize_hist(img)
-    img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
-    img = img.astype(float) / 255.0
-
     # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
     # that means, we'll start with a window with initial size 320*320
     # for each ground_truth boundary, extract regions in such that:
@@ -826,9 +819,20 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
     # boundary is x1, y1, x2, y2 => (x1,y1) top left, (x2, y2) bottom right
     # don't forget that stride of sliding the window is dynamic
 
+    # pre-process image by: equalize histogram and stretch intensity
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_proc = skimage.exposure.equalize_hist(img)
+    img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
+    img = img.astype(float) / 255.0
+
+    # min, max defines what is the range of scaling the sliding window
+    # while scaling factor controls the amount of pixels to go down in each scale
+    max_window_dim = int(img_dim * 2)
+    min_window_dim = int(img_dim / 4)
     down_scale_factor = 0.9
-    window_dim = 160
-    stride_factor = 10
+    stride_factor = 0.1
+
     img_shape = img.shape
     img_width = img_shape[1]
     img_height = img_shape[0]
@@ -836,13 +840,21 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
     s_count = 0
     r_count = 0
 
-    # regions predicted from the previous scale
+    # regions, locations and window_dim at each scale
     scale_regions = []
     scale_locations = []
+    scale_window_dim = []
+
+    # we start by the window dimension = max and stop when it goes below
+    # the min, at each iteration, we scale down the window dimension by a factor
+    window_dim = max_window_dim
 
     # scale_down until you reach the min window
     # instead of scaling up the image itself, we scale down the sliding window
-    while window_dim >= img_dim:
+    while window_dim >= min_window_dim:
+
+        # we need to save window_dim at each scale to resize back the predicted region
+        scale_window_dim.append(window_dim)
 
         # locations are the x,y position (top left) of the sliding-windows
         # regions are the extracted sliding windows from the image, passed
@@ -853,8 +865,11 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
         # stride is dynamic, smaller strides for smaller scales
         # this means that stride is equivialant to 2 pixels
         # when the window is resized to the img_dim (required for CNN)
-        r_factor = window_dim / img_dim
-        stride = int(stride_factor * int(r_factor))
+        # r_factor = window_dim / min_window_dim
+        # stride = int(stride_factor * int(r_factor))
+
+        # simpler way to calculate the stride is: the stride is 10% of the current window dim
+        stride = int(window_dim * stride_factor)
 
         s_count += 1
         r_count = 0
@@ -952,6 +967,7 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
     # construct the probability map for each scale and show it/ save it
     s_count = 0
     for pred, locations in zip(scale_pred, scale_locations):
+        window_dim = scale_window_dim[s_count]
         s_count += 1
         map, weak_regions, strong_regions = __probability_map(img, pred, locations, window_dim, img_width, img_height, img_dim, s_count)
         if len(strong_regions) > 0:
