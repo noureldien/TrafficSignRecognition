@@ -823,6 +823,7 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img_proc = skimage.exposure.equalize_hist(img)
+    # img_proc = skimage.exposure.equalize_adapthist(img_proc, clip_limit=0.05, kernel_size=(8, 8))
     img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
     img = img.astype(float) / 255.0
 

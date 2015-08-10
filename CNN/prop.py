@@ -17,7 +17,7 @@ from skimage.draw import circle_perimeter
 from skimage.util import img_as_ubyte
 
 
-def detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
+def detection_proposal_and_save(img_path, min_dim=40, max_dim=160, pre_process=True):
     # extract detection proposals for circle-based traffic signs
     # suppress the extracted circles to weak and strong regions
     # draw the regions on the image and save it
@@ -25,8 +25,11 @@ def detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
     # load picture and detect edges
     img_color = cv2.imread(img_path)
     img = cv2.cvtColor(img_color, cv2.COLOR_BGRA2GRAY)
-    img = skimage.exposure.equalize_hist(img)
-    img = skimage.exposure.rescale_intensity(img, in_range=(0.2, 0.75))
+    if pre_process:
+        img = skimage.exposure.equalize_hist(img)
+        img = skimage.exposure.rescale_intensity(img, in_range=(0.2, 0.75))
+    else:
+        img = img.astype(float) / 255.0
 
     regions_weak, regions_strong, map = detection_proposal(img, min_dim, max_dim)
 
@@ -101,9 +104,10 @@ def detection_proposal(img_preprocessed, min_dim, max_dim):
     return regions_weak, regions_strong, map
 
 
-def __hough_circle_detection(img_path, min_dim=40, max_dim=60, step=1):
+def __hough_circle_detection(img_path, min_dim=40, max_dim=60):
     # load picture and detect edges
-    img = CNN.utils.rgb_to_gs(img_path)
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
     img_edges = canny(img, sigma=3, low_threshold=10, high_threshold=50)
 
     centers = []
@@ -113,7 +117,7 @@ def __hough_circle_detection(img_path, min_dim=40, max_dim=60, step=1):
     # detect all radii within the range
     min_radius = int(min_dim / 2)
     max_radius = int(max_dim / 2)
-    hough_radii = np.arange(start=min_radius, stop=max_radius, step=step)
+    hough_radii = np.arange(start=min_radius, stop=max_radius, step=1)
     hough_res = hough_circle(img_edges, hough_radii)
 
     for radius, h in zip(hough_radii, hough_res):
@@ -150,3 +154,67 @@ def __hough_circle_detection(img_path, min_dim=40, max_dim=60, step=1):
 
     # save the result
     skimage.io.imsave("D://_Dataset//GTSDB//Test_Regions//_img2_.png", img_color)
+
+
+def __hough_circle_detection_cv2(img_path, min_dim=40, max_dim=60):
+    img_color = cv2.imread(img_path)
+    img_filtered = cv2.pyrMeanShiftFiltering(img_color, 10, 10)
+    img_filtered = cv2.cvtColor(img_filtered, cv2.COLOR_BGRA2GRAY)
+    img_filtered = img_filtered.astype(float)
+    img_blurred = cv2.GaussianBlur(img_filtered, (5, 5), sigmaX=0)
+    img_laplacian = cv2.Laplacian(img_blurred, ddepth=cv2.CV_64F)
+
+    weight = 0.01 * 40
+    scale = 0.01 * 20
+    img_sharpened = (1.5 * img_filtered) - (0.5 * img_blurred) - (weight * cv2.multiply(img_filtered, scale * img_laplacian))
+    img_sharpened = img_sharpened.astype("uint8")
+
+    circles = cv2.HoughCircles(img_sharpened, cv2.HOUGH_GRADIENT, 1, 1, param1=50, param2=30, minRadius=int(min_dim / 2), maxRadius=int(max_dim / 2))
+
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        for i in circles[0, :]:
+            # draw the outer circle
+            cv2.circle(img_color, (i[0], i[1]), i[2], (0, 255, 0), 2)
+            # draw the center of the circle
+            cv2.circle(img_color, (i[0], i[1]), 2, (0, 0, 255), 3)
+
+    # for circle in circles[0]:
+    #     center_x = int(circle[0])
+    #     center_y = int(circle[1])
+    #     radius = int(circle[2])
+    #     cx, cy = circle_perimeter(center_x, center_y, radius)
+    #     img_color[cy, cx] = (220, 20, 20)
+
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2_1.png", img_color)
+
+
+def __hough_circle_detection_cv2_old(img_path):
+    img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+    frame_gray = cv2.GaussianBlur(img, (5, 5), 2)
+
+    edges = frame_gray - cv2.erode(frame_gray, None)
+    _, bin_edge = cv2.threshold(edges, 0, 255, cv2.THRESH_OTSU)
+    height, width = bin_edge.shape
+    mask = numpy.zeros((height + 2, width + 2), dtype=numpy.uint8)
+    cv2.floodFill(bin_edge, mask, (0, 0), 255)
+
+    components = segment_on_dt(bin_edge)
+
+    circles, obj_center = [], []
+    contours, _ = cv2.findContours(components,
+                                   cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+    for c in contours:
+        c = c.astype(numpy.int64)  # XXX OpenCV bug.
+        area = cv2.contourArea(c)
+        if 100 < area < 3000:
+            arclen = cv2.arcLength(c, True)
+            circularity = (pi_4 * area) / (arclen * arclen)
+            if circularity > 0.5:  # XXX Yes, pretty low threshold.
+                circles.append(c)
+                box = cv2.boundingRect(c)
+                obj_center.append((box[0] + (box[2] / 2), box[1] + (box[3] / 2)))
+
+    return circles, obj_center
