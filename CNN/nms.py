@@ -95,10 +95,9 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
     x2 = boxes[:, 2]
     y2 = boxes[:, 3]
 
-    # compute the area of the bounding boxes and sort the bounding
-    # boxes by the bottom-right y-coordinate of the bounding box
+    # compute the area of the bounding boxes
     area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    idxs = np.argsort(y2)
+    idxs = np.arange(boxes.shape[0])
 
     # keep looping while some indexes still remain in the indexes
     # list
@@ -112,20 +111,35 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
         # find the largest (x, y) coordinates for the start of
         # the bounding box and the smallest (x, y) coordinates
         # for the end of the bounding box
-        xx1 = np.maximum(x1[i], x1[ii])
-        yy1 = np.maximum(y1[i], y1[ii])
-        xx2 = np.minimum(x2[i], x2[ii])
-        yy2 = np.minimum(y2[i], y2[ii])
+        xx1 = x1[ii]
+        yy1 = y1[ii]
+        xx2 = x2[ii]
+        yy2 = y2[ii]
+
+        last_x1 = x1[i]
+        last_y1 = y1[i]
+        last_x2 = x2[i]
+        last_y2 = y2[i]
 
         # compute the width and height of the bounding box
-        w = np.maximum(0, xx2 - xx1 + 1)
-        h = np.maximum(0, yy2 - yy1 + 1)
+        w = xx2 - xx1
+        h = yy2 - yy1
 
         # compute the ratio of overlap
         overlap = (w * h) / area[idxs[:last]]
 
         # get the indexes that need to be deleted
-        deleted_i = np.concatenate(([last], np.where(overlap > overlap_thresh)[0]))
+        overlap_cond = np.where(overlap > overlap_thresh)[0]
+        x1_cond = np.intersect1d(np.where(xx1 >= last_x1)[0], np.where(xx1 <= last_x2)[0])
+        x2_cond = np.intersect1d(np.where(xx2 >= last_x1)[0], np.where(xx2 <= last_x2)[0])
+        y1_cond = np.intersect1d(np.where(yy1 >= last_y1)[0], np.where(yy1 <= last_y2)[0])
+        y2_cond = np.intersect1d(np.where(yy2 >= last_y1)[0], np.where(yy2 <= last_y2)[0])
+        y_cond = np.union1d(y1_cond, y2_cond)
+        xy_cond1 = np.intersect1d(x1_cond, y_cond)
+        xy_cond2 = np.intersect1d(x2_cond, y_cond)
+        xy_cond = np.union1d(xy_cond1, xy_cond2)
+        cond = np.intersect1d(overlap_cond, xy_cond)
+        deleted_i = np.concatenate(([last], cond))
 
         # instead of picking up the base box of the suppressed boxes
         # we might want instead to pick up their means
@@ -141,6 +155,6 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
         # delete all indexes from the index list that have
         idxs = np.delete(idxs, deleted_i)
 
-    # return only the bounding boxes that were picked using the
-    # integer data type
+        # return only the bounding boxes that were picked using the
+        # integer data type
     return np.asarray(pick, dtype=int), np.asarray(strong_pick, dtype=int)

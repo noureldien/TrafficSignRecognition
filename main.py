@@ -145,8 +145,8 @@ print('Traffic Sign Recognition')
 img_dim_80 = 80
 gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
 gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80.pkl'
-gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_mandatory_organized_80.pkl'
-gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_mandatory_convolved_80.pkl'
+gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_organized_80.pkl'
+gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_80.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True, True)
@@ -167,28 +167,14 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_mandatory_convolved_80.pkl'
 # CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
-# CNN.detec.detect_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//_img16.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
-#                          recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80, proposals=True)
+CNN.detec.detect_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00061.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+                          recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80, proposals=True)
 
 
-import cv2
-import skimage
-import skimage.exposure
-
-img_path = "D://_Dataset//GTSDB//Test_PNG//00064.png"
-
-# img = cv2.imread(img_path)
-# img = cv2.pyrMeanShiftFiltering(img, 16, 64, 2)
-# # img = skimage.exposure.equalize_hist(img_gs)
-# # img_int = skimage.exposure.rescale_intensity(img, in_range=(0.1, 0.8))
-# img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-# img = skimage.exposure.equalize_adapthist(img, clip_limit=0.2, kernel_size=(8, 8))
-# cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img1.png", img * 255)
-
-
-#CNN.prop.__hough_circle_detection(img_path, 22, 40, True)
-CNN.prop.__hough_circle_detection_cv2(img_path, 22, 40)
-# CNN.prop.detection_proposal_and_save(img_path, min_dim=22, max_dim=45, pre_process=False)
+#import cv2
+#img_path = "D://_Dataset//GTSDB//Test_PNG/00149.png"
+#img_color = cv2.imread(img_path)
+#CNN.prop.__tutorial_detection_proposal_and_save(img_path, 20, 50)
 
 # endregion
 

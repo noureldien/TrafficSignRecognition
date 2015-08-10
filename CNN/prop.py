@@ -17,34 +17,78 @@ from skimage.draw import circle_perimeter
 from skimage.util import img_as_ubyte
 
 
-def detection_proposal_and_save(img_path, min_dim=40, max_dim=160, pre_process=True):
-    # extract detection proposals for circle-based traffic signs
-    # suppress the extracted circles to weak and strong regions
-    # draw the regions on the image and save it
+def detection_proposal(img_color, min_dim, max_dim):
+    """
+    This algorithm depends on opencv, which is much much better than this of skiimage
+    :param img_color:
+    :param min_dim:
+    :param max_dim:
+    :return:
+    """
 
-    # load picture and detect edges
-    img_color = cv2.imread(img_path)
-    img = cv2.cvtColor(img_color, cv2.COLOR_BGRA2GRAY)
-    if pre_process:
-        img = skimage.exposure.equalize_hist(img)
-        img = skimage.exposure.rescale_intensity(img, in_range=(0.2, 0.75))
-    else:
-        img = img.astype(float) / 255.0
+    img_filtered = cv2.pyrMeanShiftFiltering(img_color, 10, 10)
+    img_filtered = cv2.cvtColor(img_filtered, cv2.COLOR_BGRA2GRAY)
+    img_filtered = img_filtered.astype(float)
+    img_blurred = cv2.GaussianBlur(img_filtered, (7, 7), sigmaX=0)
+    img_laplacian = cv2.Laplacian(img_blurred, ddepth=cv2.CV_64F)
 
-    regions_weak, regions_strong, map = detection_proposal(img, min_dim, max_dim)
+    weight = 0.01 * 40
+    scale = 0.01 * 20
+    img_sharpened = (1.5 * img_filtered) - (0.5 * img_blurred) - (weight * cv2.multiply(img_filtered, scale * img_laplacian))
+    img_sharpened = img_sharpened.astype("uint8")
 
-    # draw and save the result, for testing purposes
-    red_color = (255, 0, 0)
-    yellow_color = (255, 212, 84)
-    for loc in regions_weak:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
-    for loc in regions_strong:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
-    # save the result
-    skimage.io.imsave("D://_Dataset//GTSDB//Test_Regions//_img2.png", img_color)
+    min_r = int(min_dim / 2)
+    max_r = int(max_dim / 2)
+    circles = cv2.HoughCircles(img_sharpened, cv2.HOUGH_GRADIENT, 1, min_r, param1=50, param2=30, minRadius=min_r, maxRadius=max_r)
+
+    # if no circles, then return
+    if circles is None:
+        regions_weak = []
+        regions_strong = []
+        map = []
+        circles = []
+        return regions_weak, regions_strong, map, circles
+
+    # convert circles to regions
+    regions = []
+    circles = np.uint16(np.around(circles))
+    circles = circles[0]
+    for c in circles:
+        center_x = c[0]
+        center_y = c[1]
+        radius = c[2]
+        x1 = center_x - radius
+        y1 = center_y - radius
+        x2 = center_x + radius
+        y2 = center_y + radius
+
+        # we don't want to collect circles, but we want to collect regions
+        # later on, we'll suppress these regions
+        regions.append([x1, y1, x2, y2])
+
+    # suppress the regions to extract the strongest ones
+    min_overlap = 0
+    overlap_thresh = 0.5
+    regions_weak, regions_strong = CNN.nms.non_max_suppression_accurate(boxes=regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
+
+    # create binary map using only the strong regions
+    img_shape = img_color.shape
+    map = np.zeros(shape=(img_shape[0], img_shape[1]), dtype=bool)
+    for r in regions_strong:
+        map[r[1]:r[3], r[0]:r[2]] = True
+    return regions_weak, regions_strong, map, circles
 
 
-def detection_proposal(img_preprocessed, min_dim, max_dim):
+def __detection_proposal_old(img_preprocessed, min_dim, max_dim):
+    """
+    This algorithm depends on Hough circle detection using skii-image
+    Which turned out to be crap
+    :param img_preprocessed:
+    :param min_dim:
+    :param max_dim:
+    :return:
+    """
+
     img = img_preprocessed
     img_edge = canny(img * 255, sigma=3, low_threshold=10, high_threshold=50)
 
@@ -104,7 +148,42 @@ def detection_proposal(img_preprocessed, min_dim, max_dim):
     return regions_weak, regions_strong, map
 
 
-def __hough_circle_detection(img_path, min_dim=40, max_dim=60):
+def __tutorial_detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
+    # extract detection proposals for circle-based traffic signs
+    # suppress the extracted circles to weak and strong regions
+    # draw the regions on the image and save it
+
+    # load picture and detect edges
+    img_color = cv2.imread(img_path)
+    regions_weak, regions_strong, map, circles = detection_proposal(img_color, min_dim, max_dim)
+
+    for i in circles:
+        # draw the outer circle
+        cv2.circle(img_color, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        # draw the center of the circle
+        cv2.circle(img_color, (i[0], i[1]), 2, (0, 0, 255), 3)
+
+    # draw and save the result, for testing purposes
+    red_color = (0, 0, 255)
+    yellow_color = (84, 212, 255)
+    for loc in regions_weak:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
+    for loc in regions_strong:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
+
+    # save the result
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2.png", img_color)
+
+
+def __tutorial_hough_circle_detection_skiimage(img_path, min_dim=40, max_dim=60):
+    """
+    This algorithm is crap, the one using opencv is much much better
+    :param img_path:
+    :param min_dim:
+    :param max_dim:
+    :return:
+    """
+
     # load picture and detect edges
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
@@ -156,7 +235,7 @@ def __hough_circle_detection(img_path, min_dim=40, max_dim=60):
     skimage.io.imsave("D://_Dataset//GTSDB//Test_Regions//_img2_.png", img_color)
 
 
-def __hough_circle_detection_cv2(img_path, min_dim=40, max_dim=60):
+def __tutorial_hough_circle_detection_cv(img_path, min_dim=40, max_dim=60):
     img_color = cv2.imread(img_path)
     img_filtered = cv2.pyrMeanShiftFiltering(img_color, 10, 10)
     img_filtered = cv2.cvtColor(img_filtered, cv2.COLOR_BGRA2GRAY)
@@ -185,7 +264,7 @@ def __hough_circle_detection_cv2(img_path, min_dim=40, max_dim=60):
     cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2_2.png", img_color)
 
 
-def __hough_circle_detection_cv2_old(img_path):
+def __tutorial_hough_circle_detection_cv_old(img_path):
     img = cv2.imread(img_path)
     img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
     frame_gray = cv2.GaussianBlur(img, (5, 5), 2)
