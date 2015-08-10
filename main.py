@@ -175,7 +175,7 @@ import cv2
 import skimage
 import skimage.exposure
 
-img_path = "D://_Dataset//GTSDB//Test_PNG//00061.png"
+img_path = "D://_Dataset//GTSDB//Test_PNG//00064.png"
 
 # img = cv2.imread(img_path)
 # img = cv2.pyrMeanShiftFiltering(img, 16, 64, 2)
