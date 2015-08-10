@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/prop.py" afterPath="$PROJECT_DIR$/CNN/prop.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -42,12 +41,12 @@
       <file leaf-file-name="prop.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CNN/prop.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.12688822">
-              <caret line="163" column="76" selection-start-line="163" selection-start-column="76" selection-end-line="163" selection-end-column="76" />
+            <state vertical-scroll-proportion="-0.18126889">
+              <caret line="171" column="28" selection-start-line="171" selection-start-column="28" selection-end-line="171" selection-end-column="28" />
               <folding>
                 <element signature="e#464#1492#0" expanded="false" />
                 <element signature="e#1559#3527#0" expanded="false" />
-                <element signature="e#6650#7743#0" expanded="false" />
+                <element signature="e#6640#7733#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -764,7 +763,13 @@
       <option name="project" value="LOCAL" />
       <updated>1439217496534</updated>
     </task>
-    <option name="localTasksCounter" value="46" />
+    <task id="LOCAL-00046" summary="Commit">
+      <created>1439218161380</created>
+      <option name="number" value="00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1439218161380</updated>
+    </task>
+    <option name="localTasksCounter" value="47" />
     <servers />
   </component>
   <component name="TodoView">
@@ -1329,12 +1334,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CNN/prop.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.12688822">
-          <caret line="163" column="76" selection-start-line="163" selection-start-column="76" selection-end-line="163" selection-end-column="76" />
+        <state vertical-scroll-proportion="-0.18126889">
+          <caret line="171" column="28" selection-start-line="171" selection-start-column="28" selection-end-line="171" selection-end-column="28" />
           <folding>
             <element signature="e#464#1492#0" expanded="false" />
             <element signature="e#1559#3527#0" expanded="false" />
-            <element signature="e#6650#7743#0" expanded="false" />
+            <element signature="e#6640#7733#0" expanded="false" />
           </folding>
         </state>
       </provider>

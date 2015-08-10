@@ -161,13 +161,13 @@ def __hough_circle_detection_cv2(img_path, min_dim=40, max_dim=60):
     img_filtered = cv2.pyrMeanShiftFiltering(img_color, 10, 10)
     img_filtered = cv2.cvtColor(img_filtered, cv2.COLOR_BGRA2GRAY)
     img_filtered = img_filtered.astype(float)
-    img_blurred = cv2.GaussianBlur(img_filtered, (5, 5), sigmaX=2, sigmaY=2)
+    img_blurred = cv2.GaussianBlur(img_filtered, (7, 7), sigmaX=0)
     img_laplacian = cv2.Laplacian(img_blurred, ddepth=cv2.CV_64F)
 
     weight = 0.01 * 40
     scale = 0.01 * 20
     img_sharpened = (1.5 * img_filtered) - (0.5 * img_blurred) - (weight * cv2.multiply(img_filtered, scale * img_laplacian))
-    img_sharpened = img_laplacian.astype("uint8")
+    img_sharpened = img_sharpened.astype("uint8")
 
     min_r = int(min_dim / 2)
     max_r = int(max_dim / 2)
@@ -181,7 +181,7 @@ def __hough_circle_detection_cv2(img_path, min_dim=40, max_dim=60):
             # draw the center of the circle
             cv2.circle(img_color, (i[0], i[1]), 2, (0, 0, 255), 3)
 
-    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2_1.png", img_laplacian)
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2_1.png", img_sharpened)
     cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2_2.png", img_color)
 
 
