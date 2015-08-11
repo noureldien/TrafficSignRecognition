@@ -145,13 +145,16 @@ print('Traffic Sign Recognition')
 img_dim_80 = 80
 gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
 gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80.pkl'
+gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl'
 gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_organized_80.pkl'
 gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_80.pkl'
+gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_80_binary.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True, True)
 # CNN.utils.organize_gtsdb(img_dim_80)
 # CNN.utils.convolve_gtsdb(gtsrb_model_80)
+# CNN.utils.change_target_to_binary(img_dim_80)
 
 # detection proposals
 # CNN.prop.detection_proposal_and_save(img_path="D://_Dataset//GTSDB//Test_PNG//00028.png", min_dim=16, max_dim=160)
@@ -160,21 +163,19 @@ gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_80.pkl'
 # CNN.detec.train_deep(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80,
 #                     mlp_layers=(7200, 4), batch_size=500, n_epochs=20, learning_rate=0.01, momentum=0.9)
 
+
 # train only the regressor (images already convolved/filtered)
-# CNN.detec.train_regressor(dataset_path=gtsdb_dataset_conv_80, detection_model_path=gtsdb_model_80, n_epochs=100)
+# CNN.detec.train_binary_detector(dataset_path=gtsdb_dataset_conv_bin_80, detection_model_path=gtsdb_model_bin_80, n_epochs=100)
 
 # test the detector
 # CNN.detec.detect_from_dataset(dataset_path=gtsdb_dataset_80, recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80)
 
 # test the detector
-CNN.detec.detect_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00061.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
-                          recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_80, img_dim=img_dim_80, proposals=True)
+CNN.detec.binary_detect_from_file(img_path="D://_Dataset//GTSDB//Test_PNG//00061.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
+                           recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_bin_80, img_dim=img_dim_80, proposals=True)
 
-
-#import cv2
-#img_path = "D://_Dataset//GTSDB//Test_PNG/00149.png"
-#img_color = cv2.imread(img_path)
-#CNN.prop.__tutorial_detection_proposal_and_save(img_path, 20, 50)
+# img = "D://_Dataset//GTSDB//Test_PNG//00061.png"
+# CNN.prop.detection_proposal_and_save(img, 10, 160)
 
 # endregion
 

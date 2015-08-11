@@ -1345,6 +1345,52 @@ def convolve_gtsdb(recognition_model_path):
     print("... finish convolving ans saving the images, total time consumed: %f" % (duration))
 
 
+def change_target_to_binary(img_dim):
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_name, 'rb'))
+    y_train = data[0][1]
+    y_valid = data[1][1]
+    y_test = data[2][1]
+
+    y_train_new = []
+    y_valid_new = []
+    y_test_new = []
+
+    for y in y_train:
+        if numpy.count_nonzero(y) == 0:
+            y_train_new.append(0)
+        else:
+            y_train_new.append(1)
+    y_train_new = numpy.asarray(y_train_new, dtype=int)
+
+    for y in y_valid:
+        if numpy.count_nonzero(y) == 0:
+            y_valid_new.append(0)
+        else:
+            y_valid_new.append(1)
+    y_valid_new = numpy.asarray(y_valid_new, dtype=int)
+
+    for y in y_test:
+        if numpy.count_nonzero(y) == 0:
+            y_test_new.append(0)
+        else:
+            y_test_new.append(1)
+    y_test_new = numpy.asarray(y_test_new, dtype=int)
+
+    data = ((data[0][0], y_train_new), (data[1][0], y_valid_new), (data[2][0], y_test_new))
+    print(len(data[0][0]))
+    print(len(y_train_new))
+    print(len(data[1][0]))
+    print(len(y_valid_new))
+    print(len(data[2][0]))
+    print(len(y_test_new))
+
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_%d_binary.pkl' % (img_dim)
+    pickle.dump(data, open(file_name, 'wb'))
+
+    print("Finish converting target to binary")
+
+
 def __sample_true_negatives(img, window_dim, resize_dim, boundaries, count, pre_processing):
     img_h = img.shape[0]
     img_w = img.shape[1]

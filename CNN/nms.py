@@ -2,7 +2,7 @@
 import numpy as np
 
 # Malisiewicz et al.
-def non_max_suppression(boxes, overlap_thresh, min_overlap):
+def __tutorial(boxes, overlap_thresh, min_overlap):
     # if there are no boxes, return an empty list
     if len(boxes) == 0:
         return []
@@ -71,7 +71,7 @@ def non_max_suppression(boxes, overlap_thresh, min_overlap):
 
 
 # Malisiewicz et al. with mean-suppression
-def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
+def suppression(boxes, overlap_thresh, min_overlap):
     # if there are no boxes, return an empty list
     if len(boxes) == 0:
         return []
@@ -82,7 +82,7 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
 
     # if the bounding boxes integers, convert them to floats --
     # this is important since we'll be doing a bunch of divisions
-    if boxes.dtype.kind == "i":
+    if boxes.dtype.kind == "i" or boxes.dtype.kind == "u":
         boxes = boxes.astype("float")
 
     # initialize the list of picked indexes
@@ -96,8 +96,9 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
     y2 = boxes[:, 3]
 
     # compute the area of the bounding boxes
+    # sort according to the area, so that the bigger box eat the smaller ones
     area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    idxs = np.arange(boxes.shape[0])
+    idxs = np.argsort(area)
 
     # keep looping while some indexes still remain in the indexes
     # list
@@ -122,24 +123,25 @@ def non_max_suppression_accurate(boxes, overlap_thresh, min_overlap):
         last_y2 = y2[i]
 
         # compute the width and height of the bounding box
-        w = xx2 - xx1
-        h = yy2 - yy1
+        w = np.maximum(0, 1 + np.minimum(last_x2, xx2) - np.maximum(last_x1, xx1))
+        h = np.maximum(0, 1 + np.minimum(last_y2, yy2) - np.maximum(last_y1, yy1))
 
         # compute the ratio of overlap
         overlap = (w * h) / area[idxs[:last]]
 
         # get the indexes that need to be deleted
         overlap_cond = np.where(overlap > overlap_thresh)[0]
-        x1_cond = np.intersect1d(np.where(xx1 >= last_x1)[0], np.where(xx1 <= last_x2)[0])
-        x2_cond = np.intersect1d(np.where(xx2 >= last_x1)[0], np.where(xx2 <= last_x2)[0])
-        y1_cond = np.intersect1d(np.where(yy1 >= last_y1)[0], np.where(yy1 <= last_y2)[0])
-        y2_cond = np.intersect1d(np.where(yy2 >= last_y1)[0], np.where(yy2 <= last_y2)[0])
-        y_cond = np.union1d(y1_cond, y2_cond)
-        xy_cond1 = np.intersect1d(x1_cond, y_cond)
-        xy_cond2 = np.intersect1d(x2_cond, y_cond)
-        xy_cond = np.union1d(xy_cond1, xy_cond2)
-        cond = np.intersect1d(overlap_cond, xy_cond)
-        deleted_i = np.concatenate(([last], cond))
+        deleted_i = np.concatenate(([last], overlap_cond))
+
+        # x1_cond = np.intersect1d(np.where(xx1 >= last_x1)[0], np.where(xx1 <= last_x2)[0])
+        # x2_cond = np.intersect1d(np.where(xx2 >= last_x1)[0], np.where(xx2 <= last_x2)[0])
+        # y1_cond = np.intersect1d(np.where(yy1 >= last_y1)[0], np.where(yy1 <= last_y2)[0])
+        # y2_cond = np.intersect1d(np.where(yy2 >= last_y1)[0], np.where(yy2 <= last_y2)[0])
+        # y_cond = np.union1d(y1_cond, y2_cond)
+        # xy_cond1 = np.intersect1d(x1_cond, y_cond)
+        # xy_cond2 = np.intersect1d(x2_cond, y_cond)
+        # xy_cond = np.union1d(xy_cond1, xy_cond2)
+        # cond = np.intersect1d(overlap_cond, xy_cond)
 
         # instead of picking up the base box of the suppressed boxes
         # we might want instead to pick up their means

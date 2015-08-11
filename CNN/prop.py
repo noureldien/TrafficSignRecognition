@@ -37,49 +37,80 @@ def detection_proposal(img_color, min_dim, max_dim):
     img_sharpened = (1.5 * img_filtered) - (0.5 * img_blurred) - (weight * cv2.multiply(img_filtered, scale * img_laplacian))
     img_sharpened = img_sharpened.astype("uint8")
 
-    min_r = int(min_dim / 2)
-    max_r = int(max_dim / 2)
-    circles = cv2.HoughCircles(img_sharpened, cv2.HOUGH_GRADIENT, 1, min_r, param1=50, param2=30, minRadius=min_r, maxRadius=max_r)
+    dims = []
+    if (max_dim - min_dim) > 10:
+        dims = numpy.arange(max_dim, min_dim, -10, dtype=int)
+        if dims[dims.shape[0] - 1] > min_dim:
+            dims = numpy.append(dims, min_dim)
+    else:
+        dims = [max_dim, min_dim]
+    # the problem with HoughCircles is it gives many false positives if the range between
+    # min and max increase more than 10 pixels specially in the bigger windows size (>80)
+    # so, if the range is detected to be bigger than 10 pixels, then do detection on several steps
+
+    # loop on the dimensions, max radius is the current dim/2, while min radius = next dim/2
+    circles = []
+    for i in range(0, len(dims) - 1):
+        max_r = int(dims[i] / 2)
+        min_r = int(dims[i + 1] / 2)
+        current_circles = cv2.HoughCircles(img_sharpened, cv2.HOUGH_GRADIENT, 1, min_r, param1=50, param2=30, minRadius=min_r, maxRadius=max_r)
+        if current_circles is not None:
+            circles.append(current_circles[0])
 
     # if no circles, then return
-    if circles is None:
-        regions_weak = []
-        regions_strong = []
-        map = []
-        circles = []
-        return regions_weak, regions_strong, map, circles
+    if len(circles) == 0:
+        return [], [], [], circles
 
     # convert circles to regions
-    regions = []
-    circles = np.uint16(np.around(circles))
-    circles = circles[0]
-    for c in circles:
-        center_x = c[0]
-        center_y = c[1]
-        radius = c[2]
-        x1 = center_x - radius
-        y1 = center_y - radius
-        x2 = center_x + radius
-        y2 = center_y + radius
-
-        # we don't want to collect circles, but we want to collect regions
-        # later on, we'll suppress these regions
-        regions.append([x1, y1, x2, y2])
+    circles = numpy.vstack(circles)
+    circles = (np.around(circles)).astype(int)
+    center_x = circles[:, 0]
+    center_y = circles[:, 1]
+    radius = circles[:, 2]
+    regions = numpy.asarray([center_x - radius, center_y - radius, center_x + radius, center_y + radius])
+    regions = numpy.transpose(regions)
 
     # suppress the regions to extract the strongest ones
     min_overlap = 0
-    overlap_thresh = 0.5
-    regions_weak, regions_strong = CNN.nms.non_max_suppression_accurate(boxes=regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
+    overlap_thresh = 0.75
+    regions_weak, regions_strong = CNN.nms.suppression(boxes=regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
 
     # create binary map using only the strong regions
     img_shape = img_color.shape
-    map = np.zeros(shape=(img_shape[0], img_shape[1]), dtype=bool)
+    img_map = np.zeros(shape=(img_shape[0], img_shape[1]), dtype=bool)
     for r in regions_strong:
-        map[r[1]:r[3], r[0]:r[2]] = True
-    return regions_weak, regions_strong, map, circles
+        img_map[r[1]:r[3], r[0]:r[2]] = True
+    return regions_weak, regions_strong, img_map, circles
 
 
-def __detection_proposal_old(img_preprocessed, min_dim, max_dim):
+def detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
+    # extract detection proposals for circle-based traffic signs
+    # suppress the extracted circles to weak and strong regions
+    # draw the regions on the image and save it
+
+    # load picture and detect edges
+    img_color = cv2.imread(img_path)
+    regions_weak, regions_strong, img_map, circles = detection_proposal(img_color, min_dim, max_dim)
+
+    for c in circles:
+        # draw the outer circle
+        cv2.circle(img_color, (c[0], c[1]), c[2], (0, 255, 0), 2)
+        # draw the center of the circle
+        cv2.circle(img_color, (c[0], c[1]), 2, (0, 0, 255), 3)
+
+    # draw and save the result, for testing purposes
+    red_color = (0, 0, 255)
+    yellow_color = (84, 212, 255)
+    for loc in regions_weak:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
+    for loc in regions_strong:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
+
+    # save the result
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2.png", img_color)
+
+
+def __proposal_old(img_preprocessed, min_dim, max_dim):
     """
     This algorithm depends on Hough circle detection using skii-image
     Which turned out to be crap
@@ -133,7 +164,7 @@ def __detection_proposal_old(img_preprocessed, min_dim, max_dim):
     if len(regions) > 0:
         min_overlap = 3
         overlap_thresh = 0.7
-        regions_weak, regions_strong = CNN.nms.non_max_suppression_accurate(boxes=regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
+        regions_weak, regions_strong = CNN.nms.suppression(boxes=regions, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
 
         # create binary map using only the strong regions
         img_shape = img_preprocessed.shape
@@ -146,33 +177,6 @@ def __detection_proposal_old(img_preprocessed, min_dim, max_dim):
         map = []
 
     return regions_weak, regions_strong, map
-
-
-def __tutorial_detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
-    # extract detection proposals for circle-based traffic signs
-    # suppress the extracted circles to weak and strong regions
-    # draw the regions on the image and save it
-
-    # load picture and detect edges
-    img_color = cv2.imread(img_path)
-    regions_weak, regions_strong, map, circles = detection_proposal(img_color, min_dim, max_dim)
-
-    for i in circles:
-        # draw the outer circle
-        cv2.circle(img_color, (i[0], i[1]), i[2], (0, 255, 0), 2)
-        # draw the center of the circle
-        cv2.circle(img_color, (i[0], i[1]), 2, (0, 0, 255), 3)
-
-    # draw and save the result, for testing purposes
-    red_color = (0, 0, 255)
-    yellow_color = (84, 212, 255)
-    for loc in regions_weak:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
-    for loc in regions_strong:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
-
-    # save the result
-    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2.png", img_color)
 
 
 def __tutorial_hough_circle_detection_skiimage(img_path, min_dim=40, max_dim=60):
@@ -253,7 +257,7 @@ def __tutorial_hough_circle_detection_cv(img_path, min_dim=40, max_dim=60):
     circles = cv2.HoughCircles(img_sharpened, cv2.HOUGH_GRADIENT, 1, 1, param1=50, param2=30, minRadius=min_r, maxRadius=max_r)
 
     if circles is not None:
-        circles = np.uint16(np.around(circles))
+        circles = np.around(circles).astype(int)
         for i in circles[0, :]:
             # draw the outer circle
             cv2.circle(img_color, (i[0], i[1]), i[2], (0, 255, 0), 2)
