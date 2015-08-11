@@ -3,14 +3,24 @@ import math
 import numpy
 import requests
 import io
+import time
 
 import PIL
 import PIL.Image
+
+import cv2
+import skimage
+import skimage.exposure
+import skimage.transform
 
 import colorsys
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
+
+import theano
+import theano.tensor
+import theano.tensor as T
 
 import googlemaps
 import googlemaps.client
@@ -29,8 +39,34 @@ import polyline.codec
 import webbrowser
 import pygmaps.pygmaps
 
+import CNN
+import CNN.prop
+import CNN.conv
+import CNN.utils
+import CNN.enums
+import CNN.nms
+
 
 def span_google_street_view():
+    # load the network once and for all
+    recognition_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_80.pkl"
+    detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
+    img_color = cv2.imread("D://_Dataset//GTSDB//Test_PNG//_img15.png")
+    batch_size = 100
+    net_cnn, net_mlp, net_mlp_input_shape = __build_detector(recognition_model_path, detection_model_path, batch_size)
+    weak_regions, strong_regions = __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape)
+    # draw the result of the detection
+    red_color = (0, 0, 255)
+    yellow_color = (84, 212, 255)
+    for loc in weak_regions:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
+    for loc in strong_regions:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
+
+    dummy = 10
+
+    return
+
     api_key = __read_api_key()
     client = googlemaps.client.Client(key=api_key)
 
@@ -72,6 +108,243 @@ def span_google_street_view():
     # road_locations = googlemaps.client.snap_to_roads(client, path, interpolate=True)
 
     dummy = 10
+
+    # load the network once and for all
+    recognition_model_path = ""
+    detection_model_path = ""
+    batch_size = 100
+    net_cnn, net_mlp = __build_detector(recognition_model_path, detection_model_path, batch_size)
+    predictions = __detect(img, batch_size, net_cnn, net_mlp)
+
+    # run the detector
+    # // (img_path, recognition_model_path, detection_model_path, img_dim,)
+
+
+def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
+    """
+    detect a traffic sign form the given natural image
+    detected signs depend on the given model, for example if it is a prohibitory detection model
+    we'll only detect prohibitory traffic signs
+    :param img_path:
+    :param model_path:
+    :param classifier:
+    :param img_dim:
+    :return:
+    """
+
+    ##############################
+    # Extract detection regions  #
+    ##############################
+
+    # pre-process image by: equalize histogram and stretch intensity
+    img = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
+    img = img.astype(float) / 255.0
+    img_dim = 80
+
+    # min, max defines what is the range the detection proposals
+    max_window_dim = int(img_dim * 2)
+    min_window_dim = int(img_dim / 4)
+
+    # regions, locations and window_dim at each scale
+    regions = []
+    locations = []
+    window_dims = []
+    r_count = 0
+
+    # important, instead of naively add every sliding window, we'll only add
+    # windows that covers the strong detection proposals
+    prop_weak, prop_strong, prop_map, prop_circles = CNN.prop.detection_proposal(img_color, min_dim=min_window_dim, max_dim=max_window_dim)
+    if len(prop_strong) == 0:
+        print("... NO TRAFFIC SIGN PROPOSALS WERE FOUND")
+        return [], []
+
+    # loop on the detection proposals
+    scales = numpy.arange(0.7, 1.58, 0.05)
+    for prop in prop_strong:
+        x1 = prop[0]
+        y1 = prop[1]
+        x2 = prop[2]
+        y2 = prop[3]
+        w = x2 - x1
+        h = y2 - y1
+        window_dim = max(h, w)
+        center_x = int(x1 + round(w / 2))
+        center_y = int(y1 + round(h / 2))
+
+        for scale in scales:
+            r_count += 1
+            dim = window_dim * scale
+            dim_half = round(dim / 2)
+            dim = round(dim)
+            x1 = center_x - dim_half
+            y1 = center_y - dim_half
+            x2 = center_x + dim_half
+            y2 = center_y + dim_half
+
+            # pre-process the region and scale it to img_dim
+            region = img[y1:y2, x1:x2]
+            region = skimage.transform.resize(region, output_shape=(img_dim, img_dim))
+            region = skimage.exposure.equalize_hist(region)
+
+            # we only need to store the region, it's top-left corner and sliding window dim
+            regions.append(region)
+            locations.append([x1, y1])
+            window_dims.append(dim)
+
+    regions = numpy.asarray(regions)
+    locations = numpy.asarray(locations)
+    window_dims = numpy.asarray(window_dims)
+
+    ##############################
+    # Start detection            #
+    ##############################
+
+    # split it to batches first, zero-pad them if needed
+    regions = numpy.asarray(regions)
+    n_regions = regions.shape[0]
+    if n_regions % batch_size != 0:
+        n_remaining = batch_size - (n_regions % batch_size)
+        regions_padding = numpy.zeros(shape=(n_remaining, img_dim, img_dim), dtype=float)
+        regions = numpy.vstack((regions, regions_padding))
+
+    # run the detector on the regions
+    start_time = time.clock()
+
+    # loop on the batches of the regions
+    n_batches = int(regions.shape[0] / batch_size)
+    layer0_img_shape = (batch_size, 1, img_dim, img_dim)
+    predictions = []
+    for i in range(n_batches):
+        # prediction: CNN filtering then MLP regression
+        t1 = time.clock()
+        batch = regions[i * batch_size: (i + 1) * batch_size]
+        batch = batch.reshape(layer0_img_shape)
+        filters = net_cnn(batch)
+        filters = filters.reshape(net_mlp_input_shape).astype("float32")
+        batch_pred = net_mlp.predict(filters)
+        predictions.append(batch_pred)
+        t2 = time.clock()
+        print("... batch: %i/%i, time(sec.): %f" % ((i + 1), n_batches, t2 - t1))
+
+    # after getting all the predictions, remove the padding
+    predictions = numpy.vstack(predictions)
+    predictions = predictions[0:n_regions]
+
+    end_time = time.clock()
+    duration = (end_time - start_time) / 60.0
+    print("... detection regions: %d, duration(min.): %f" % (r_count, duration))
+
+    # construct the probability map for each scale and show it/ save it
+    s_count = 0
+    overlap_thresh = 0.5
+    min_overlap = 0
+    strong_regions = []
+    for pred, loc, window_dim in zip(predictions, locations, window_dims):
+        s_count += 1
+        map, w_regions, s_regions = __probability_map([pred], [loc], window_dim, overlap_thresh, min_overlap)
+        if len(s_regions) > 0:
+            strong_regions.append(s_regions)
+            print("Scale: %d, window_dim: %d, regions: %d, strong regions detected" % (s_count, window_dim, r_count))
+        else:
+            print("Scale: %d, window_dim: %d, regions: %d, no regions detected" % (s_count, window_dim, r_count))
+
+    # now, after we finished scanning at all the levels, we should make the final verdict
+    # by suppressing all the strong_regions that we extracted on different scales
+    if len(strong_regions) > 0:
+        overlap_thresh = 0.25
+        min_overlap = round(len(scales) - 9 / 10)
+        regions = numpy.vstack(strong_regions)
+        weak_regions, strong_regions = CNN.nms.suppression(regions, overlap_thresh, min_overlap)
+        return weak_regions, strong_regions
+    else:
+        return [], []
+
+
+def __build_detector(recognition_model_path, detection_model_path, batch_size):
+    # stack the regions of all the scales in one array
+    # please note that a scale can have no regions, so using vstack wouldn't work
+    # remove the scales with empty regions then use vstack
+
+    ##############################
+    # Build the detector         #
+    ##############################
+
+    loaded_objects = CNN.utils.load_model(model_path=recognition_model_path, model_type=CNN.enums.ModelType._02_conv3_mlp2)
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+
+    layer0_input = T.tensor4(name='input')
+    layer0_img_dim = img_dim
+    layer0_img_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+    layer3_input_shape = (batch_size, nkerns[2] * layer3_img_dim * layer3_img_dim)
+
+    # layer 0, 1, 2: Conv-Pool
+    layer0_output = CNN.conv.convpool_layer(
+        input=layer0_input, W=layer0_W, b=layer0_b,
+        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
+        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
+        pool_size=pool_size
+    )
+    layer1_output = CNN.conv.convpool_layer(
+        input=layer0_output, W=layer1_W, b=layer1_b,
+        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
+        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
+        pool_size=pool_size
+    )
+    layer2_output = CNN.conv.convpool_layer(
+        input=layer1_output, W=layer2_W, b=layer2_b,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        pool_size=pool_size
+    )
+    # do the filtering using 3 layers of Conv+Pool
+    conv_fn = theano.function([layer0_input], layer2_output)
+
+    # load the regression model
+    with open(detection_model_path, 'rb') as f:
+        nn_mlp = pickle.load(f)
+
+    return conv_fn, nn_mlp, layer3_input_shape
+
+
+def __probability_map(predictions, locations, window_dim, overlap_thresh, min_overlap):
+    locations = numpy.asarray(locations)
+    predictions = numpy.asarray(predictions)
+
+    regions = []
+    for i in numpy.where(predictions):
+        region = [0, 0, window_dim, window_dim]
+        location = locations[i]
+        x1 = int(region[0] + location[0])
+        y1 = int(region[1] + location[1])
+        x2 = int(region[2] + location[0])
+        y2 = int(region[3] + location[1])
+        regions.append([x1, y1, x2, y2])
+
+    # check if no region found
+    if len(regions) == 0:
+        return [], []
+
+    # suppress the new regions and raw them with red color
+    weak_regions, strong_regions = CNN.nms.suppression(regions, overlap_thresh, min_overlap)
+
+    # return the map to be exploited later by the detector, for the next scale
+    return weak_regions, strong_regions
 
 
 def __draw_image(img, num):

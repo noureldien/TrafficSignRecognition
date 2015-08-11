@@ -872,8 +872,7 @@ def detect_from_dataset(dataset_path, recognition_model_path, detection_model_pa
     print("... finish training the model, total time consumed: %f min." % (duration))
 
 
-def binary_detect_from_file_fast(img_path, recognition_model_path, detection_model_path, img_dim,
-                                 model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def binary_detect_from_file_fast(img_path, recognition_model_path, detection_model_path, img_dim):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -896,23 +895,17 @@ def binary_detect_from_file_fast(img_path, recognition_model_path, detection_mod
     # pre-process image by: equalize histogram and stretch intensity
     img_color = cv2.imread(img_path)
     img = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
-    # img_proc = skimage.exposure.equalize_hist(img)
-    # img_proc = skimage.exposure.equalize_adapthist(img_proc, clip_limit=0.05, kernel_size=(8, 8))
-    # img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
     img = img.astype(float) / 255.0
 
     # min, max defines what is the range of scaling the sliding window
     # while scaling factor controls the amount of pixels to go down in each scale
     max_window_dim = int(img_dim * 2)
     min_window_dim = int(img_dim / 4)
-    down_scale_factor = 0.9
-    stride_factor = 0.1
 
     img_shape = img.shape
     img_width = img_shape[1]
     img_height = img_shape[0]
 
-    s_count = 0
     r_count = 0
 
     # regions, locations and window_dim at each scale
@@ -928,6 +921,7 @@ def binary_detect_from_file_fast(img_path, recognition_model_path, detection_mod
         return
 
     # loop on the detection proposals
+    scales = numpy.arange(0.7, 1.58, 0.05)
     for prop in prop_strong:
         x1 = prop[0]
         y1 = prop[1]
@@ -939,7 +933,6 @@ def binary_detect_from_file_fast(img_path, recognition_model_path, detection_mod
         center_x = int(x1 + round(w / 2))
         center_y = int(y1 + round(h / 2))
 
-        scales = [0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2]
         for scale in scales:
             dim = window_dim * scale
             dim_half = round(dim / 2)
@@ -975,9 +968,12 @@ def binary_detect_from_file_fast(img_path, recognition_model_path, detection_mod
 
     # construct the probability map for each scale and show it/ save it
     s_count = 0
+    overlap_thresh = 0.5
+    min_overlap = 0
     for pred, loc, window_dim in zip(predictions, locations, window_dims):
         s_count += 1
-        map, w_regions, s_regions = __probability_map(img, pred, loc, window_dim, img_width, img_height, img_dim, s_count, False)
+        map, w_regions, s_regions = __probability_map(img, [pred], [loc], window_dim, img_width, img_height, img_dim, s_count,
+                                                      False, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
         if len(s_regions) > 0:
             strong_regions.append(s_regions)
             print("Scale: %d, window_dim: %d, regions: %d, strong regions detected" % (s_count, window_dim, r_count))
@@ -987,12 +983,13 @@ def binary_detect_from_file_fast(img_path, recognition_model_path, detection_mod
     # now, after we finished scanning at all the levels, we should make the final verdict
     # by suppressing all the strong_regions that we extracted on different scales
     if len(strong_regions) > 0:
+        overlap_thresh = 0.35
+        min_overlap = round(len(scales) - 9 / 10)
         regions = numpy.vstack(strong_regions)
-        __confidence_map(img, img_width, img_height, regions, s_count)
+        __confidence_map(img, img_width, img_height, regions, s_count, overlap_thresh=overlap_thresh, min_overlap=min_overlap)
 
 
-def binary_detect_from_file(img_path, recognition_model_path, detection_model_path, img_dim, proposals=True,
-                            model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def binary_detect_from_file(img_path, recognition_model_path, detection_model_path, img_dim, proposals=True):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -1190,8 +1187,7 @@ def binary_detect_from_file(img_path, recognition_model_path, detection_model_pa
         __confidence_map(img, img_width, img_height, scale_regions, s_count)
 
 
-def detect_from_file_fast(img_path, recognition_model_path, detection_model_path, img_dim,
-                          model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def detect_from_file_fast(img_path, recognition_model_path, detection_model_path, img_dim):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -1348,8 +1344,7 @@ def detect_from_file_fast(img_path, recognition_model_path, detection_model_path
         __confidence_map(img, img_width, img_height, scale_regions, s_count)
 
 
-def detect_from_file(img_path, recognition_model_path, detection_model_path, img_dim, proposals=True,
-                     model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def detect_from_file(img_path, recognition_model_path, detection_model_path, img_dim, proposals=True):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -1547,8 +1542,7 @@ def detect_from_file(img_path, recognition_model_path, detection_model_path, img
         __confidence_map(img, img_width, img_height, scale_regions, s_count)
 
 
-def detect_from_file_slow_1(img_path, recognition_model_path, detection_model_path, pre_process=True, proposals=True,
-                            model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+def detect_from_file_slow_1(img_path, recognition_model_path, detection_model_path, pre_process=True, proposals=True):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -2272,15 +2266,16 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
     return c_result, c_prob, c_duration
 
 
-def __probability_map(img, predictions, locations, window_dim, img_width, img_height, img_dim, count, regression=True):
+def __probability_map(img, predictions, locations, window_dim, img_width, img_height, img_dim, count, regression=True, **kwargs):
     # parameters of the algorithm
     min_dim = img_dim / 2
-    if regression:
-        overlap_thresh = 0.4
-        min_overlap = 5
-    else:
-        overlap_thresh = 0.5
-        min_overlap = 8
+    overlap_thresh = 0.4
+    min_overlap = 5
+
+    if 'overlap_thresh' in kwargs:
+        overlap_thresh = kwargs['overlap_thresh']
+    if 'min_overlap' in kwargs:
+        min_overlap = kwargs['min_overlap']
 
     r_factor = window_dim / img_dim
     locations = numpy.asarray(locations)
@@ -2354,9 +2349,16 @@ def __probability_map(img, predictions, locations, window_dim, img_width, img_he
     return map, weak_regions, strong_regions
 
 
-def __confidence_map(img, img_width, img_height, scale_regions, scale_count):
+def __confidence_map(img, img_width, img_height, scale_regions, scale_count, **kwargs):
     overlap_thresh = 0.5
     min_overlap = 3
+    save_img = True
+
+    if 'overlap_thresh' in kwargs:
+        overlap_thresh = kwargs['overlap_thresh']
+    if 'min_overlap' in kwargs:
+        min_overlap = kwargs['min_overlap']
+
     weak_regions, strong_regions = CNN.nms.suppression(scale_regions, overlap_thresh, min_overlap)
 
     # normalize the image
