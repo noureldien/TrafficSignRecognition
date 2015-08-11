@@ -872,6 +872,125 @@ def detect_from_dataset(dataset_path, recognition_model_path, detection_model_pa
     print("... finish training the model, total time consumed: %f min." % (duration))
 
 
+def binary_detect_from_file_fast(img_path, recognition_model_path, detection_model_path, img_dim,
+                                 model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
+    """
+    detect a traffic sign form the given natural image
+    detected signs depend on the given model, for example if it is a prohibitory detection model
+    we'll only detect prohibitory traffic signs
+    :param img_path:
+    :param model_path:
+    :param classifier:
+    :param img_dim:
+    :return:
+    """
+
+    ##############################
+    # Extract and detect regions #
+    ##############################
+
+    # this is similar to "binary_detect_from_file" except we won't slide the window
+    # we'll depend on the detection proposals then take ~5 regions with the same center
+    # as the proposal but at different scales
+    # this results in much much faster process time
+    # pre-process image by: equalize histogram and stretch intensity
+    img_color = cv2.imread(img_path)
+    img = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
+    # img_proc = skimage.exposure.equalize_hist(img)
+    # img_proc = skimage.exposure.equalize_adapthist(img_proc, clip_limit=0.05, kernel_size=(8, 8))
+    # img_proc = skimage.exposure.rescale_intensity(img_proc, in_range=(0.2, 0.75))
+    img = img.astype(float) / 255.0
+
+    # min, max defines what is the range of scaling the sliding window
+    # while scaling factor controls the amount of pixels to go down in each scale
+    max_window_dim = int(img_dim * 2)
+    min_window_dim = int(img_dim / 4)
+    down_scale_factor = 0.9
+    stride_factor = 0.1
+
+    img_shape = img.shape
+    img_width = img_shape[1]
+    img_height = img_shape[0]
+
+    s_count = 0
+    r_count = 0
+
+    # regions, locations and window_dim at each scale
+    regions = []
+    locations = []
+    window_dims = []
+
+    # important, instead of naively add every sliding window, we'll only add
+    # windows that covers the strong detection proposals
+    prop_weak, prop_strong, prop_map, prop_circles = CNN.prop.detection_proposal(img_color, min_dim=min_window_dim, max_dim=max_window_dim)
+    if len(prop_strong) == 0:
+        print("... NO TRAFFIC SIGN PROPOSALS WERE FOUND")
+        return
+
+    # loop on the detection proposals
+    for prop in prop_strong:
+        x1 = prop[0]
+        y1 = prop[1]
+        x2 = prop[2]
+        y2 = prop[3]
+        w = x2 - x1
+        h = y2 - y1
+        window_dim = max(h, w)
+        center_x = int(x1 + round(w / 2))
+        center_y = int(y1 + round(h / 2))
+
+        scales = [0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2]
+        for scale in scales:
+            dim = window_dim * scale
+            dim_half = round(dim / 2)
+            dim = round(dim)
+            x1 = center_x - dim_half
+            y1 = center_y - dim_half
+            x2 = center_x + dim_half
+            y2 = center_y + dim_half
+
+            # pre-process the region and scale it to img_dim
+            region = img[y1:y2, x1:x2]
+            region = skimage.transform.resize(region, output_shape=(img_dim, img_dim))
+            region = skimage.exposure.equalize_hist(region)
+
+            # we only need to store the region, it's top-left corner and sliding window dim
+            regions.append(region)
+            locations.append([x1, y1])
+            window_dims.append(dim)
+
+    regions = numpy.asarray(regions)
+    locations = numpy.asarray(locations)
+    window_dims = numpy.asarray(window_dims)
+
+    # run the detector on the regions
+    start_time = time.clock()
+    predictions = __detect_from_scales_regions(recognition_model_path, detection_model_path, regions, False)
+
+    end_time = time.clock()
+    duration = (end_time - start_time) / 60.0
+    strong_regions = []
+
+    print("... detection regions: %d, duration(min.): %f" % (r_count, duration))
+
+    # construct the probability map for each scale and show it/ save it
+    s_count = 0
+    for pred, loc, window_dim in zip(predictions, locations, window_dims):
+        s_count += 1
+        map, w_regions, s_regions = __probability_map(img, pred, loc, window_dim, img_width, img_height, img_dim, s_count, False)
+        if len(s_regions) > 0:
+            strong_regions.append(s_regions)
+            print("Scale: %d, window_dim: %d, regions: %d, strong regions detected" % (s_count, window_dim, r_count))
+        else:
+            print("Scale: %d, window_dim: %d, regions: %d, no regions detected" % (s_count, window_dim, r_count))
+
+    # now, after we finished scanning at all the levels, we should make the final verdict
+    # by suppressing all the strong_regions that we extracted on different scales
+    if len(strong_regions) > 0:
+        regions = numpy.vstack(strong_regions)
+        __confidence_map(img, img_width, img_height, regions, s_count)
+
+
 def binary_detect_from_file(img_path, recognition_model_path, detection_model_path, img_dim, proposals=True,
                             model_type=CNN.enums.ModelType, classifier=CNN.enums.ClassifierType.logit):
     """
@@ -1805,12 +1924,14 @@ def __detect_from_scales_regions(recognition_model_path, detection_model_path, s
     # stack the regions of all the scales in one array
     # please note that a scale can have no regions, so using vstack wouldn't work
     # remove the scales with empty regions then use vstack
-    regions = []
-    for r in scale_regions:
-        if len(r) > 0:
-            regions.append(r)
-
-    regions = numpy.vstack(regions)
+    if regression:
+        regions = []
+        for r in scale_regions:
+            if len(r) > 0:
+                regions.append(r)
+        regions = numpy.vstack(regions)
+    else:
+        regions = scale_regions
     batch_size = len(regions)
 
     ##############################
@@ -1880,20 +2001,24 @@ def __detect_from_scales_regions(recognition_model_path, detection_model_path, s
     t2 = time.clock()
     print("... prediction time(sec.): %f" % (t2 - t1))
 
-    # in case of regression, scale-back the the predicted values to it's original scale
+    # in case of regression
     if regression:
+
+        # scale-back the the predicted values to it's original scale
         pred = numpy.rint(((pred * img_dim) + img_dim) / 2).astype(int)
         pred[pred > img_dim - 1] = img_dim - 1
         pred[pred < 0] = 0
 
-    # split the predictions to their scales
-    # i.e. re-arrange the pred to scale_pred
-    scale_pred = []
-    r_count = 0
-    for r in scale_regions:
-        n = len(r)
-        scale_pred.append(pred[r_count:r_count + n])
-        r_count += n
+        # split the predictions to their scales
+        # i.e. re-arrange the pred to scale_pred
+        scale_pred = []
+        r_count = 0
+        for r in scale_regions:
+            n = len(r)
+            scale_pred.append(pred[r_count:r_count + n])
+            r_count += n
+    else:
+        scale_pred = pred
 
     return scale_pred
 
@@ -2150,8 +2275,12 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
 def __probability_map(img, predictions, locations, window_dim, img_width, img_height, img_dim, count, regression=True):
     # parameters of the algorithm
     min_dim = img_dim / 2
-    overlap_thresh = 0.4
-    min_overlap = 5
+    if regression:
+        overlap_thresh = 0.4
+        min_overlap = 5
+    else:
+        overlap_thresh = 0.5
+        min_overlap = 8
 
     r_factor = window_dim / img_dim
     locations = numpy.asarray(locations)
@@ -2172,21 +2301,19 @@ def __probability_map(img, predictions, locations, window_dim, img_width, img_he
             y1 = predictions[i, 1]
             if (x2 - x1) < min_dim or (y2 - y1) < min_dim:
                 continue
-            predicted_region = predictions[i]
+            new_region = numpy.rint(predictions[i] * r_factor)
         else:
             if predictions[i]:
-                predicted_region = [0, 0, img_dim, img_dim]
+                new_region = [0, 0, window_dim, window_dim]
             else:
-                predicted_region = [0, 0, 0, 0]
+                continue
 
-        new_region = numpy.rint(predicted_region * r_factor)
         location = locations[i]
         x1 = int(new_region[0] + location[0])
         y1 = int(new_region[1] + location[1])
         x2 = int(new_region[2] + location[0])
         y2 = int(new_region[3] + location[1])
         new_regions.append([x1, y1, x2, y2])
-
         map[y1:y2, x1:x2] += 1
 
     # check if no region found
