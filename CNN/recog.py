@@ -28,6 +28,7 @@ import PIL
 import PIL.Image
 
 import numpy
+import numpy.random
 
 import theano
 import theano.tensor as T
@@ -47,6 +48,7 @@ import CNN.conv
 from CNN.mlp import HiddenLayer
 import CNN.enums
 
+# region train Class Classifier
 
 def train_linear_classifier(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_epochs=200, kernel_dim=(5, 5), nkerns=(20, 50),
                             mlp_layers=(500, 10), batch_size=50, pool_size=(2, 2)):
@@ -1118,106 +1120,9 @@ def train_cnn_svm(dataset_path, model_path='', img_dim=28, learning_rate=0.1, n_
     save_file.close()
 
 
-def train_superclass_classifier(dataset_path, model_path='', kernel_dim=(9, 7, 4), mlp_layers=(7200, 3), nkerns=(10, 50, 200),
-                                pool_size=(2, 2), learning_rates=(0.05, 0.008), momentums=(0.9, 0.95), n_epochs=100):
-    # train classifier model using lasagne and nolearn
-    # this will classify the traffic signs to their super-class only
+# endregion
 
-    img_dim = 80
-
-    # load the data
-    print('... loading data')
-    with open(dataset_path, 'rb') as f:
-        dataset = pickle.load(f)
-    # concatenate all subsets in one set as the nolearn will use them to train and validate
-    train_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
-    train_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1]))
-
-    n_batches = 10
-    eval_split = 0.1
-    batch_size = int(train_y.shape[0] / n_batches)
-
-    #########################################
-    #       Build the regression model      #
-    #########################################
-
-    print("... building the super-class classification model")
-    nn_recognition = nolearn.lasagne.NeuralNet(
-        layers=[
-            ('input', lasagne.layers.InputLayer),
-            ('conv1', lasagne.layers.Conv2DLayer),
-            ('pool1', lasagne.layers.MaxPool2DLayer),
-            ('dropout1', lasagne.layers.DropoutLayer),
-            ('conv2', lasagne.layers.Conv2DLayer),
-            ('pool2', lasagne.layers.MaxPool2DLayer),
-            ('dropout2', lasagne.layers.DropoutLayer),
-            ('conv3', lasagne.layers.Conv2DLayer),
-            ('pool3', lasagne.layers.MaxPool2DLayer),
-            ('dropout3', lasagne.layers.DropoutLayer),
-            ('hidden4', lasagne.layers.DenseLayer),
-            ('dropout4', lasagne.layers.DropoutLayer),
-            ('hidden5', lasagne.layers.DenseLayer),
-            ('output', lasagne.layers.DenseLayer),
-        ],
-        input_shape=(None, 1, img_dim, img_dim),
-        conv1_num_filters=nkerns[0], conv1_filter_size=(kernel_dim[0], kernel_dim[0]), pool1_pool_size=pool_size,
-        dropout1_p=0.1,
-        conv2_num_filters=nkerns[1], conv2_filter_size=(kernel_dim[1], kernel_dim[1]), pool2_pool_size=pool_size,
-        dropout2_p=0.2,
-        conv3_num_filters=nkerns[2], conv3_filter_size=(kernel_dim[2], kernel_dim[2]), pool3_pool_size=pool_size,
-        dropout3_p=0.3,
-        hidden4_num_units=int(mlp_layers[0] / 4),
-        dropout4_p=0.5,
-        hidden5_num_units=int(mlp_layers[0] / 8),
-        output_num_units=mlp_layers[1],
-        output_nonlinearity=lasagne.nonlinearities.softmax,
-        objective_loss_function=lasagne.objectives.categorical_crossentropy,
-        update_learning_rate=theano.shared(CNN.utils.float32(learning_rates[0])),
-        update_momentum=theano.shared(CNN.utils.float32(momentums[0])),
-        batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
-        train_split=nolearn.lasagne.TrainSplit(eval_size=eval_split),
-        max_epochs=n_epochs,
-        regression=False,
-        verbose=3,
-        on_epoch_finished=[
-            CNN.utils.AdjustVariable('update_learning_rate', start=learning_rates[0], stop=learning_rates[1]),
-            CNN.utils.AdjustVariable('update_momentum', start=momentums[0], stop=momentums[1]),
-            CNN.utils.EarlyStopping(patience=200),
-        ]
-    )
-
-    ##############################
-    # Train The Regression Model #
-    ##############################
-
-    n_minibatches = int(train_y.shape[0] / batch_size)
-    # Finally, launch the training loop.
-    print("... training the regression model")
-    print("... in total, %d samples in training" % (train_y.shape[0]))
-    print("... since we have batch size of %d" % (batch_size))
-    print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
-
-    # no need to iterate on epochs or mini-baches because fitting a nolearn network
-    # takes care of all of that if configured correctly
-    start_time = time.clock()
-    nn_recognition.fit(train_x, train_y)
-    end_time = time.clock()
-
-    duration = (end_time - start_time) / 60.0
-    print("... finish training the model, total time consumed: %f min" % (duration))
-
-    # save the model (optional)
-    if len(model_path) > 0:
-        with open(model_path, "wb") as f:
-            pickle.dump(nn_recognition, f, -1)
-
-    # calculate the error
-    # predict = nn_classifier.predict(train_x)
-    # error = numpy.sum(numpy.not_equal(predict, train_y))
-    # print("... train error: %f" % (error / len(train_y)))
-
-    dummy_variable = 10
-
+#  region Test Classification/Recognition
 
 def classify_imgs_from_files(imgs_pathes, model_path, classifier=CNN.enums.ClassifierType.logit, img_dim=28, is_rgb=False):
     imgs = []
@@ -1610,3 +1515,246 @@ def __plot_filters_2(filters, figure_num):
         plt.axis('off')
         plt.imshow(filters[i, 0, :, :])
     plt.show()
+
+
+# endregion
+
+# region Train Superclass Classifier
+
+def train_superclass_classifier_shallow(dataset_path, model_path='', kernel_dim=(5, 5), mlp_layers=(400, 100, 3), nkerns=(40, 100),
+                                        pool_size=(2, 2), learning_rates=(0.05, 0.008), momentums=(0.9, 0.95), n_epochs=100):
+    # train classifier model using lasagne and nolearn
+    # this will classify the traffic signs to their super-class only
+
+    # load the data
+    print('... loading data')
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    # concatenate all subsets in one set as the nolearn will use them to train and validate
+    train_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
+    train_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1]))
+
+    img_dim = 28
+    n_batches = 10
+    eval_split = 0.1
+    batch_size = int(train_y.shape[0] / n_batches)
+
+    # reshape images so it can be ready for convolution
+    train_x = train_x.reshape((train_x.shape[0], 1, img_dim, img_dim))
+
+    #########################################
+    #       Build the regression model      #
+    #########################################
+
+    print("... building the super-class classification model")
+    nn_recognition = nolearn.lasagne.NeuralNet(
+        layers=[
+            ('input', lasagne.layers.InputLayer),
+            ('conv1', lasagne.layers.Conv2DLayer),
+            ('pool1', lasagne.layers.MaxPool2DLayer),
+            ('dropout1', lasagne.layers.DropoutLayer),
+            ('conv2', lasagne.layers.Conv2DLayer),
+            ('pool2', lasagne.layers.MaxPool2DLayer),
+            ('dropout2', lasagne.layers.DropoutLayer),
+            ('hidden3', lasagne.layers.DenseLayer),
+            ('dropout3', lasagne.layers.DropoutLayer),
+            ('hidden4', lasagne.layers.DenseLayer),
+            ('output', lasagne.layers.DenseLayer),
+        ],
+        input_shape=(None, 1, img_dim, img_dim),
+        conv1_num_filters=nkerns[0], conv1_filter_size=(kernel_dim[0], kernel_dim[0]), pool1_pool_size=pool_size,
+        dropout1_p=0.1,
+        conv2_num_filters=nkerns[1], conv2_filter_size=(kernel_dim[1], kernel_dim[1]), pool2_pool_size=pool_size,
+        dropout2_p=0.2,
+        hidden3_num_units=mlp_layers[0],
+        dropout3_p=0.5,
+        hidden4_num_units=mlp_layers[1],
+        output_num_units=mlp_layers[2],
+        output_nonlinearity=lasagne.nonlinearities.softmax,
+        objective_loss_function=lasagne.objectives.categorical_crossentropy,
+        update_learning_rate=theano.shared(CNN.utils.float32(learning_rates[0])),
+        update_momentum=theano.shared(CNN.utils.float32(momentums[0])),
+        batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
+        train_split=nolearn.lasagne.TrainSplit(eval_size=eval_split),
+        max_epochs=n_epochs,
+        regression=False,
+        verbose=3,
+        on_epoch_finished=[
+            CNN.utils.AdjustVariable('update_learning_rate', start=learning_rates[0], stop=learning_rates[1]),
+            CNN.utils.AdjustVariable('update_momentum', start=momentums[0], stop=momentums[1]),
+            CNN.utils.EarlyStopping(patience=200),
+        ]
+    )
+
+    ##############################
+    # Train The Regression Model #
+    ##############################
+
+    n_minibatches = int(train_y.shape[0] / batch_size)
+    # Finally, launch the training loop.
+    print("... training the regression model")
+    print("... in total, %d samples in training" % (train_y.shape[0]))
+    print("... since we have batch size of %d" % (batch_size))
+    print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
+
+    # no need to iterate on epochs or mini-baches because fitting a nolearn network
+    # takes care of all of that if configured correctly
+    start_time = time.clock()
+    nn_recognition.fit(train_x, train_y)
+    end_time = time.clock()
+
+    duration = (end_time - start_time) / 60.0
+    print("... finish training the model, total time consumed: %f min" % (duration))
+
+    # save the model (optional)
+    if len(model_path) > 0:
+        with open(model_path, "wb") as f:
+            pickle.dump(nn_recognition, f, -1)
+
+    # calculate the error
+    # predict = nn_classifier.predict(train_x)
+    # error = numpy.sum(numpy.not_equal(predict, train_y))
+    # print("... train error: %f" % (error / len(train_y)))
+
+    dummy_variable = 10
+
+
+def train_superclass_classifier_deep(dataset_path, model_path='', kernel_dim=(9, 7, 4), mlp_layers=(7200 / 4, 7200 / 8, 3), nkerns=(10, 50, 200),
+                                     pool_size=(2, 2), learning_rates=(0.05, 0.008), momentums=(0.9, 0.95), n_epochs=100):
+    # train classifier model using lasagne and nolearn
+    # this will classify the traffic signs to their super-class only
+
+    # load the data
+    print('... loading data')
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    # concatenate all subsets in one set as the nolearn will use them to train and validate
+    train_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
+    train_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1]))
+
+    img_dim = 80
+    n_batches = 10
+    eval_split = 0.1
+    batch_size = int(train_y.shape[0] / n_batches)
+
+    # reshape images so it can be ready for convolution
+    train_x = train_x.reshape((train_x.shape[0], 1, img_dim, img_dim))
+
+    #########################################
+    #       Build the regression model      #
+    #########################################
+
+    print("... building the super-class classification model")
+    nn_recognition = nolearn.lasagne.NeuralNet(
+        layers=[
+            ('input', lasagne.layers.InputLayer),
+            ('conv1', lasagne.layers.Conv2DLayer),
+            ('pool1', lasagne.layers.MaxPool2DLayer),
+            ('dropout1', lasagne.layers.DropoutLayer),
+            ('conv2', lasagne.layers.Conv2DLayer),
+            ('pool2', lasagne.layers.MaxPool2DLayer),
+            ('dropout2', lasagne.layers.DropoutLayer),
+            ('conv3', lasagne.layers.Conv2DLayer),
+            ('pool3', lasagne.layers.MaxPool2DLayer),
+            ('dropout3', lasagne.layers.DropoutLayer),
+            ('hidden4', lasagne.layers.DenseLayer),
+            ('dropout4', lasagne.layers.DropoutLayer),
+            ('hidden5', lasagne.layers.DenseLayer),
+            ('output', lasagne.layers.DenseLayer),
+        ],
+        input_shape=(None, 1, img_dim, img_dim),
+        conv1_num_filters=nkerns[0], conv1_filter_size=(kernel_dim[0], kernel_dim[0]), pool1_pool_size=pool_size,
+        dropout1_p=0.1,
+        conv2_num_filters=nkerns[1], conv2_filter_size=(kernel_dim[1], kernel_dim[1]), pool2_pool_size=pool_size,
+        dropout2_p=0.2,
+        conv3_num_filters=nkerns[2], conv3_filter_size=(kernel_dim[2], kernel_dim[2]), pool3_pool_size=pool_size,
+        dropout3_p=0.3,
+        hidden4_num_units=mlp_layers[0],
+        dropout4_p=0.5,
+        hidden5_num_units=mlp_layers[1],
+        output_num_units=mlp_layers[2],
+        output_nonlinearity=lasagne.nonlinearities.softmax,
+        objective_loss_function=lasagne.objectives.categorical_crossentropy,
+        update_learning_rate=theano.shared(CNN.utils.float32(learning_rates[0])),
+        update_momentum=theano.shared(CNN.utils.float32(momentums[0])),
+        batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
+        train_split=nolearn.lasagne.TrainSplit(eval_size=eval_split),
+        max_epochs=n_epochs,
+        regression=False,
+        verbose=3,
+        on_epoch_finished=[
+            CNN.utils.AdjustVariable('update_learning_rate', start=learning_rates[0], stop=learning_rates[1]),
+            CNN.utils.AdjustVariable('update_momentum', start=momentums[0], stop=momentums[1]),
+            CNN.utils.EarlyStopping(patience=200),
+        ]
+    )
+
+    ##############################
+    # Train The Regression Model #
+    ##############################
+
+    n_minibatches = int(train_y.shape[0] / batch_size)
+    # Finally, launch the training loop.
+    print("... training the regression model")
+    print("... in total, %d samples in training" % (train_y.shape[0]))
+    print("... since we have batch size of %d" % (batch_size))
+    print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
+
+    # no need to iterate on epochs or mini-baches because fitting a nolearn network
+    # takes care of all of that if configured correctly
+    start_time = time.clock()
+    nn_recognition.fit(train_x, train_y)
+    end_time = time.clock()
+
+    duration = (end_time - start_time) / 60.0
+    print("... finish training the model, total time consumed: %f min" % (duration))
+
+    # save the model (optional)
+    if len(model_path) > 0:
+        with open(model_path, "wb") as f:
+            pickle.dump(nn_recognition, f, -1)
+
+    # calculate the error
+    # predict = nn_classifier.predict(train_x)
+    # error = numpy.sum(numpy.not_equal(predict, train_y))
+    # print("... train error: %f" % (error / len(train_y)))
+
+    dummy_variable = 10
+
+
+# endregion
+
+# region Test Superclass Classifier
+
+def classify_superclass_from_database(model_path, img_dim):
+    import io
+    import os
+    import os.path
+
+    superclass_id = 1
+    ##directory = "D:\\_Dataset\\SuperClass\\Test_Preprocessed_Revised_28\\0000%d\\" % (superclass_id)
+    directory = "D:\\_Dataset\\BelgiumTS\\Training_Preprocessed_28\\00032\\"
+
+    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    imgs = []
+    for file in files:
+        img_path = os.path.join(directory, file)
+        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+        imgs.append(img)
+
+    # read the image, don't forget to reshape
+    # the image for the sake of the detector
+    imgs = numpy.asarray(imgs)
+    imgs = imgs.reshape((imgs.shape[0], 1, img_dim, img_dim))
+
+    # load the regression model
+    with open(model_path, 'rb') as f:
+        net_cnn = pickle.load(f)
+
+    prediction = net_cnn.predict(imgs)
+
+    error = 100 * len(prediction[prediction != superclass_id]) / len(imgs)
+    print("... error percentage: %f%%" % error)
+    dummy = 10
+
+# endregion

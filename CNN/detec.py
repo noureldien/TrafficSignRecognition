@@ -29,6 +29,7 @@ import CNN.prop
 
 from CNN.mlp import HiddenLayer
 
+# region Train Detector
 
 def train_shallow(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=500,
                   classifier=CNN.enums.ClassifierType.logit):
@@ -780,6 +781,9 @@ def train_from_scatch(dataset_path, detection_model_path, learning_rate=0.1, n_e
     pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
     save_file.close()
 
+# endregion
+
+# region Do Recognition
 
 def detect_from_dataset(dataset_path, recognition_model_path, detection_model_path):
     # load the cnn model to run the extract convolution filters from the images
@@ -2265,6 +2269,10 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
 
     return c_result, c_prob, c_duration
 
+#endregion
+
+# region Helping Functions
+
 
 def __probability_map(img, predictions, locations, window_dim, img_width, img_height, img_dim, count, regression=True, **kwargs):
     # parameters of the algorithm
@@ -2378,3 +2386,5 @@ def __confidence_map(img, img_width, img_height, scale_regions, scale_count, **k
         cv2.rectangle(map_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
 
     cv2.imwrite("D:\\_Dataset\\GTSDB\\Test_Regions\\" + "{0:05d}.png".format(scale_count + 1), map_color)
+
+#endregion

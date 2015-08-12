@@ -46,7 +46,7 @@ print('Traffic Sign Recognition')
 # CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50, mlp_layers=(500, 10)) # 4.77%
 # CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50, mlp_layers=(100, 10)) # 5.06%
 # CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(20, 50), mlp_layers=(500, 12), batch_size=50, mlp_layers=(200, 10)) # 4.31%
-# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=[4, 10], mlp_layers=(500, 12), batch_size=50, mlp_layers=(50, 10)) # 8.00%
+# CNN.recog.train(dataset_path=gtsrb_dataset_28, learning_rate=0.2, n_epochs=1, nkerns=(4, 10), mlp_layers=(500, 12), batch_size=50, mlp_layers=(50, 10)) # 8.00%
 
 # test model on specific image
 # CNN.recog.classify_img_from_file("D://_Dataset//GTSRB//Final_Test_Preprocessed_28//00412.png", gtsrb_model_28)
@@ -113,6 +113,24 @@ print('Traffic Sign Recognition')
 # endregion
 
 # region Recognition (Superclass 80)
+
+img_dim_80 = 80
+img_dim_28 = 28
+
+superclass_model_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
+superclass_dataset_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
+
+superclass_model_28 = 'D://_Dataset//SuperClass//cnn_model_28_lasagne.pkl'
+superclass_dataset_28 = 'D://_Dataset//SuperClass//superclass_normalized_28.pkl'
+
+# train super-class model on 28 pixels
+# CNN.recog.train_superclass_classifier_shallow(dataset_path=superclass_dataset_28, model_path=superclass_model_28, n_epochs=30)
+
+# train super-class model on 80 pixels
+# CNN.recog.train_superclass_classifier_deep(dataset_path=superclass_dataset_80, model_path=superclass_model_80, n_epochs=30)
+
+# test super-class classifier model
+# CNN.recog.classify_superclass_from_database(model_path=superclass_model_28, img_dim=img_dim_28)
 
 # endregion
 
@@ -186,12 +204,5 @@ print('Traffic Sign Recognition')
 # region Google Street View
 
 # CNN.stview.span_google_street_view()
-
-
-# import numpy as np
-# a = np.array((1, 2, 3))
-# b = np.array((2, 3, 4))
-# c = np.hstack((a, b))
-# x = 10
 
 # endregion

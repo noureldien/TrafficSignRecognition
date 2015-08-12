@@ -87,16 +87,89 @@ def span_google_street_view():
     # path = [(start_location_lat, start_location_lng), (stop_location_lat, stop_location_lng)]
     # road_locations = googlemaps.client.snap_to_roads(client, path, interpolate=True)
 
-    dummy = 10
+    # load the models once and for all
+    prohib_recognition_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_80.pkl"
+    prohib_detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
+    superclass_recognition_model_path = "D:\\_Dataset\\SuperClass\\cnn_model_28_lasagne.pkl"
 
-    # load the network once and for all
-    recognition_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_80.pkl"
-    detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
+    detec_cnn, detec_mlp, detec_mlp_input_shape = __build_detector(prohib_recognition_model_path, prohib_detection_model_path, batch_size)
+    recog_superclass_cnn = __build_classifier(superclass_recognition_model_path)
+
+
+    # detect the region
     img_color = cv2.imread("D:\\_Dataset\\GTSDB\\Test_PNG\\_img15.png")
     batch_size = 100
-    net_cnn, net_mlp, net_mlp_input_shape = __build_detector(recognition_model_path, detection_model_path, batch_size)
-    regions = __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape)
+
+    regions = __detect(img_color, batch_size, detec_cnn, detec_mlp, detec_mlp_input_shape)
+
+    # after detection, run super-class classification on only the strong regions
+    strong_regions = regions
+
     __save_detection_result(img_color, regions)
+
+
+# region Detector
+
+def __build_detector(recognition_model_path, detection_model_path, batch_size):
+    # stack the regions of all the scales in one array
+    # please note that a scale can have no regions, so using vstack wouldn't work
+    # remove the scales with empty regions then use vstack
+
+    ##############################
+    # Build the detector         #
+    ##############################
+
+    loaded_objects = CNN.utils.load_model(model_path=recognition_model_path, model_type=CNN.enums.ModelType._02_conv3_mlp2)
+    img_dim = loaded_objects[1]
+    kernel_dim = loaded_objects[2]
+    nkerns = loaded_objects[3]
+    pool_size = loaded_objects[5]
+
+    layer0_W = theano.shared(loaded_objects[6], borrow=True)
+    layer0_b = theano.shared(loaded_objects[7], borrow=True)
+    layer1_W = theano.shared(loaded_objects[8], borrow=True)
+    layer1_b = theano.shared(loaded_objects[9], borrow=True)
+    layer2_W = theano.shared(loaded_objects[10], borrow=True)
+    layer2_b = theano.shared(loaded_objects[11], borrow=True)
+
+    layer0_input = T.tensor4(name='input')
+    layer0_img_dim = img_dim
+    layer0_img_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
+    layer0_kernel_dim = kernel_dim[0]
+    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
+    layer1_kernel_dim = kernel_dim[1]
+    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
+    layer2_kernel_dim = kernel_dim[2]
+    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
+    layer3_input_shape = (batch_size, nkerns[2] * layer3_img_dim * layer3_img_dim)
+
+    # layer 0, 1, 2: Conv-Pool
+    layer0_output = CNN.conv.convpool_layer(
+        input=layer0_input, W=layer0_W, b=layer0_b,
+        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
+        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
+        pool_size=pool_size
+    )
+    layer1_output = CNN.conv.convpool_layer(
+        input=layer0_output, W=layer1_W, b=layer1_b,
+        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
+        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
+        pool_size=pool_size
+    )
+    layer2_output = CNN.conv.convpool_layer(
+        input=layer1_output, W=layer2_W, b=layer2_b,
+        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
+        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
+        pool_size=pool_size
+    )
+    # do the filtering using 3 layers of Conv+Pool
+    conv_fn = theano.function([layer0_input], layer2_output)
+
+    # load the regression model
+    with open(detection_model_path, 'rb') as f:
+        nn_mlp = pickle.load(f)
+
+    return conv_fn, nn_mlp, layer3_input_shape
 
 
 def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
@@ -241,71 +314,9 @@ def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
         overlap_thresh = 0.25
         min_overlap = round(len(scales) * 0.35)
         weak_regions, strong_regions = CNN.nms.suppression(strong_prob_regions, overlap_thresh, min_overlap)
-        return weak_regions, strong_regions, weak_prob_regions, strong_prob_regions
+        return strong_regions, weak_regions, strong_prob_regions, weak_prob_regions
     else:
         return [], [], [], []
-
-
-def __build_detector(recognition_model_path, detection_model_path, batch_size):
-    # stack the regions of all the scales in one array
-    # please note that a scale can have no regions, so using vstack wouldn't work
-    # remove the scales with empty regions then use vstack
-
-    ##############################
-    # Build the detector         #
-    ##############################
-
-    loaded_objects = CNN.utils.load_model(model_path=recognition_model_path, model_type=CNN.enums.ModelType._02_conv3_mlp2)
-    img_dim = loaded_objects[1]
-    kernel_dim = loaded_objects[2]
-    nkerns = loaded_objects[3]
-    pool_size = loaded_objects[5]
-
-    layer0_W = theano.shared(loaded_objects[6], borrow=True)
-    layer0_b = theano.shared(loaded_objects[7], borrow=True)
-    layer1_W = theano.shared(loaded_objects[8], borrow=True)
-    layer1_b = theano.shared(loaded_objects[9], borrow=True)
-    layer2_W = theano.shared(loaded_objects[10], borrow=True)
-    layer2_b = theano.shared(loaded_objects[11], borrow=True)
-
-    layer0_input = T.tensor4(name='input')
-    layer0_img_dim = img_dim
-    layer0_img_shape = (batch_size, 1, layer0_img_dim, layer0_img_dim)
-    layer0_kernel_dim = kernel_dim[0]
-    layer1_img_dim = int((layer0_img_dim - layer0_kernel_dim + 1) / 2)
-    layer1_kernel_dim = kernel_dim[1]
-    layer2_img_dim = int((layer1_img_dim - layer1_kernel_dim + 1) / 2)
-    layer2_kernel_dim = kernel_dim[2]
-    layer3_img_dim = int((layer2_img_dim - layer2_kernel_dim + 1) / 2)
-    layer3_input_shape = (batch_size, nkerns[2] * layer3_img_dim * layer3_img_dim)
-
-    # layer 0, 1, 2: Conv-Pool
-    layer0_output = CNN.conv.convpool_layer(
-        input=layer0_input, W=layer0_W, b=layer0_b,
-        image_shape=(batch_size, 1, layer0_img_dim, layer0_img_dim),
-        filter_shape=(nkerns[0], 1, layer0_kernel_dim, layer0_kernel_dim),
-        pool_size=pool_size
-    )
-    layer1_output = CNN.conv.convpool_layer(
-        input=layer0_output, W=layer1_W, b=layer1_b,
-        image_shape=(batch_size, nkerns[0], layer1_img_dim, layer1_img_dim),
-        filter_shape=(nkerns[1], nkerns[0], layer1_kernel_dim, layer1_kernel_dim),
-        pool_size=pool_size
-    )
-    layer2_output = CNN.conv.convpool_layer(
-        input=layer1_output, W=layer2_W, b=layer2_b,
-        image_shape=(batch_size, nkerns[1], layer2_img_dim, layer2_img_dim),
-        filter_shape=(nkerns[2], nkerns[1], layer2_kernel_dim, layer2_kernel_dim),
-        pool_size=pool_size
-    )
-    # do the filtering using 3 layers of Conv+Pool
-    conv_fn = theano.function([layer0_input], layer2_output)
-
-    # load the regression model
-    with open(detection_model_path, 'rb') as f:
-        nn_mlp = pickle.load(f)
-
-    return conv_fn, nn_mlp, layer3_input_shape
 
 
 def __probability_map(predictions, locations, window_dim, overlap_thresh, min_overlap):
@@ -335,10 +346,10 @@ def __probability_map(predictions, locations, window_dim, overlap_thresh, min_ov
 
 
 def __save_detection_result(img_color, regions):
-    weak_regions = regions[0]
-    strong_regions = regions[1]
-    weak_probability_regions = regions[2]
-    strong_probability_regions = regions[3]
+    strong_regions = regions[0]
+    weak_regions = regions[1]
+    strong_probability_regions = regions[2]
+    weak_probability_regions = regions[3]
 
     # draw the result of the detection
     red_color = (0, 0, 255)
@@ -357,6 +368,83 @@ def __save_detection_result(img_color, regions):
     cv2.imwrite("D://_Dataset//GTSDB//Test_Regions/result.png", img_color)
 
 
+# endregion
+
+# region Classifier
+
+def __build_classifier(model_path):
+    # load the model
+    with open(model_path, 'rb') as f:
+        net_cnn = pickle.load(f)
+
+    return net_cnn
+
+
+def __classify(net_cnn, img, img_dim):
+    img = img.reshape((1, 1, img_dim, img_dim))
+    prediction = net_cnn.predict(img)
+    return prediction
+
+
+# endregion
+
+# region View/Show/Plot
+
+
+def __show_street_view_images(directions, api_key):
+    # loop on all the points and get the google street view image at each one
+    plt.figure(num=1, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='w')
+    plt.ion()
+    plt.axis('off')
+    plt.show()
+
+    # download the images of google street view at each location/step
+    img_count = 0
+    for dir in directions:
+        latlng = "%f,%f" % (dir["lat"], dir["lng"])
+        heading = dir["heading"]
+        url = "https://maps.googleapis.com/maps/api/streetview?size=640x400&location=%s&heading=%f&pitch=0&key=%s" % (latlng, heading, api_key)
+        img_bytes = requests.get(url).content
+        img = numpy.asarray(PIL.Image.open(io.BytesIO(img_bytes)))
+        plt.imshow(img)
+        plt.pause(0.1)
+        img_count += 1
+        print("... new image: %d" % (img_count))
+
+
+def __plot_points_on_map(locations, is_locations=True):
+    if is_locations:
+        points = __convert_locations_to_points(locations)
+    else:
+        points = locations
+    zoom_level = 16
+    p_count = len(points)
+    center = points[int(p_count / 2)]
+    mymap = pygmaps.pygmaps.maps(center[0], center[1], zoom_level)
+
+    # mymap.setgrids(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
+    # mymap.addradpoint(37.429, -122.145, 95, "#FF0000")
+
+    # create range of colors for the points
+    hex_colors = []
+    for val in range(1, p_count + 1):
+        col = __pseudo_color(val, 0, p_count)
+        hex_colors.append(__rgb_to_hex(col))
+
+    # draw marks at the points
+    p_count = 0
+    for pnt, col in zip(points, hex_colors):
+        p_count += 1
+        mymap.addpoint(pnt[0], pnt[1], col, title=str(p_count))
+
+    # draw path using the points then show the map
+    path_color = "#0A6491"
+    mymap.addpath(points, path_color)
+    mymap.draw('mymap.draw.html')
+    url = 'mymap.draw.html'
+    webbrowser.open_new_tab(url)
+
+
 def __draw_image(img, num):
     # plot original image and first and second components of output
     # plt.figure(num)
@@ -367,10 +455,9 @@ def __draw_image(img, num):
     plt.show()
 
 
-def __read_api_key():
-    file_path = "C://Users//Noureldien//Documents//PycharmProjects//TrafficSignRecognition//Data//google-maps-key.pkl"
-    key = pickle.load(open(file_path, "rb"))
-    return key
+# endregion
+
+# region Path Calculation
 
 
 def __recode_path(direction_steps, frames_per_meter=1):
@@ -477,60 +564,6 @@ def __compute_direction(point1, point2):
     return math.degrees(math.atan2(y, x))
 
 
-def __show_street_view_images(directions, api_key):
-    # loop on all the points and get the google street view image at each one
-    plt.figure(num=1, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='w')
-    plt.ion()
-    plt.axis('off')
-    plt.show()
-
-    # download the images of google street view at each location/step
-    img_count = 0
-    for dir in directions:
-        latlng = "%f,%f" % (dir["lat"], dir["lng"])
-        heading = dir["heading"]
-        url = "https://maps.googleapis.com/maps/api/streetview?size=640x400&location=%s&heading=%f&pitch=0&key=%s" % (latlng, heading, api_key)
-        img_bytes = requests.get(url).content
-        img = numpy.asarray(PIL.Image.open(io.BytesIO(img_bytes)))
-        plt.imshow(img)
-        plt.pause(0.1)
-        img_count += 1
-        print("... new image: %d" % (img_count))
-
-
-def __plot_points_on_map(locations, is_locations=True):
-    if is_locations:
-        points = __convert_locations_to_points(locations)
-    else:
-        points = locations
-    zoom_level = 16
-    p_count = len(points)
-    center = points[int(p_count / 2)]
-    mymap = pygmaps.pygmaps.maps(center[0], center[1], zoom_level)
-
-    # mymap.setgrids(37.42, 37.43, 0.001, -122.15, -122.14, 0.001)
-    # mymap.addradpoint(37.429, -122.145, 95, "#FF0000")
-
-    # create range of colors for the points
-    hex_colors = []
-    for val in range(1, p_count + 1):
-        col = __pseudo_color(val, 0, p_count)
-        hex_colors.append(__rgb_to_hex(col))
-
-    # draw marks at the points
-    p_count = 0
-    for pnt, col in zip(points, hex_colors):
-        p_count += 1
-        mymap.addpoint(pnt[0], pnt[1], col, title=str(p_count))
-
-    # draw path using the points then show the map
-    path_color = "#0A6491"
-    mymap.addpath(points, path_color)
-    mymap.draw('mymap.draw.html')
-    url = 'mymap.draw.html'
-    webbrowser.open_new_tab(url)
-
-
 def __snap_result_to_locations(snap_result):
     locations = []
     for snap in snap_result:
@@ -538,6 +571,11 @@ def __snap_result_to_locations(snap_result):
         loc = {"lat": snap["latitude"], "lng": snap["longitude"]}
         locations.append(loc)
     return locations
+
+
+# endregion
+
+# region Conversions
 
 
 def __convert_steps_to_locations(steps):
@@ -563,6 +601,10 @@ def __convert_points_to_locations(points):
     return locations
 
 
+# endregions
+
+# region Color Manipluation
+
 def __pseudo_color(val, minval, maxval):
     # convert val in range minval..maxval to the range 0..120 degrees which
     # correspond to the colors red..green in the HSV colorspace
@@ -586,6 +628,16 @@ def __rgb_to_hex(rgb):
     return '#%02x%02x%02x' % rgb
 
 
+# endregion
+
+# region Mics
+
+def __read_api_key():
+    file_path = "C://Users//Noureldien//Documents//PycharmProjects//TrafficSignRecognition//Data//google-maps-key.pkl"
+    key = pickle.load(open(file_path, "rb"))
+    return key
+
+
 def __tutorial():
     api_key = __read_api_key()
     client = googlemaps.client.Client(key=api_key)
@@ -598,7 +650,6 @@ def __tutorial():
 
     # Request directions via public transit
     now = googlemaps.client.datetime.now()
-    directions_result = googlemaps.client.directions(client, "Sydney Town Hall",
-                                                     "Parramatta, NSW",
-                                                     mode="transit",
-                                                     departure_time=now)
+    directions_result = googlemaps.client.directions(client, "Sydney Town Hall", "Parramatta, NSW", mode="transit", departure_time=now)
+
+# endregion
