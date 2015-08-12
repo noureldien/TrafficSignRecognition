@@ -48,25 +48,6 @@ import CNN.nms
 
 
 def span_google_street_view():
-    # load the network once and for all
-    recognition_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_80.pkl"
-    detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
-    img_color = cv2.imread("D://_Dataset//GTSDB//Test_PNG//_img15.png")
-    batch_size = 100
-    net_cnn, net_mlp, net_mlp_input_shape = __build_detector(recognition_model_path, detection_model_path, batch_size)
-    weak_regions, strong_regions = __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape)
-    # draw the result of the detection
-    red_color = (0, 0, 255)
-    yellow_color = (84, 212, 255)
-    for loc in weak_regions:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
-    for loc in strong_regions:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
-
-    dummy = 10
-
-    return
-
     api_key = __read_api_key()
     client = googlemaps.client.Client(key=api_key)
 
@@ -101,7 +82,6 @@ def span_google_street_view():
     x = 10
     return
 
-
     # since we interpolated points in the direction, these generated points might not be on
     # the road (if road wasn't straight line). The solution is to snap these point to the road
     # path = [(start_location_lat, start_location_lng), (stop_location_lat, stop_location_lng)]
@@ -110,14 +90,13 @@ def span_google_street_view():
     dummy = 10
 
     # load the network once and for all
-    recognition_model_path = ""
-    detection_model_path = ""
+    recognition_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_80.pkl"
+    detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
+    img_color = cv2.imread("D:\\_Dataset\\GTSDB\\Test_PNG\\_img15.png")
     batch_size = 100
-    net_cnn, net_mlp = __build_detector(recognition_model_path, detection_model_path, batch_size)
-    predictions = __detect(img, batch_size, net_cnn, net_mlp)
-
-    # run the detector
-    # // (img_path, recognition_model_path, detection_model_path, img_dim,)
+    net_cnn, net_mlp, net_mlp_input_shape = __build_detector(recognition_model_path, detection_model_path, batch_size)
+    regions = __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape)
+    __save_detection_result(img_color, regions)
 
 
 def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
@@ -156,7 +135,7 @@ def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
     prop_weak, prop_strong, prop_map, prop_circles = CNN.prop.detection_proposal(img_color, min_dim=min_window_dim, max_dim=max_window_dim)
     if len(prop_strong) == 0:
         print("... NO TRAFFIC SIGN PROPOSALS WERE FOUND")
-        return [], []
+        return [], [], [], []
 
     # loop on the detection proposals
     scales = numpy.arange(0.7, 1.58, 0.05)
@@ -227,8 +206,7 @@ def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
         print("... batch: %i/%i, time(sec.): %f" % ((i + 1), n_batches, t2 - t1))
 
     # after getting all the predictions, remove the padding
-    predictions = numpy.vstack(predictions)
-    predictions = predictions[0:n_regions]
+    predictions = numpy.hstack(predictions)[0:n_regions]
 
     end_time = time.clock()
     duration = (end_time - start_time) / 60.0
@@ -238,26 +216,34 @@ def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
     s_count = 0
     overlap_thresh = 0.5
     min_overlap = 0
-    strong_regions = []
+    strong_prob_regions = []
+    weak_prob_regions = []
     for pred, loc, window_dim in zip(predictions, locations, window_dims):
         s_count += 1
-        map, w_regions, s_regions = __probability_map([pred], [loc], window_dim, overlap_thresh, min_overlap)
+        w_regions, s_regions = __probability_map([pred], [loc], window_dim, overlap_thresh, min_overlap)
+        if len(w_regions) > 0:
+            weak_prob_regions.append(w_regions)
         if len(s_regions) > 0:
-            strong_regions.append(s_regions)
+            strong_prob_regions.append(s_regions)
             print("Scale: %d, window_dim: %d, regions: %d, strong regions detected" % (s_count, window_dim, r_count))
         else:
             print("Scale: %d, window_dim: %d, regions: %d, no regions detected" % (s_count, window_dim, r_count))
 
+    if len(weak_prob_regions) > 0:
+        weak_prob_regions = numpy.vstack(weak_prob_regions)
+
+    if len(strong_prob_regions) > 0:
+        strong_prob_regions = numpy.vstack(strong_prob_regions)
+
     # now, after we finished scanning at all the levels, we should make the final verdict
     # by suppressing all the strong_regions that we extracted on different scales
-    if len(strong_regions) > 0:
+    if len(strong_prob_regions) > 0:
         overlap_thresh = 0.25
-        min_overlap = round(len(scales) - 9 / 10)
-        regions = numpy.vstack(strong_regions)
-        weak_regions, strong_regions = CNN.nms.suppression(regions, overlap_thresh, min_overlap)
-        return weak_regions, strong_regions
+        min_overlap = round(len(scales) * 0.35)
+        weak_regions, strong_regions = CNN.nms.suppression(strong_prob_regions, overlap_thresh, min_overlap)
+        return weak_regions, strong_regions, weak_prob_regions, strong_prob_regions
     else:
-        return [], []
+        return [], [], [], []
 
 
 def __build_detector(recognition_model_path, detection_model_path, batch_size):
@@ -327,7 +313,8 @@ def __probability_map(predictions, locations, window_dim, overlap_thresh, min_ov
     predictions = numpy.asarray(predictions)
 
     regions = []
-    for i in numpy.where(predictions):
+    idx = numpy.where(predictions)[0]
+    for i in idx:
         region = [0, 0, window_dim, window_dim]
         location = locations[i]
         x1 = int(region[0] + location[0])
@@ -345,6 +332,29 @@ def __probability_map(predictions, locations, window_dim, overlap_thresh, min_ov
 
     # return the map to be exploited later by the detector, for the next scale
     return weak_regions, strong_regions
+
+
+def __save_detection_result(img_color, regions):
+    weak_regions = regions[0]
+    strong_regions = regions[1]
+    weak_probability_regions = regions[2]
+    strong_probability_regions = regions[3]
+
+    # draw the result of the detection
+    red_color = (0, 0, 255)
+    blue_color = (255, 0, 0)
+    green_color = (0, 255, 0)
+    yellow_color = (84, 212, 255)
+    for reg in weak_probability_regions:
+        cv2.rectangle(img_color, (reg[0], reg[1]), (reg[2], reg[3]), green_color, 1)
+    for reg in strong_probability_regions:
+        cv2.rectangle(img_color, (reg[0], reg[1]), (reg[2], reg[3]), blue_color, 1)
+    for reg in weak_regions:
+        cv2.rectangle(img_color, (reg[0], reg[1]), (reg[2], reg[3]), yellow_color, 1)
+    for reg in strong_regions:
+        cv2.rectangle(img_color, (reg[0], reg[1]), (reg[2], reg[3]), red_color, 2)
+
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions/result.png", img_color)
 
 
 def __draw_image(img, num):

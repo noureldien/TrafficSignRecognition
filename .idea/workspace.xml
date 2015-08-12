@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="39282e68-efc6-400e-aac6-8f1638705102" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/detec.py" afterPath="$PROJECT_DIR$/CNN/detec.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/main.py" afterPath="$PROJECT_DIR$/main.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/recog.py" afterPath="$PROJECT_DIR$/CNN/recog.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CNN/stview.py" afterPath="$PROJECT_DIR$/CNN/stview.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
@@ -29,49 +29,103 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-8.206897">
-              <caret line="183" column="0" selection-start-line="183" selection-start-column="0" selection-end-line="183" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="93" column="0" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
               <folding>
                 <element signature="e#190#221#0" expanded="false" />
-                <element signature="e#5236#5267#0" expanded="false" />
-                <element signature="e#7527#7556#0" expanded="false" />
-                <element signature="e#9289#9318#0" expanded="false" />
+                <element signature="e#7578#7607#0" expanded="false" />
+                <element signature="e#9340#9369#0" expanded="false" />
+                <element signature="e#11255#11282#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="stview.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="stview.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CNN/stview.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.82102275">
-              <caret line="63" column="82" selection-start-line="63" selection-start-column="82" selection-end-line="63" selection-end-column="82" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="246" column="0" selection-start-line="246" selection-start-column="0" selection-end-line="246" selection-end-column="0" />
               <folding>
-                <element signature="e#3967#9184#0" expanded="false" />
-                <element signature="e#3967#4278#1" expanded="false" />
-                <element signature="e#9271#11912#0" expanded="false" />
-                <element signature="e#12007#12787#0" expanded="false" />
-                <element signature="e#12822#12997#0" expanded="false" />
-                <element signature="e#13026#13200#0" expanded="false" />
-                <element signature="e#13263#14163#0" expanded="false" />
-                <element signature="e#13263#13455#1" expanded="false" />
-                <element signature="e#14200#14576#0" expanded="false" />
-                <element signature="e#14200#14517#1" expanded="false" />
-                <element signature="e#14639#15196#0" expanded="false" />
-                <element signature="e#14639#14821#1" expanded="false" />
-                <element signature="e#15239#15604#0" expanded="false" />
-                <element signature="e#15239#15369#1" expanded="false" />
-                <element signature="e#15652#16073#0" expanded="false" />
-                <element signature="e#16132#16908#0" expanded="false" />
-                <element signature="e#16971#17942#0" expanded="false" />
-                <element signature="e#17994#18186#0" expanded="false" />
-                <element signature="e#18234#18359#0" expanded="false" />
-                <element signature="e#18412#18515#0" expanded="false" />
-                <element signature="e#18565#18702#0" expanded="false" />
-                <element signature="e#18750#19211#0" expanded="false" />
-                <element signature="e#19243#19367#0" expanded="false" />
-                <element signature="e#19397#19425#0" expanded="false" />
-                <element signature="e#19450#20187#0" expanded="false" />
+                <element signature="e#812#3168#0" expanded="false" />
+                <element signature="e#3251#8771#0" expanded="false" />
+                <element signature="e#3251#3562#1" expanded="false" />
+                <element signature="e#8858#11499#0" expanded="false" />
+                <element signature="e#11594#12391#0" expanded="false" />
+                <element signature="e#12447#13309#0" expanded="false" />
+                <element signature="e#13344#13519#0" expanded="false" />
+                <element signature="e#13548#13722#0" expanded="false" />
+                <element signature="e#13785#14685#0" expanded="false" />
+                <element signature="e#13785#13977#1" expanded="false" />
+                <element signature="e#14722#15098#0" expanded="false" />
+                <element signature="e#14722#15039#1" expanded="false" />
+                <element signature="e#15161#15718#0" expanded="false" />
+                <element signature="e#15161#15343#1" expanded="false" />
+                <element signature="e#15761#16126#0" expanded="false" />
+                <element signature="e#15761#15891#1" expanded="false" />
+                <element signature="e#16174#16595#0" expanded="false" />
+                <element signature="e#16654#17430#0" expanded="false" />
+                <element signature="e#17493#18464#0" expanded="false" />
+                <element signature="e#18516#18708#0" expanded="false" />
+                <element signature="e#18756#18881#0" expanded="false" />
+                <element signature="e#18934#19037#0" expanded="false" />
+                <element signature="e#19087#19224#0" expanded="false" />
+                <element signature="e#19272#19733#0" expanded="false" />
+                <element signature="e#19765#19889#0" expanded="false" />
+                <element signature="e#19919#19947#0" expanded="false" />
+                <element signature="e#19972#20709#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="lasagne_experiment.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_experiment.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="68" column="25" selection-start-line="68" selection-start-column="8" selection-end-line="68" selection-end-column="25" />
+              <folding>
+                <element signature="e#664#692#0" expanded="false" />
+                <element signature="e#2622#3062#0" expanded="false" />
+                <element signature="e#2680#2763#0" expanded="false" />
+                <element signature="e#2816#3062#0" expanded="false" />
+                <element signature="e#3098#3927#0" expanded="false" />
+                <element signature="e#3140#3264#0" expanded="false" />
+                <element signature="e#3317#3927#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="recog.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/CNN/recog.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.519802">
+              <caret line="1120" column="31" selection-start-line="1120" selection-start-column="4" selection-end-line="1120" selection-end-column="31" />
+              <folding>
+                <element signature="e#0#921#1" expanded="false" />
+                <element signature="e#923#932#0" expanded="true" />
+                <element signature="e#1509#11249#0" expanded="false" />
+                <element signature="e#1509#1980#1" expanded="false" />
+                <element signature="e#11459#20958#0" expanded="false" />
+                <element signature="e#11459#11930#1" expanded="false" />
+                <element signature="e#21170#31468#0" expanded="false" />
+                <element signature="e#21170#21641#1" expanded="false" />
+                <element signature="e#31747#35548#0" expanded="false" />
+                <element signature="e#31747#31811#1" expanded="false" />
+                <element signature="e#35758#45518#0" expanded="false" />
+                <element signature="e#35758#36229#1" expanded="false" />
+                <element signature="e#45770#50111#0" expanded="false" />
+                <element signature="e#50242#50673#0" expanded="false" />
+                <element signature="e#50870#51279#0" expanded="false" />
+                <element signature="e#51405#51751#0" expanded="false" />
+                <element signature="e#51840#54987#0" expanded="false" />
+                <element signature="e#55089#58508#0" expanded="false" />
+                <element signature="e#58644#58958#0" expanded="false" />
+                <element signature="e#59061#62898#0" expanded="false" />
+                <element signature="e#62998#67462#0" expanded="false" />
+                <element signature="e#67512#67846#0" expanded="false" />
+                <element signature="e#67896#68230#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -137,15 +191,15 @@
         <option value="$PROJECT_DIR$/CodeSnippets/facial_keypoints.py" />
         <option value="$PROJECT_DIR$/CNN/conv.py" />
         <option value="$USER_HOME$/Anaconda3/Lib/site-packages/nolearn/lasagne/base.py" />
-        <option value="$PROJECT_DIR$/CNN/recog.py" />
         <option value="$USER_HOME$/Anaconda3/Lib/site-packages/pygmaps_ng/__init__.py" />
         <option value="$USER_HOME$/Anaconda3/Lib/site-packages/pygmaps/pygmaps.py" />
         <option value="$PROJECT_DIR$/CNN/nms.py" />
         <option value="$PROJECT_DIR$/CNN/prop.py" />
         <option value="$PROJECT_DIR$/CNN/utils.py" />
         <option value="$PROJECT_DIR$/CNN/detec.py" />
-        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/CNN/stview.py" />
+        <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/CNN/recog.py" />
       </list>
     </option>
   </component>
@@ -410,12 +464,6 @@
       <created>1434041380824</created>
       <option name="number" value="Default" />
       <updated>1434041380824</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Commit">
-      <created>1436010679310</created>
-      <option name="number" value="00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1436010679310</updated>
     </task>
     <task id="LOCAL-00003" summary="Commit">
       <created>1436089211483</created>
@@ -705,7 +753,13 @@
       <option name="project" value="LOCAL" />
       <updated>1439299291062</updated>
     </task>
-    <option name="localTasksCounter" value="51" />
+    <task id="LOCAL-00051" summary="Commit">
+      <created>1439320381655</created>
+      <option name="number" value="00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1439320381655</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="TodoView">
@@ -733,7 +787,7 @@
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.46063653" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.20149253" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32663316" sideWeight="0.5029762" order="11" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.36348408" sideWeight="0.47172618" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2763819" sideWeight="0.47172618" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -759,13 +813,6 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/CNN/stview.py</url>
-          <line>65</line>
-          <option name="timeStamp" value="1590" />
-        </line-breakpoint>
-      </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
@@ -776,7 +823,7 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="1591" />
+      <option name="time" value="1617" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -919,13 +966,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.50165015">
           <caret line="172" column="33" selection-start-line="172" selection-start-column="33" selection-end-line="172" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CNN/recog.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6023622">
-          <caret line="788" column="18" selection-start-line="788" selection-start-column="18" selection-end-line="788" selection-end-column="18" />
         </state>
       </provider>
     </entry>
@@ -1072,38 +1112,6 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_experiment.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#664#692#0" expanded="false" />
-            <element signature="e#712#2585#0" expanded="false" />
-            <element signature="e#2622#3062#0" expanded="false" />
-            <element signature="e#2680#2763#0" expanded="false" />
-            <element signature="e#2816#3062#0" expanded="false" />
-            <element signature="e#3098#3927#0" expanded="false" />
-            <element signature="e#3140#3264#0" expanded="false" />
-            <element signature="e#3317#3927#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_mnist_classification.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6530612">
-          <caret line="187" column="36" selection-start-line="187" selection-start-column="36" selection-end-line="187" selection-end-column="36" />
-          <folding>
-            <element signature="e#188#1235#0" expanded="false" />
-            <element signature="e#1563#3229#0" expanded="false" />
-            <element signature="e#3346#4558#0" expanded="false" />
-            <element signature="e#4596#6448#0" expanded="false" />
-            <element signature="e#7133#7540#0" expanded="false" />
-            <element signature="e#7830#12503#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1379,8 +1387,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CNN/detec.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6413502">
-          <caret line="2268" column="129" selection-start-line="2268" selection-start-column="129" selection-end-line="2268" selection-end-column="129" />
+        <state vertical-scroll-proportion="0.39273927">
+          <caret line="482" column="0" selection-start-line="482" selection-start-column="0" selection-end-line="564" selection-end-column="57" />
           <folding>
             <element signature="e#618#10579#0" expanded="false" />
             <element signature="e#10764#16698#0" expanded="false" />
@@ -1412,49 +1420,121 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
+    <entry file="file://$PROJECT_DIR$/CNN/stview.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-8.206897">
-          <caret line="183" column="0" selection-start-line="183" selection-start-column="0" selection-end-line="183" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="246" column="0" selection-start-line="246" selection-start-column="0" selection-end-line="246" selection-end-column="0" />
           <folding>
-            <element signature="e#190#221#0" expanded="false" />
-            <element signature="e#5236#5267#0" expanded="false" />
-            <element signature="e#7527#7556#0" expanded="false" />
-            <element signature="e#9289#9318#0" expanded="false" />
+            <element signature="e#812#3168#0" expanded="false" />
+            <element signature="e#3251#8771#0" expanded="false" />
+            <element signature="e#3251#3562#1" expanded="false" />
+            <element signature="e#8858#11499#0" expanded="false" />
+            <element signature="e#11594#12391#0" expanded="false" />
+            <element signature="e#12447#13309#0" expanded="false" />
+            <element signature="e#13344#13519#0" expanded="false" />
+            <element signature="e#13548#13722#0" expanded="false" />
+            <element signature="e#13785#14685#0" expanded="false" />
+            <element signature="e#13785#13977#1" expanded="false" />
+            <element signature="e#14722#15098#0" expanded="false" />
+            <element signature="e#14722#15039#1" expanded="false" />
+            <element signature="e#15161#15718#0" expanded="false" />
+            <element signature="e#15161#15343#1" expanded="false" />
+            <element signature="e#15761#16126#0" expanded="false" />
+            <element signature="e#15761#15891#1" expanded="false" />
+            <element signature="e#16174#16595#0" expanded="false" />
+            <element signature="e#16654#17430#0" expanded="false" />
+            <element signature="e#17493#18464#0" expanded="false" />
+            <element signature="e#18516#18708#0" expanded="false" />
+            <element signature="e#18756#18881#0" expanded="false" />
+            <element signature="e#18934#19037#0" expanded="false" />
+            <element signature="e#19087#19224#0" expanded="false" />
+            <element signature="e#19272#19733#0" expanded="false" />
+            <element signature="e#19765#19889#0" expanded="false" />
+            <element signature="e#19919#19947#0" expanded="false" />
+            <element signature="e#19972#20709#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/CNN/stview.py">
+    <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_mnist_classification.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.82102275">
-          <caret line="63" column="82" selection-start-line="63" selection-start-column="82" selection-end-line="63" selection-end-column="82" />
+        <state vertical-scroll-proportion="2.1333334">
+          <caret line="187" column="36" selection-start-line="187" selection-start-column="36" selection-end-line="187" selection-end-column="36" />
           <folding>
-            <element signature="e#3967#9184#0" expanded="false" />
-            <element signature="e#3967#4278#1" expanded="false" />
-            <element signature="e#9271#11912#0" expanded="false" />
-            <element signature="e#12007#12787#0" expanded="false" />
-            <element signature="e#12822#12997#0" expanded="false" />
-            <element signature="e#13026#13200#0" expanded="false" />
-            <element signature="e#13263#14163#0" expanded="false" />
-            <element signature="e#13263#13455#1" expanded="false" />
-            <element signature="e#14200#14576#0" expanded="false" />
-            <element signature="e#14200#14517#1" expanded="false" />
-            <element signature="e#14639#15196#0" expanded="false" />
-            <element signature="e#14639#14821#1" expanded="false" />
-            <element signature="e#15239#15604#0" expanded="false" />
-            <element signature="e#15239#15369#1" expanded="false" />
-            <element signature="e#15652#16073#0" expanded="false" />
-            <element signature="e#16132#16908#0" expanded="false" />
-            <element signature="e#16971#17942#0" expanded="false" />
-            <element signature="e#17994#18186#0" expanded="false" />
-            <element signature="e#18234#18359#0" expanded="false" />
-            <element signature="e#18412#18515#0" expanded="false" />
-            <element signature="e#18565#18702#0" expanded="false" />
-            <element signature="e#18750#19211#0" expanded="false" />
-            <element signature="e#19243#19367#0" expanded="false" />
-            <element signature="e#19397#19425#0" expanded="false" />
-            <element signature="e#19450#20187#0" expanded="false" />
+            <element signature="e#188#1235#0" expanded="false" />
+            <element signature="e#1563#3229#0" expanded="false" />
+            <element signature="e#3346#4558#0" expanded="false" />
+            <element signature="e#7133#7540#0" expanded="false" />
+            <element signature="e#7830#12503#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_mnist_tutorial.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-5.158621">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CodeSnippets/lasagne_experiment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="68" column="25" selection-start-line="68" selection-start-column="8" selection-end-line="68" selection-end-column="25" />
+          <folding>
+            <element signature="e#664#692#0" expanded="false" />
+            <element signature="e#2622#3062#0" expanded="false" />
+            <element signature="e#2680#2763#0" expanded="false" />
+            <element signature="e#2816#3062#0" expanded="false" />
+            <element signature="e#3098#3927#0" expanded="false" />
+            <element signature="e#3140#3264#0" expanded="false" />
+            <element signature="e#3317#3927#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="93" column="0" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+          <folding>
+            <element signature="e#190#221#0" expanded="false" />
+            <element signature="e#7578#7607#0" expanded="false" />
+            <element signature="e#9340#9369#0" expanded="false" />
+            <element signature="e#11255#11282#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CNN/recog.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.519802">
+          <caret line="1120" column="31" selection-start-line="1120" selection-start-column="4" selection-end-line="1120" selection-end-column="31" />
+          <folding>
+            <element signature="e#0#921#1" expanded="false" />
+            <element signature="e#923#932#0" expanded="true" />
+            <element signature="e#1509#11249#0" expanded="false" />
+            <element signature="e#1509#1980#1" expanded="false" />
+            <element signature="e#11459#20958#0" expanded="false" />
+            <element signature="e#11459#11930#1" expanded="false" />
+            <element signature="e#21170#31468#0" expanded="false" />
+            <element signature="e#21170#21641#1" expanded="false" />
+            <element signature="e#31747#35548#0" expanded="false" />
+            <element signature="e#31747#31811#1" expanded="false" />
+            <element signature="e#35758#45518#0" expanded="false" />
+            <element signature="e#35758#36229#1" expanded="false" />
+            <element signature="e#45770#50111#0" expanded="false" />
+            <element signature="e#50242#50673#0" expanded="false" />
+            <element signature="e#50870#51279#0" expanded="false" />
+            <element signature="e#51405#51751#0" expanded="false" />
+            <element signature="e#51840#54987#0" expanded="false" />
+            <element signature="e#55089#58508#0" expanded="false" />
+            <element signature="e#58644#58958#0" expanded="false" />
+            <element signature="e#59061#62898#0" expanded="false" />
+            <element signature="e#62998#67462#0" expanded="false" />
+            <element signature="e#67512#67846#0" expanded="false" />
+            <element signature="e#67896#68230#0" expanded="false" />
           </folding>
         </state>
       </provider>
