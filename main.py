@@ -114,14 +114,14 @@ print('Traffic Sign Recognition')
 
 # region Recognition (Superclass 80)
 
-img_dim_80 = 80
-img_dim_28 = 28
-
-superclass_model_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
-superclass_dataset_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
-
-superclass_model_28 = 'D://_Dataset//SuperClass//cnn_model_28_lasagne.pkl'
-superclass_dataset_28 = 'D://_Dataset//SuperClass//superclass_normalized_28.pkl'
+# img_dim_80 = 80
+# img_dim_28 = 28
+#
+# superclass_model_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
+# superclass_dataset_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
+#
+# superclass_model_28 = 'D://_Dataset//SuperClass//cnn_model_28_lasagne.pkl'
+# superclass_dataset_28 = 'D://_Dataset//SuperClass//superclass_normalized_28.pkl'
 
 # train super-class model on 28 pixels
 # CNN.recog.train_superclass_classifier_shallow(dataset_path=superclass_dataset_28, model_path=superclass_model_28, n_epochs=30)
@@ -206,3 +206,8 @@ superclass_dataset_28 = 'D://_Dataset//SuperClass//superclass_normalized_28.pkl'
 # CNN.stview.span_google_street_view()
 
 # endregion
+
+import cv2
+img = cv2.imread("D://_Dataset//GTSDB//Test_PNG//_img12.png")
+CNN.prop.detection_proposal(img, 40, 100, CNN.enums.SuperclassType._02_Warning)
+

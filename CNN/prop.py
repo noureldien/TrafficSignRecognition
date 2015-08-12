@@ -4,8 +4,10 @@ import matplotlib.pyplot as plt
 
 import cv2
 
+import CNN
 import CNN.utils
 import CNN.nms
+import CNN.enums
 
 import skimage
 import skimage.io
@@ -17,7 +19,43 @@ from skimage.draw import circle_perimeter
 from skimage.util import img_as_ubyte
 
 
-def detection_proposal(img_color, min_dim, max_dim):
+def detection_proposal(img_color, min_dim, max_dim, superclass_type=CNN.enums.SuperclassType._01_Prohibitory):
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory or superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        return __detection_proposal_circles(img_color, min_dim, max_dim)
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        return __detection_proposal_triangles(img_color, min_dim, max_dim)
+    else:
+        raise Exception("Sorry, non-supported superclass type to find detecttion proposal to.")
+
+
+def detection_proposal_and_save(img_path, min_dim=40, max_dim=160, superclass_type=CNN.enums.SuperclassType._01_Prohibitory):
+    # extract detection proposals for circle-based traffic signs
+    # suppress the extracted circles to weak and strong regions
+    # draw the regions on the image and save it
+
+    # load picture and detect edges
+    img_color = cv2.imread(img_path)
+    regions_weak, regions_strong, img_map, circles = detection_proposal(img_color, min_dim, max_dim)
+
+    for c in circles:
+        # draw the outer circle
+        cv2.circle(img_color, (c[0], c[1]), c[2], (0, 255, 0), 2)
+        # draw the center of the circle
+        cv2.circle(img_color, (c[0], c[1]), 2, (0, 0, 255), 3)
+
+    # draw and save the result, for testing purposes
+    red_color = (0, 0, 255)
+    yellow_color = (84, 212, 255)
+    for loc in regions_weak:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
+    for loc in regions_strong:
+        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
+
+    # save the result
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2.png", img_color)
+
+
+def __detection_proposal_circles(img_color, min_dim, max_dim):
     """
     This algorithm depends on opencv, which is much much better than this of skiimage
     :param img_color:
@@ -83,31 +121,70 @@ def detection_proposal(img_color, min_dim, max_dim):
     return regions_weak, regions_strong, img_map, circles
 
 
-def detection_proposal_and_save(img_path, min_dim=40, max_dim=160):
-    # extract detection proposals for circle-based traffic signs
-    # suppress the extracted circles to weak and strong regions
-    # draw the regions on the image and save it
+def __detection_proposal_triangles(img_color, min_dim, max_dim):
+    # pre-process the image for better detection
+    img_filtered = cv2.pyrMeanShiftFiltering(img_color, 10, 10)
+    img_filtered = cv2.cvtColor(img_filtered, cv2.COLOR_BGRA2GRAY)
+    img_filtered = img_filtered.astype(float)
+    img_blurred = cv2.GaussianBlur(img_filtered, (7, 7), sigmaX=0)
 
-    # load picture and detect edges
-    img_color = cv2.imread(img_path)
-    regions_weak, regions_strong, img_map, circles = detection_proposal(img_color, min_dim, max_dim)
+    # img_laplacian = cv2.Laplacian(img_blurred, ddepth=cv2.CV_64F)
+    # img_laplacian_thresh = cv2.bitwise_not(img_laplacian.astype("uint8"))
+    # img_thresh = cv2.adaptiveThreshold(img_blurred.astype("uint8"), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    # #image, contours, hierarchy = cv2.findContours(img_edge.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    for c in circles:
-        # draw the outer circle
-        cv2.circle(img_color, (c[0], c[1]), c[2], (0, 255, 0), 2)
-        # draw the center of the circle
-        cv2.circle(img_color, (c[0], c[1]), 2, (0, 0, 255), 3)
+    import math
 
-    # draw and save the result, for testing purposes
-    red_color = (0, 0, 255)
-    yellow_color = (84, 212, 255)
-    for loc in regions_weak:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), yellow_color, 1)
-    for loc in regions_strong:
-        cv2.rectangle(img_color, (loc[0], loc[1]), (loc[2], loc[3]), red_color, 2)
+    img_edge = cv2.Canny(img_blurred.astype("uint8"), 10, 200, apertureSize=3)
+    lines = []
+    for angle in [1]:
+        min_theta = math.radians(angle - 10)
+        max_theta = math.radians(angle + 10)
+        theta = math.radians(angle)
+        # new_lines = cv2.HoughLinesP(img_edge, 1, np.pi / 180, 50, minLineLength=40, maxLineGap=10)
+        # new_lines = cv2.HoughLines(img_edge, 1, theta, 10, min_theta=min_theta, max_theta=max_theta)
+        # new_lines = cv2.HoughLines(img_edge, 1, numpy.pi / 180, 10)
+        new_lines = cv2.HoughLines(img_edge, 2, theta, 100)
+        if new_lines is not None:
+            new_lines = new_lines.reshape(new_lines.shape[0], new_lines.shape[2])
+            lines.append(new_lines)
 
-    # save the result
-    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img2.png", img_color)
+    img_map = img_color.copy()
+    if len(lines) > 0:
+        lines = numpy.vstack(lines)
+    print("line counr %d " % (len(lines)))
+
+    # # for probablistic lines
+    # for x1, y1, x2, y2 in lines:
+    #     cv2.line(img_map, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+    for rho, theta in lines[0:50]:
+        # print("rho %f, theta %f" % (rho, math.degrees(theta)))
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        x1 = int(x0 + 1000 * (-b))
+        y1 = int(y0 + 1000 * (a))
+        x2 = int(x0 - 1000 * (-b))
+        y2 = int(y0 - 1000 * (a))
+        cv2.line(img_map, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+    # color_red = (0, 255, 0)
+    # for contour in contours:
+    #     approx = cv2.approxPolyDP(contour, 0.01 * cv2.arcLength(contour, True), True)
+    #     cv2.drawContours(img_map, [contour], 0, color_red, 1)
+    # # if len(approx) == 3:
+
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img_01.png", img_map)
+    cv2.imwrite("D://_Dataset//GTSDB//Test_Regions//_img_02.png", img_edge)
+    return
+
+    regions_weak = []
+    regions_strong = []
+    triangles = []
+
+    return regions_weak, regions_strong, img_map, triangles
 
 
 def __proposal_old(img_preprocessed, min_dim, max_dim):
