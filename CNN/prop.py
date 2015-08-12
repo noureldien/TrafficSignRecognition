@@ -35,7 +35,7 @@ def detection_proposal_and_save(img_path, min_dim=40, max_dim=160, superclass_ty
 
     # load picture and detect edges
     img_color = cv2.imread(img_path)
-    regions_weak, regions_strong, img_map, circles = detection_proposal(img_color, min_dim, max_dim)
+    regions_weak, regions_strong, img_map, circles = detection_proposal(img_color, min_dim, max_dim, superclass_type)
 
     for c in circles:
         # draw the outer circle
@@ -141,10 +141,10 @@ def __detection_proposal_triangles(img_color, min_dim, max_dim):
         min_theta = math.radians(angle - 10)
         max_theta = math.radians(angle + 10)
         theta = math.radians(angle)
-        # new_lines = cv2.HoughLinesP(img_edge, 1, np.pi / 180, 50, minLineLength=40, maxLineGap=10)
+        # new_lines = cv2.HoughLines(img_edge, 2, theta, 100)
         # new_lines = cv2.HoughLines(img_edge, 1, theta, 10, min_theta=min_theta, max_theta=max_theta)
         # new_lines = cv2.HoughLines(img_edge, 1, numpy.pi / 180, 10)
-        new_lines = cv2.HoughLines(img_edge, 2, theta, 100)
+        new_lines = cv2.HoughLinesP(img_edge, 1, np.pi / 180, 50, minLineLength=40, maxLineGap=10)
         if new_lines is not None:
             new_lines = new_lines.reshape(new_lines.shape[0], new_lines.shape[2])
             lines.append(new_lines)
@@ -154,21 +154,22 @@ def __detection_proposal_triangles(img_color, min_dim, max_dim):
         lines = numpy.vstack(lines)
     print("line counr %d " % (len(lines)))
 
-    # # for probablistic lines
-    # for x1, y1, x2, y2 in lines:
-    #     cv2.line(img_map, (x1, y1), (x2, y2), (0, 255, 0), 1)
+    # for probabilistic Hough
+    for x1, y1, x2, y2 in lines:
+        cv2.line(img_map, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
-    for rho, theta in lines[0:50]:
-        # print("rho %f, theta %f" % (rho, math.degrees(theta)))
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a * rho
-        y0 = b * rho
-        x1 = int(x0 + 1000 * (-b))
-        y1 = int(y0 + 1000 * (a))
-        x2 = int(x0 - 1000 * (-b))
-        y2 = int(y0 - 1000 * (a))
-        cv2.line(img_map, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    # # # for typical Hough
+    # for rho, theta in lines[0:50]:
+    #     # print("rho %f, theta %f" % (rho, math.degrees(theta)))
+    #     a = np.cos(theta)
+    #     b = np.sin(theta)
+    #     x0 = a * rho
+    #     y0 = b * rho
+    #     x1 = int(x0 + 1000 * (-b))
+    #     y1 = int(y0 + 1000 * (a))
+    #     x2 = int(x0 - 1000 * (-b))
+    #     y2 = int(y0 - 1000 * (a))
+    #     cv2.line(img_map, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
     # color_red = (0, 255, 0)
     # for contour in contours:

@@ -207,7 +207,3 @@ print('Traffic Sign Recognition')
 
 # endregion
 
-import cv2
-img = cv2.imread("D://_Dataset//GTSDB//Test_PNG//_img12.png")
-CNN.prop.detection_proposal(img, 40, 100, CNN.enums.SuperclassType._02_Warning)
-

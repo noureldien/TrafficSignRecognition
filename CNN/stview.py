@@ -92,15 +92,19 @@ def span_google_street_view():
     prohib_detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
     superclass_recognition_model_path = "D:\\_Dataset\\SuperClass\\cnn_model_28_lasagne.pkl"
 
-    detec_cnn, detec_mlp, detec_mlp_input_shape = __build_detector(prohib_recognition_model_path, prohib_detection_model_path, batch_size)
+    detect_ner_p = __build_detector(prohib_recognition_model_path, prohib_detection_model_path, batch_size)
     recog_superclass_cnn = __build_classifier(superclass_recognition_model_path)
 
+    #import nolearn
+    #import nolearn.lasagne
+    #a = nolearn.lasagne.NeuralNet()
+    #a.predict_proba()
 
     # detect the region
     img_color = cv2.imread("D:\\_Dataset\\GTSDB\\Test_PNG\\_img15.png")
     batch_size = 100
 
-    regions = __detect(img_color, batch_size, detec_cnn, detec_mlp, detec_mlp_input_shape)
+    regions = __detect(img_color, batch_size, detect_ner_p)
 
     # after detection, run super-class classification on only the strong regions
     strong_regions = regions
@@ -172,7 +176,7 @@ def __build_detector(recognition_model_path, detection_model_path, batch_size):
     return conv_fn, nn_mlp, layer3_input_shape
 
 
-def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
+def __detect(img_color, batch_size, net):
     """
     detect a traffic sign form the given natural image
     detected signs depend on the given model, for example if it is a prohibitory detection model
@@ -183,6 +187,8 @@ def __detect(img_color, batch_size, net_cnn, net_mlp, net_mlp_input_shape):
     :param img_dim:
     :return:
     """
+
+    net_cnn, net_mlp, net_mlp_input_shape = net
 
     ##############################
     # Extract detection regions  #
