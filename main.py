@@ -94,7 +94,7 @@ print('Traffic Sign Recognition')
 
 # CNN.utils.serialize_gtsr(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
 # CNN.utils.organize_gtsr(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
-CNN.utils.remap_class_ids_mandatroy(img_dim_80)
+# CNN.utils.map_class_ids(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
 # CNN.utils.check_database_4()
 
 # train model on GTSRB 80 database
@@ -109,9 +109,9 @@ CNN.utils.remap_class_ids_mandatroy(img_dim_80)
 
 # region Recognition (Warning 80)
 
-img_dim_80 = 80
-gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_w_80.pkl'
-gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_w_80.pkl'
+# img_dim_80 = 80
+# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_w_80.pkl'
+# gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_w_80.pkl'
 
 # CNN.utils.serialize_gtsr(img_dim_80, CNN.enums.SuperclassType._02_Warning)
 # CNN.utils.organize_gtsr(img_dim_80, CNN.enums.SuperclassType._02_Warning)
@@ -119,8 +119,8 @@ gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_w_80.pkl'
 # CNN.utils.check_database_4()
 
 # train model on GTSRB 80 database
-CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=3, kernel_dim=(9, 7, 4),
-                     nkerns=(10, 50, 200), mlp_layers=(500, 15), batch_size=10)
+# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.04, n_epochs=5, kernel_dim=(9, 7, 4),
+#                     nkerns=(10, 50, 200), mlp_layers=(600, 15), batch_size=10) # 9.5% increase the MLP capacity to get better results!
 
 # test the recognition
 # p = "D://_Dataset/GTSDB//Training_Regions//00473_04450.png"
@@ -178,21 +178,21 @@ CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, l
 
 # endregion
 
-# region Detection (Model 80)
+# region Detection (Prohibitory 80)
 
 # img_dim_80 = 80
 # gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_80.pkl'
 # gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80.pkl'
 # gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl'
-# gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_organized_80.pkl'
+# gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_p_80.pkl'
 # gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_p_80.pkl'
 # gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_p_80_binary.pkl'
 
 # extract region images to train the detector
-# CNN.utils.serialize_gtsdb(img_dim_80, True, True)
-# CNN.utils.organize_gtsdb(img_dim_80)
-# CNN.utils.convolve_gtsdb(gtsrb_model_80)
-# CNN.utils.change_target_to_binary(img_dim_80)
+# CNN.utils.serialize_gtsdb(img_dim_80, CNN.enums.SuperclassType._01_Prohibitory, True, True)
+# CNN.utils.organize_gtsdb(img_dim_80, CNN.enums.SuperclassType._01_Prohibitory)
+# CNN.utils.convolve_gtsdb(gtsrb_model_80, CNN.enums.SuperclassType._01_Prohibitory)
+# CNN.utils.change_target_to_binary(img_dim_80, CNN.enums.SuperclassType._01_Prohibitory)
 
 # detection proposals
 # CNN.prop.detection_proposal_and_save(img_path="D://_Dataset//GTSDB//Test_PNG//00028.png", min_dim=16, max_dim=160)
@@ -211,6 +211,67 @@ CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, l
 # test the detector
 # CNN.detec.binary_detect_from_file_fast(img_path="D://_Dataset//GTSDB//Test_PNG//_img16.png", model_type=CNN.enums.ModelType._02_conv3_mlp2,
 #                                  recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_bin_80, img_dim=img_dim_80)
+
+# img = "D://_Dataset//GTSDB//Test_PNG//00061.png"
+# CNN.prop.detection_proposal_and_save(img, 10, 160)
+
+# endregion
+
+# region Detection (Mandatory 80)
+
+# img_dim_80 = 80
+#
+# gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_m_80.pkl'
+# gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_m_80_binary.pkl'
+# gtsdb_model_bin_from_scratch_80 = 'D:\\_Dataset\\GTSDB\\las_model_m_80_binary_scratch.pkl'
+#
+# gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_m_80.pkl'
+# gtsdb_dataset_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_m_80_binary.pkl'
+# gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_m_80_binary.pkl'
+
+# extract region images to train the detector
+# CNN.utils.serialize_gtsdb(img_dim_80, CNN.enums.SuperclassType._03_Mandatory, True, True)
+# CNN.utils.organize_gtsdb(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
+# CNN.utils.convolve_gtsdb(gtsrb_model_80, CNN.enums.SuperclassType._03_Mandatory)
+# CNN.utils.change_target_to_binary(img_dim_80, CNN.enums.SuperclassType._03_Mandatory, True)
+# CNN.utils.change_target_to_binary(img_dim_80, CNN.enums.SuperclassType._03_Mandatory, False)
+# CNN.utils.check_database_detector(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
+
+# train binary detector from scratch
+# CNN.detec.train_from_scatch_binary_detector(dataset_path=gtsdb_dataset_bin_80, model_path='gtsdb_model_bin_from_scratch_80')
+
+# train only binary detector (images already convolved/filtered)
+# CNN.detec.train_binary_detector(dataset_path=gtsdb_dataset_conv_bin_80, detection_model_path=gtsdb_model_bin_80, n_epochs=5)
+
+# test the detector
+# CNN.detec.binary_detect_from_file_fast(img_path="D://_Dataset//GTSDB//Test_PNG//_img16.png",
+#                                       recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_bin_80, img_dim=img_dim_80)
+
+# img = "D://_Dataset//GTSDB//Test_PNG//00061.png"
+# CNN.prop.detection_proposal_and_save(img, 10, 160)
+
+# endregion
+
+# region Detection (Warning 80)
+
+# img_dim_80 = 80
+# gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_w_80.pkl'
+# gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_w_80_binary.pkl'
+# gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_w_80.pkl'
+# gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_w_80_binary.pkl'
+
+# extract region images to train the detector
+# CNN.utils.serialize_gtsdb(img_dim_80, CNN.enums.SuperclassType._02_Warning, True, True)
+# CNN.utils.organize_gtsdb(img_dim_80, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.convolve_gtsdb(gtsrb_model_80, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.change_target_to_binary(img_dim_80, CNN.enums.SuperclassType._02_Warning)
+
+# train only the regressor (images already convolved/filtered)
+# CNN.detec.train_binary_detector(dataset_path=gtsdb_dataset_conv_bin_80, detection_model_path=gtsdb_model_bin_80, n_epochs=100)
+
+# test the detector
+# CNN.detec.binary_detect_from_file_fast(img_path="D://_Dataset//GTSDB//Test_PNG//_img16.png",
+#                                       recognition_model_path=gtsrb_model_80, detection_model_path=gtsdb_model_bin_80, img_dim=img_dim_80)
 
 # img = "D://_Dataset//GTSDB//Test_PNG//00061.png"
 # CNN.prop.detection_proposal_and_save(img, 10, 160)

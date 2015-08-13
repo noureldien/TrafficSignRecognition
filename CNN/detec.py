@@ -482,7 +482,7 @@ def train_regressor(dataset_path, detection_model_path='', learning_rate=0.02, m
 
 
 def train_binary_detector(dataset_path, detection_model_path='', learning_rate=0.02, momentum=0.9,
-                          n_epochs=50, mlp_layers=(7200, 2)):
+                          n_epochs=50, mlp_layers=(1800, 900, 1)):
     # train only binary classifier model using lasagne and nolearn
     # we will depend on the already convolutioned images
     # i.e the filters as input to the regression model
@@ -500,6 +500,10 @@ def train_binary_detector(dataset_path, detection_model_path='', learning_rate=0
     train_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
     train_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1]))
 
+    # convert target to binary
+    train_y = train_y.astype(bool)
+
+    eval_size = 0.1
     n_batches = 10
     batch_size = int(train_y.shape[0] / n_batches)
     layer0_input_shape = (None, train_x.shape[1])
@@ -507,7 +511,7 @@ def train_binary_detector(dataset_path, detection_model_path='', learning_rate=0
     #########################################
     #       Build the regression model      #
     #########################################
-    print("... building the regression model")
+    print("... building the binary detection model")
     nn_regression = nolearn.lasagne.NeuralNet(
         layers=[
             ('input', lasagne.layers.InputLayer),
@@ -517,18 +521,18 @@ def train_binary_detector(dataset_path, detection_model_path='', learning_rate=0
             ('output', lasagne.layers.DenseLayer),
         ],
         input_shape=layer0_input_shape,
-        hidden1_num_units=int(mlp_layers[0] / 4),
+        hidden1_num_units=mlp_layers[0],
         dropout1_p=0.5,
-        hidden2_num_units=int(mlp_layers[0] / 8),
-        output_num_units=mlp_layers[1],
-        output_nonlinearity=lasagne.nonlinearities.softmax,
-        objective_loss_function=lasagne.objectives.categorical_crossentropy,
+        hidden2_num_units=mlp_layers[1],
+        output_num_units=mlp_layers[2],
+        output_nonlinearity=lasagne.nonlinearities.sigmoid,
+        objective_loss_function=lasagne.objectives.binary_crossentropy,
         update_learning_rate=theano.shared(CNN.utils.float32(learning_rate)),
         update_momentum=theano.shared(CNN.utils.float32(momentum)),
         batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
-        train_split=nolearn.lasagne.TrainSplit(eval_size=0.1),
+        train_split=nolearn.lasagne.TrainSplit(eval_size=eval_size),
         max_epochs=n_epochs,
-        regression=False,
+        regression=True,
         verbose=3,
         on_epoch_finished=[
             CNN.utils.AdjustVariable('update_learning_rate', start=0.05, stop=0.008),
@@ -542,7 +546,7 @@ def train_binary_detector(dataset_path, detection_model_path='', learning_rate=0
     ##############################
     n_minibatches = int(train_y.shape[0] / batch_size)
     # Finally, launch the training loop.
-    print("... training the regression model")
+    print("... training the binary detection model")
     print("... in total, %d samples in training" % (train_y.shape[0]))
     print("... since we have batch size of %d" % (batch_size))
     print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
@@ -562,12 +566,24 @@ def train_binary_detector(dataset_path, detection_model_path='', learning_rate=0
 
     # calculate the error
     predict = nn_regression.predict(train_x)
+
+    # convert predication from float to binary
+    # as we've trained the network using regression flag = true
+    predict = predict.reshape((predict.shape[0],))
+    predict[predict >= 0.5] = 1
+    predict[predict < 0.5] = 0
+    predict = predict.astype(bool)
+
     error = numpy.sum(numpy.not_equal(predict, train_y))
     print("... train error: %f" % (error / len(train_y)))
 
 
-def train_from_scatch(dataset_path, detection_model_path, learning_rate=0.1, n_epochs=10, batch_size=500,
-                      nkerns=(40, 40 * 9), mlp_layers=(800, 29), kernel_dim=(5, 5), img_dim=28, pool_size=(2, 2)):
+# endregion
+
+# region Train Detector From Scratch
+
+def train_from_scatch_regressor(dataset_path, detection_model_path, learning_rate=0.1, n_epochs=10, batch_size=500,
+                                nkerns=(40, 40 * 9), mlp_layers=(800, 29), kernel_dim=(5, 5), img_dim=28, pool_size=(2, 2)):
     datasets = CNN.utils.load_data(dataset_path)
 
     train_set_x, train_set_y = datasets[0]
@@ -780,6 +796,110 @@ def train_from_scatch(dataset_path, detection_model_path, learning_rate=0.1, n_e
     pickle.dump(layer3.W.get_value(borrow=True), save_file, -1)
     pickle.dump(layer3.b.get_value(borrow=True), save_file, -1)
     save_file.close()
+
+
+def train_from_scatch_binary_detector(dataset_path, model_path='', kernel_dim=(9, 7, 4), mlp_layers=(1800, 900, 2), nkerns=(10, 50, 200),
+                                      pool_size=(2, 2), learning_rates=(0.05, 0.008), momentums=(0.9, 0.95), n_epochs=100):
+    # train classifier model using lasagne and nolearn
+    # this will classify the traffic signs to their super-class only
+
+    # load the data
+    print('... loading data')
+    with open(dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    # concatenate all subsets in one set as the nolearn will use them to train and validate
+    train_x = numpy.concatenate((numpy.concatenate((dataset[0][0], dataset[1][0])), dataset[2][0]))
+    train_y = numpy.concatenate((numpy.concatenate((dataset[0][1], dataset[1][1])), dataset[2][1]))
+
+    img_dim = 80
+    n_batches = 10
+    eval_split = 0.1
+    batch_size = int(train_y.shape[0] / n_batches)
+
+    # reshape images so it can be ready for convolution
+    train_x = train_x.reshape((train_x.shape[0], 1, img_dim, img_dim))
+
+    #########################################
+    #       Build the regression model      #
+    #########################################
+
+    print("... building the super-class classification model")
+    nn_detection = nolearn.lasagne.NeuralNet(
+        layers=[
+            ('input', lasagne.layers.InputLayer),
+            ('conv1', lasagne.layers.Conv2DLayer),
+            ('pool1', lasagne.layers.MaxPool2DLayer),
+            ('dropout1', lasagne.layers.DropoutLayer),
+            ('conv2', lasagne.layers.Conv2DLayer),
+            ('pool2', lasagne.layers.MaxPool2DLayer),
+            ('dropout2', lasagne.layers.DropoutLayer),
+            ('conv3', lasagne.layers.Conv2DLayer),
+            ('pool3', lasagne.layers.MaxPool2DLayer),
+            ('dropout3', lasagne.layers.DropoutLayer),
+            ('hidden4', lasagne.layers.DenseLayer),
+            ('dropout4', lasagne.layers.DropoutLayer),
+            ('hidden5', lasagne.layers.DenseLayer),
+            ('output', lasagne.layers.DenseLayer),
+        ],
+        input_shape=(None, 1, img_dim, img_dim),
+        conv1_num_filters=nkerns[0], conv1_filter_size=(kernel_dim[0], kernel_dim[0]), pool1_pool_size=pool_size,
+        dropout1_p=0.1,
+        conv2_num_filters=nkerns[1], conv2_filter_size=(kernel_dim[1], kernel_dim[1]), pool2_pool_size=pool_size,
+        dropout2_p=0.2,
+        conv3_num_filters=nkerns[2], conv3_filter_size=(kernel_dim[2], kernel_dim[2]), pool3_pool_size=pool_size,
+        dropout3_p=0.3,
+        hidden4_num_units=mlp_layers[0],
+        dropout4_p=0.5,
+        hidden5_num_units=mlp_layers[1],
+        output_num_units=mlp_layers[2],
+        output_nonlinearity=lasagne.nonlinearities.softmax,
+        objective_loss_function=lasagne.objectives.categorical_crossentropy,
+        update_learning_rate=theano.shared(CNN.utils.float32(learning_rates[0])),
+        update_momentum=theano.shared(CNN.utils.float32(momentums[0])),
+        batch_iterator_train=nolearn.lasagne.BatchIterator(batch_size=batch_size),
+        train_split=nolearn.lasagne.TrainSplit(eval_size=eval_split),
+        max_epochs=n_epochs,
+        regression=False,
+        verbose=3,
+        on_epoch_finished=[
+            CNN.utils.AdjustVariable('update_learning_rate', start=learning_rates[0], stop=learning_rates[1]),
+            CNN.utils.AdjustVariable('update_momentum', start=momentums[0], stop=momentums[1]),
+            CNN.utils.EarlyStopping(patience=200),
+        ]
+    )
+
+    ##############################
+    # Train The Regression Model #
+    ##############################
+
+    n_minibatches = int(train_y.shape[0] / batch_size)
+    # Finally, launch the training loop.
+    print("... training the detection model")
+    print("... in total, %d samples in training" % (train_y.shape[0]))
+    print("... since we have batch size of %d" % (batch_size))
+    print("... then training will run for %d mini-batches and for %d epochs" % (n_minibatches, n_epochs))
+
+    # no need to iterate on epochs or mini-baches because fitting a nolearn network
+    # takes care of all of that if configured correctly
+    start_time = time.clock()
+    nn_detection.fit(train_x, train_y)
+    end_time = time.clock()
+
+    duration = (end_time - start_time) / 60.0
+    print("... finish training the model, total time consumed: %f min" % (duration))
+
+    # save the model (optional)
+    if len(model_path) > 0:
+        with open(model_path, "wb") as f:
+            pickle.dump(nn_detection, f, -1)
+
+    # calculate the error
+    predict = nn_detection.predict(train_x)
+    error = numpy.sum(numpy.not_equal(predict, train_y))
+    print("... train error: %f" % (error / len(train_y)))
+
+    dummy_variable = 10
+
 
 # endregion
 
@@ -2269,7 +2389,8 @@ def __detect_img_deep_model(img4D, model_path, classifier=CNN.enums.ClassifierTy
 
     return c_result, c_prob, c_duration
 
-#endregion
+
+# endregion
 
 # region Helping Functions
 
@@ -2387,4 +2508,4 @@ def __confidence_map(img, img_width, img_height, scale_regions, scale_count, **k
 
     cv2.imwrite("D:\\_Dataset\\GTSDB\\Test_Regions\\" + "{0:05d}.png".format(scale_count + 1), map_color)
 
-#endregion
+# endregion

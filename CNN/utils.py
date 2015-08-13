@@ -705,73 +705,6 @@ def map_class_ids(img_dim, superclass_type):
     pickle.dump(data, open(file_path, 'wb'))
 
 
-def remap_class_ids_prohibitroy(img_dim):
-    # because the ids of the data are not successive
-    # so we need to re-map them from
-    # from [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
-    # to   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-
-    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_p_%d.pkl' % (img_dim)
-    data = pickle.load(open(file_path, 'rb'))
-
-    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    all_classes = [train_classes, valid_classes, test_classes]
-
-    for i in range(0, len(data)):
-        classes = data[i][1]
-        classes[classes == 7] = 60
-        classes[classes == 8] = 70
-        classes[classes == 9] = 80
-        classes[classes == 10] = 90
-        classes[classes == 15] = 100
-        classes[classes == 16] = 110
-
-        classes[classes == 60] = 6
-        classes[classes == 70] = 7
-        classes[classes == 80] = 8
-        classes[classes == 90] = 9
-        classes[classes == 100] = 10
-        classes[classes == 110] = 11
-        all_classes[i] = classes
-
-    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
-    pickle.dump(data, open(file_path, 'wb'))
-
-
-def remap_class_ids_mandatroy(img_dim):
-    # because the ids of the data are not successive
-    # so we need to re-map them from
-    # from [33, 34, 35, 36, 37, 38, 39, 40]
-    # to   [00, 01, 02, 03, 04, 05, 06, 07]
-
-    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_m_%d.pkl' % (img_dim)
-    data = pickle.load(open(file_path, 'rb'))
-
-    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    all_classes = [train_classes, valid_classes, test_classes]
-
-    for i in range(0, len(data)):
-        classes = data[i][1]
-
-        classes[classes == 33] = 0
-        classes[classes == 34] = 1
-        classes[classes == 35] = 2
-        classes[classes == 36] = 3
-        classes[classes == 37] = 4
-        classes[classes == 38] = 5
-        classes[classes == 39] = 6
-        classes[classes == 40] = 7
-
-        all_classes[i] = classes
-
-    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
-    pickle.dump(data, open(file_path, 'wb'))
-
-
 def __reduce_gtsr(img_dim):
     '''
     Read the preprocessed images (training and test) and save them on the disk
@@ -1146,10 +1079,10 @@ def serialize_SuperClass():
 # region GTSD
 
 
-def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
+def serialize_gtsdb(img_dim, superclass_type, add_true_negative=True, pre_processing=True):
     """
     read the german traffic sign detection database
-    for each image, create multible scales
+    for each image, create multiple scales
     for each scale, create regions/batches around the ground truth boundary
     all these created regions must comprise completely the ground truth
     re-calculate the x,y of the ground truth, instead of the whole image
@@ -1158,6 +1091,15 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
     :param add_true_negative:
     :return:
     """
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
 
     # get the ground truth of the test data
     csv_data = []
@@ -1203,9 +1145,9 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
         img = cv2.imread(file_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # loop on each ground truth (i.e traffic sign)
-        # for now, consider only the 'warning' for the time being
+        # for now, consider only traffic signs of the given superclass
         # get the ground truth of 'warning' signs
-        boundaries = __gtsr_get_boundaries(csv_data, file_id, CNN.enums.SuperclassType._01_Prohibitory)
+        boundaries = __gtsr_get_boundaries(csv_data, file_id, superclass_type)
         for boundary in boundaries:
             # the biggest traffic sign to recognize is 400*400 in a 1360*800 image
             # that means, we'll start with a window with initial size of the ground_truth
@@ -1301,7 +1243,7 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
                 # also add relative boundaries for them as the ground truth
                 # which should only be zeros
 
-                # # saving images for experimenting/debugging
+                # # # saving images for experimenting/debugging
                 # ss_count = 0
                 # for s in regions_negatives:
                 #     ss_count += 1
@@ -1318,14 +1260,14 @@ def serialize_gtsdb(img_dim, add_true_negative=True, pre_processing=True):
 
     # dump the regions into a pickle file
     data = (regions, relative_boundaries)
-    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized_%d.pkl' % (img_dim)
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_serialized_%s_%d.pkl' % (type_char, img_dim)
     pickle.dump(data, open(file_name, 'wb'))
 
     print("Total number of regions: %d" % (regions.shape[0]))
     print("Finish sampling regions for detector")
 
 
-def organize_gtsdb(img_dim):
+def organize_gtsdb(img_dim, superclass_type):
     """
     Split the given training to training and valid
     Also, shuffle the training and valid sets
@@ -1333,7 +1275,16 @@ def organize_gtsdb(img_dim):
     :return:
     """
 
-    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_serialized_%d.pkl' % (img_dim)
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_serialized_%s_%d.pkl' % (type_char, img_dim)
     data = pickle.load(open(file_name, 'rb'))
     regions = data[0]
     boundaries = data[1]
@@ -1377,18 +1328,27 @@ def organize_gtsdb(img_dim):
 
     # now, save the training and data
     data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
-    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_%d.pkl' % (img_dim)
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_%s_%d.pkl' % (type_char, img_dim)
     pickle.dump(data, open(file_name, 'wb'))
 
     print("Finish Preparing Data")
 
 
-def convolve_gtsdb(recognition_model_path):
+def convolve_gtsdb(recognition_model_path, superclass_type):
     # do all the cov+pool computation using theano
     # while train the regressor of the detector using nolearn and lasagne
     # don't forget to operate on batches becuase:
     # 1. you can't convolve all the training image in once shot
     # 2. to train better regressor
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
 
     # load model and read it's parameters
     # the same weights of the convolutional layers will be used
@@ -1401,7 +1361,7 @@ def convolve_gtsdb(recognition_model_path):
 
     # load the data and concatenate all the images together
     print('... loading data')
-    dataset_path = "D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_organized_80.pkl"
+    dataset_path = "D:\\_Dataset\\GTSDB\\gtsdb_organized_%s_80.pkl" % (type_char)
     with open(dataset_path, 'rb') as f:
         dataset = pickle.load(f)
     # concatenate validation and training sets
@@ -1471,7 +1431,7 @@ def convolve_gtsdb(recognition_model_path):
         batch_count += 1
         print("... finish convolving batch %d / %d" % (batch_count, n_batches))
 
-    dataset_path = "D:\\_Dataset\\GTSDB\\gtsdb_prohibitory_convolved_80.pkl"
+    dataset_path = "D:\\_Dataset\\GTSDB\\gtsdb_convolved_%s_80.pkl" % (type_char)
     new_n_test = n_test - (n_total - n_batches * batch_size)
     train_x = all_filters[0:n_train]
     valid_x = all_filters[n_train:n_train + n_valid]
@@ -1488,8 +1448,23 @@ def convolve_gtsdb(recognition_model_path):
     print("... finish convolving ans saving the images, total time consumed: %f" % (duration))
 
 
-def change_target_to_binary(img_dim):
-    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_%d.pkl' % (img_dim)
+def change_target_to_binary(img_dim, superclass_type, is_convolved_dataset):
+
+    if is_convolved_dataset:
+        name = "convolved"
+    else:
+        name = "organized"
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_%s_%s_%d.pkl' % (name, type_char, img_dim)
     data = pickle.load(open(file_name, 'rb'))
     y_train = data[0][1]
     y_valid = data[1][1]
@@ -1521,14 +1496,7 @@ def change_target_to_binary(img_dim):
     y_test_new = numpy.asarray(y_test_new, dtype=int)
 
     data = ((data[0][0], y_train_new), (data[1][0], y_valid_new), (data[2][0], y_test_new))
-    print(len(data[0][0]))
-    print(len(y_train_new))
-    print(len(data[1][0]))
-    print(len(y_valid_new))
-    print(len(data[2][0]))
-    print(len(y_test_new))
-
-    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_%d_binary.pkl' % (img_dim)
+    file_name = 'D:\\_Dataset\\GTSDB\\gtsdb_%s_%s_%d_binary.pkl' % (name, type_char, img_dim)
     pickle.dump(data, open(file_name, 'wb'))
 
     print("Finish converting target to binary")
@@ -1585,10 +1553,10 @@ def __gtsr_get_boundaries(gt_data, image_id, superclass_type=CNN.enums.Superclas
     :return:
     '''
 
-    prohib_classes = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
-    warning_classes = [11, 12, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
-    info_classes = [33, 34, 35, 36, 37, 38, 39, 40]
-    superclasses = [prohib_classes, warning_classes, info_classes]
+    prohib_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    warning_classes = CNN.consts.ClassesIDs.WARNING_CLASSES
+    mandatory_classes = CNN.consts.ClassesIDs.MANDATORY_CLASSES
+    superclasses = [prohib_classes, warning_classes, mandatory_classes]
     type_id = superclass_type.value - 1
 
     if type_id == -1:
@@ -1710,6 +1678,45 @@ def check_database_4():
             photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
             c = classes[i] + 33
             cv2.imwrite("D:\\_Dataset\GTSRB\\_checking\\%d_%d_%d.png" % (c, j, i), photo_reshaped)
+
+
+def check_database_detector(img_dim, superclass_type):
+    """
+    Check if the organized database for the detector is correct or not
+    i.e. if the targets correctly describe the image
+    i.e. check if ground truth is correct or not
+    :param img_dim:
+    :param superclass_type:
+    :return:
+    """
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    path = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_%s_%d.pkl' % (type_char, img_dim)
+    data = pickle.load(open(path, 'rb'))
+
+    for j in [0, 1, 2]:
+        images = data[j][0]
+        regions = data[j][1]
+
+        # get first column of the tuple (which represents the image, while second one represents the image class)
+        # then get the first image and show it
+        idx = numpy.arange(start=0, stop=(len(regions)), step=len(regions) / 30, dtype=int).tolist()
+        for i in idx:
+            img = images[i]
+            img_reshaped = img.reshape((img_dim, img_dim)) * 255
+            x1, y1, x2, y2 = regions[i]
+            region_exist = not (x1 == 0 and x2 == 0 and y1 == 0 and y2 == 0)
+            if region_exist:
+                cv2.rectangle(img_reshaped, (x1, y1), (x2, y2), 125, 2, -1)
+            cv2.imwrite("D:\\_Dataset\GTSDB\\_checking\\%d_%d_%d.png" % (region_exist, j, i), img_reshaped)
 
 
 def downscale():
