@@ -55,34 +55,13 @@ print('Traffic Sign Recognition')
 # train model on gtsrb database
 # cnn.evaluate_lenet5(img_dim_28=img_dim_28, dataset=mnist_dataset_28, learning_rate=0.1, n_epochs=5, kernel_dim=[5, 5], nkerns=[100, 200], mpl_layers=[500, 10], batch_size=50)
 
-# train model on SuperClass database
-# CNN.cnn.train(model_path=superclass_model_28, dataset_path=superclass_dataset, learning_rate=0.01, n_epochs=1, batch_size=2, nkerns=(8, 8*9), mlp_layers=(340, 3)) # 8.50%
-# CNN.recog.train_cnn_svm(model_path=superclass_model_28_svm, dataset_path=superclass_dataset, learning_rate=0.01, n_epochs=1, batch_size=2, nkerns=(8, 8*9), mlp_layers=(500, 3)) # 5.01%
-
-# test model on specific image
-# CNN.cnn.classify_img_from_file("D://_Dataset//SuperClass//Test_Preprocessed_Revised//00001//00045_00004.png", superclass_model_28)
-
-###### experiments ######x
-
-# CNN.utils.rgb_to_gs_and_save("D://_Dataset//UK//preprocessed//small 8.png")
-# CNN.utils.preprocess_image(filePathRead="D://_Dataset//UK//preprocessed//small.png", filePathWrite="D://_Dataset//UK//preprocessed//small 1.png")
-
-# CNN.cnn.classify_img_from_file("D://_Dataset//UK//preprocessed//small 8.png", superclass_model_28)
-# CNN.cnn.classify_img_from_file("D://_Dataset//UK//preprocessed//small 8.png", superclass_model_28_svm, CNN.cnn.ClassifierType.svm)
-
-# CNN.utils.probability_map("D://_Dataset//UK//preprocessed//big 2.png", superclass_model_28)
-# CNN.utils.probability_map("D://_Dataset//UK//preprocessed//big 2.png", superclass_model_28_svm, CNN.cnn.ClassifierType.svm)
-
 # endregion
 
-# region Recognition (Model 80)
+# region Recognition (Prohibitory 80)
 
 # img_dim_80 = 80
-# gtsrb_model_80 = 'D://_Dataset//GTSRB//lsn_model_80.pkl'
-# gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_80.pkl'
-
-# superclass_model_80 = 'D://_Dataset//SuperClass//cnn_model_80.pkl'
-# superclass_model_80_svm = 'D://_Dataset//SuperClass//cnn_model_80_svm.pkl'
+# gtsrb_model_80 = 'D://_Dataset//GTSRB//lsn_model_p_80.pkl'
+# gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_p_80.pkl'
 
 # CNN.utils.preprocess_dataset_train(img_dim_80)
 # CNN.utils.preprocess_dataset_test(img_dim_80)
@@ -92,19 +71,56 @@ print('Traffic Sign Recognition')
 # CNN.utils.check_database_4()
 
 # train model on GTSRB 80 database
-# CNN.recog.train_deep_lasagne(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
-#                      nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
-
-# train model on GTSRB 80 database using lasagne
-# CNN.recog.train_deep_las(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rates=(0.05, 0.005), momentums=(0.9, 9.95),
-#                          kernel_dim=(13, 5, 4), nkerns=(10, 50, 200), img_dim=img_dim_80, mlp_layers=(500, 200, 12), pool_size=(2, 2), batch_size=1000, n_epochs=50)
+# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=2, kernel_dim=(13, 5, 4),
+#                     nkerns=(10, 50, 200), mlp_layers=(500, 12), batch_size=10)
 
 # just make sure that the train_deep network is working
-# d = 'D://_Dataset//GTSRB//gtsrb_organized_28.pkl'
 # CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=10, img_dim=28, learning_rate=0.01, kernel_dim=(5, 3, 3), nkerns=(10, 80, 200), mlp_layers=(500, 12), pool_size=(2, 2)) # 40.0%
 # CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=5, img_dim=28, learning_rate=0.01, kernel_dim=(5, 3, 3), nkerns=(10, 80, 200), mlp_layers=(500, 12), pool_size=(2, 2)) # 9.0%
 # CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=5, img_dim=28, learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(10, 80, 200), mlp_layers=(500, 12), pool_size=(2, 2)) # 4.0%
 # CNN.recog.train_deep(dataset_path=d, n_epochs=5, batch_size=20, img_dim=28, learning_rate=0.1, kernel_dim=(5, 3, 3), nkerns=(20, 160, 400), mlp_layers=(800, 12), pool_size=(2, 2)) # 3.4%
+
+# test the recognition
+# p = "D://_Dataset/GTSDB//Training_Regions//00473_04450.png"
+# CNN.recog.classify_img_from_file(img_path=p, model_path=gtsrb_model_80, img_dim=img_dim_80, model_type=CNN.enums.ModelType._02_conv3_mlp2)
+
+# endregion
+
+# region Recognition (Mandatory 80)
+
+# img_dim_80 = 80
+# gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_m_80.pkl'
+# gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_m_80.pkl'
+
+# CNN.utils.serialize_gtsr(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
+# CNN.utils.organize_gtsr(img_dim_80, CNN.enums.SuperclassType._03_Mandatory)
+CNN.utils.remap_class_ids_mandatroy(img_dim_80)
+# CNN.utils.check_database_4()
+
+# train model on GTSRB 80 database
+# CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=5, kernel_dim=(9, 7, 4),
+#                      nkerns=(10, 50, 200), mlp_layers=(500, 8), batch_size=10)
+
+# test the recognition
+# p = "D://_Dataset/GTSDB//Training_Regions//00473_04450.png"
+# CNN.recog.classify_img_from_file(img_path=p, model_path=gtsrb_model_80, img_dim=img_dim_80, model_type=CNN.enums.ModelType._02_conv3_mlp2)
+
+# endregion
+
+# region Recognition (Warning 80)
+
+img_dim_80 = 80
+gtsrb_model_80 = 'D://_Dataset//GTSRB//cnn_model_w_80.pkl'
+gtsrb_dataset_80 = 'D://_Dataset//GTSRB//gtsrb_organized_w_80.pkl'
+
+# CNN.utils.serialize_gtsr(img_dim_80, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.organize_gtsr(img_dim_80, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.map_class_ids(img_dim_80, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.check_database_4()
+
+# train model on GTSRB 80 database
+CNN.recog.train_deep(dataset_path=gtsrb_dataset_80, model_path=gtsrb_model_80, learning_rate=0.05, n_epochs=3, kernel_dim=(9, 7, 4),
+                     nkerns=(10, 50, 200), mlp_layers=(500, 15), batch_size=10)
 
 # test the recognition
 # p = "D://_Dataset/GTSDB//Training_Regions//00473_04450.png"
@@ -169,8 +185,8 @@ print('Traffic Sign Recognition')
 # gtsdb_model_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80.pkl'
 # gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl'
 # gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_organized_80.pkl'
-# gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_80.pkl'
-# gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_p_convolved_80_binary.pkl'
+# gtsdb_dataset_conv_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_p_80.pkl'
+# gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_p_80_binary.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, True, True)
@@ -206,4 +222,3 @@ print('Traffic Sign Recognition')
 # CNN.stview.span_google_street_view()
 
 # endregion
-

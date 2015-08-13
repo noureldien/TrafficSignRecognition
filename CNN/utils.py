@@ -14,11 +14,13 @@ import skimage
 import skimage.transform
 import skimage.exposure
 import cv2
+
 import CNN
 import CNN.recog
 import CNN.enums
 import CNN.consts
 import CNN.conv
+
 import matplotlib
 import matplotlib.cm
 import matplotlib.pyplot as plt
@@ -196,12 +198,20 @@ def shared_dataset(data_xy, borrow=True):
 
 # region Pre-process
 
-def preprocess_dataset_train(img_dim):
+def preprocess_dataset_train(img_dim, superclass_type=CNN.enums.SuperclassType._01_Prohibitory):
     directory1 = "D:\\_Dataset\\GTSRB\\Final_Training_Cropped\\"
     directory2 = "D:\\_Dataset\\GTSRB\\Final_Training_Preprocessed_%d\\" % (img_dim)
 
-    prohibitory_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
-    for class_id in prohibitory_classes:
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        classes = CNN.consts.ClassesIDs.WARNING_CLASSES
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        classes = CNN.consts.ClassesIDs.MANDATORY_CLASSES
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    for class_id in classes:
         folderName = "{0:05d}\\".format(class_id)
         subDirectory1 = directory1 + folderName
         subDirectory2 = directory2 + folderName
@@ -457,7 +467,7 @@ def __plot_prob_maps(maps, shape, fig_num):
 
 # region GTSR
 
-def serialize_gtsr(img_dim):
+def serialize_gtsr(img_dim, superclass_type):
     '''
     Read the preprocessed images (training and test) and save them on the disk
     Save them with the same format and data structure as the MNIST dataset
@@ -465,8 +475,17 @@ def serialize_gtsr(img_dim):
     :return:
     '''
 
-    from os import listdir
-    from os.path import isfile, join
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        classes_ids = CNN.consts.ClassesIDs.PROHIB_CLASSES
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        classes_ids = CNN.consts.ClassesIDs.WARNING_CLASSES
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
 
     train_images = []
     train_classes = []
@@ -480,14 +499,13 @@ def serialize_gtsr(img_dim):
     csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test_PNG\\GT-final_test.annotated.csv"
 
     # get the ground truth of the test data
-    prohib_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
     with open(csvFileName, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=';', quotechar='|')
         for row in reader:
             if row[7] == "ClassId":
                 continue
             class_id = int(row[7])
-            if class_id in prohib_classes:
+            if class_id in classes_ids:
                 all_test_names.append(int(row[0][:-4]))
                 all_test_classes.append(class_id)
 
@@ -520,7 +538,7 @@ def serialize_gtsr(img_dim):
     sub_directories = [d for d in listdir(directoryTrain) if os.path.isdir(join(directoryTrain, d))]
     for d in sub_directories:
         directoryID = int(d)
-        if not (int(d) in prohib_classes):
+        if not (int(d) in classes_ids):
             continue
         sub_directory = join(directoryTrain, d)
         onlyfiles = [f for f in listdir(sub_directory) if isfile(join(sub_directory, f))]
@@ -538,13 +556,223 @@ def serialize_gtsr(img_dim):
     train_set = (train_images, train_classes)
     test_set = (test_images, test_classes)
     data = (train_set, test_set)
-    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%d.pkl' % (img_dim)
-    pickle.dump(data, open(file_name, 'wb'))
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%s_%d.pkl' % (type_char, img_dim)
+
+    # this may cause memory problems
+    # pickle.dump(data, open(file_name, 'wb'))
+
+    p = pickle._Pickler(open(file_name, "wb"))
+    p.fast = True
+    p.dump(data)
 
     print("Finish Preparing Data")
 
 
-def reduce_gtsr(img_dim):
+def organize_gtsr(img_dim, superclass_type):
+    """
+    Read the reduced dataset (it contains only 10 classes out of 43)
+    then split the training to training and validation, the save it on disk
+
+    :return:
+    """
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        classes_ids = CNN.consts.ClassesIDs.PROHIB_CLASSES
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        classes_ids = CNN.consts.ClassesIDs.WARNING_CLASSES
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%s_%d.pkl' % (type_char, img_dim)
+    data = pickle.load(open(file_name, 'rb'))
+
+    tr_images = data[0][0]
+    tr_classes = data[0][1]
+
+    train_images = []
+    train_classes = []
+    valid_images = []
+    valid_classes = []
+
+    tr_images_reshaped = []
+    for i in range(len(classes_ids)):
+        tr_images_reshaped.append([])
+
+    for i in range(len(tr_classes)):
+        index = classes_ids.index(tr_classes[i])
+        tr_images_reshaped[index].append(tr_images[i])
+
+    for i in range(len(classes_ids)):
+        class_id = classes_ids[i]
+        n = tr_classes.count(class_id)
+        nTrain = int(n * 3 / 4)
+        nValid = n - nTrain
+
+        # create shuffled indexes to shuffle the train images and classes
+        idx = numpy.arange(start=0, stop=n, dtype=int).tolist()
+        random.shuffle(idx)
+
+        # take the first nTrain items as train_set
+        idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
+        images = [tr_images_reshaped[i][j] for j in idxRange]
+        classes = (numpy.ones(shape=(nTrain,), dtype=int) * class_id).tolist()
+        train_images.extend(images)
+        train_classes.extend(classes)
+
+        # take the next nValid items as validation_set
+        idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
+        images = [tr_images_reshaped[i][j] for j in idxRange]
+        classes = (numpy.ones(shape=(nValid,), dtype=int) * class_id).tolist()
+        valid_images.extend(images)
+        valid_classes.extend(classes)
+
+    # shuffle the train and valid dateset
+    idx = numpy.arange(start=0, stop=len(train_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    train_images_shuffled = [train_images[j] for j in idx]
+    train_classes_shuffled = [train_classes[j] for j in idx]
+
+    idx = numpy.arange(start=0, stop=len(valid_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    valid_images_shuffled = [valid_images[j] for j in idx]
+    valid_classes_shuffled = [valid_classes[j] for j in idx]
+
+    # change array to numpy
+    # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
+    train_images = numpy.asarray(train_images_shuffled, dtype=float)
+    train_classes = numpy.asarray(train_classes_shuffled)
+    valid_images = numpy.asarray(valid_images_shuffled, dtype=float)
+    valid_classes = numpy.asarray(valid_classes_shuffled)
+    test_images = numpy.asarray(data[1][0], dtype=float)
+    test_classes = numpy.asarray(data[1][1])
+
+    # now, save the training and data
+    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_%s_%d.pkl' % (type_char, img_dim)
+    data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
+
+    # this line of code can trigger memory warning
+    # pickle.dump(data, open(file_name, 'wb'))
+
+    # if memory warning happen, try this
+    p = pickle._Pickler(open(file_name, "wb"))
+    p.fast = True
+    p.dump(data)
+
+    print("Finish Preparing Data")
+
+
+def map_class_ids(img_dim, superclass_type):
+    # because the ids of the data are not successive
+    # so we need to re-map them
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        classes_ids = CNN.consts.ClassesIDs.PROHIB_CLASSES
+        type_char = 'p'
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        classes_ids = CNN.consts.ClassesIDs.WARNING_CLASSES
+        type_char = 'w'
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
+        type_char = 'm'
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_%s_%d.pkl' % (type_char, img_dim)
+    data = pickle.load(open(file_path, 'rb'))
+
+    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    all_classes = [train_classes, valid_classes, test_classes]
+
+    for i in range(0, len(data)):
+        classes = data[i][1]
+        for id in classes_ids:
+            classes[classes == id] = id * 100
+
+        for j in range(0, len(classes_ids)):
+            id = classes_ids[j] * 100
+            classes[classes == id] = j
+
+        all_classes[i] = classes
+
+    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
+    pickle.dump(data, open(file_path, 'wb'))
+
+
+def remap_class_ids_prohibitroy(img_dim):
+    # because the ids of the data are not successive
+    # so we need to re-map them from
+    # from [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
+    # to   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_p_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_path, 'rb'))
+
+    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    all_classes = [train_classes, valid_classes, test_classes]
+
+    for i in range(0, len(data)):
+        classes = data[i][1]
+        classes[classes == 7] = 60
+        classes[classes == 8] = 70
+        classes[classes == 9] = 80
+        classes[classes == 10] = 90
+        classes[classes == 15] = 100
+        classes[classes == 16] = 110
+
+        classes[classes == 60] = 6
+        classes[classes == 70] = 7
+        classes[classes == 80] = 8
+        classes[classes == 90] = 9
+        classes[classes == 100] = 10
+        classes[classes == 110] = 11
+        all_classes[i] = classes
+
+    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
+    pickle.dump(data, open(file_path, 'wb'))
+
+
+def remap_class_ids_mandatroy(img_dim):
+    # because the ids of the data are not successive
+    # so we need to re-map them from
+    # from [33, 34, 35, 36, 37, 38, 39, 40]
+    # to   [00, 01, 02, 03, 04, 05, 06, 07]
+
+    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_m_%d.pkl' % (img_dim)
+    data = pickle.load(open(file_path, 'rb'))
+
+    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
+    all_classes = [train_classes, valid_classes, test_classes]
+
+    for i in range(0, len(data)):
+        classes = data[i][1]
+
+        classes[classes == 33] = 0
+        classes[classes == 34] = 1
+        classes[classes == 35] = 2
+        classes[classes == 36] = 3
+        classes[classes == 37] = 4
+        classes[classes == 38] = 5
+        classes[classes == 39] = 6
+        classes[classes == 40] = 7
+
+        all_classes[i] = classes
+
+    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
+    pickle.dump(data, open(file_path, 'wb'))
+
+
+def __reduce_gtsr(img_dim):
     '''
     Read the preprocessed images (training and test) and save them on the disk
     Save them with the same format and data structure as the MNIST dataset
@@ -594,92 +822,6 @@ def reduce_gtsr(img_dim):
     test_set = (test_images_reduced, test_classes_reduced)
     data = (train_set, test_set)
     pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_reduced.pkl', 'wb'))
-
-    print("Finish Preparing Data")
-
-
-def organize_gtsr(img_dim):
-    """
-    Read the reduced dataset (it contains only 10 classes out of 43)
-    then split the training to training and validation, the save it on disk
-
-    :return:
-    """
-
-    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_serialized_%d.pkl' % (img_dim)
-    data = pickle.load(open(file_name, 'rb'))
-
-    tr_images = data[0][0]
-    tr_classes = data[0][1]
-
-    train_images = []
-    train_classes = []
-    valid_images = []
-    valid_classes = []
-
-    prohibit_classes = CNN.consts.ClassesIDs.PROHIB_CLASSES
-    tr_images_reshaped = []
-    for i in range(len(prohibit_classes)):
-        tr_images_reshaped.append([])
-
-    for i in range(len(tr_classes)):
-        index = prohibit_classes.index(tr_classes[i])
-        tr_images_reshaped[index].append(tr_images[i])
-
-    for i in range(len(prohibit_classes)):
-        class_id = prohibit_classes[i]
-        n = tr_classes.count(class_id)
-        nTrain = int(n * 3 / 4)
-        nValid = n - nTrain
-
-        # create shuffled indexes to shuffle the train images and classes
-        idx = numpy.arange(start=0, stop=n, dtype=int).tolist()
-        random.shuffle(idx)
-
-        # take the first nTrain items as train_set
-        idxRange = numpy.arange(start=0, stop=nTrain, dtype=int).tolist()
-        images = [tr_images_reshaped[i][j] for j in idxRange]
-        classes = (numpy.ones(shape=(nTrain,), dtype=int) * class_id).tolist()
-        train_images.extend(images)
-        train_classes.extend(classes)
-
-        # take the next nValid items as validation_set
-        idxRange = numpy.arange(start=nTrain, stop=n, dtype=int).tolist()
-        images = [tr_images_reshaped[i][j] for j in idxRange]
-        classes = (numpy.ones(shape=(nValid,), dtype=int) * class_id).tolist()
-        valid_images.extend(images)
-        valid_classes.extend(classes)
-
-    # shuffle the train and valid dateset
-    idx = numpy.arange(start=0, stop=len(train_classes), dtype=int).tolist()
-    random.shuffle(idx)
-    train_images_shuffled = [train_images[j] for j in idx]
-    train_classes_shuffled = [train_classes[j] for j in idx]
-
-    idx = numpy.arange(start=0, stop=len(valid_classes), dtype=int).tolist()
-    random.shuffle(idx)
-    valid_images_shuffled = [valid_images[j] for j in idx]
-    valid_classes_shuffled = [valid_classes[j] for j in idx]
-
-    # change array to numpy
-    # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
-    train_images = numpy.asarray(train_images_shuffled, dtype=float)
-    train_classes = numpy.asarray(train_classes_shuffled)
-    valid_images = numpy.asarray(valid_images_shuffled, dtype=float)
-    valid_classes = numpy.asarray(valid_classes_shuffled)
-    test_images = numpy.asarray(data[1][0], dtype=float)
-    test_classes = numpy.asarray(data[1][1])
-
-    # now, save the training and data
-    file_name = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_%d.pkl' % (img_dim)
-    data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
-
-    # pickle.dump(data, open(file_name, 'wb'))
-
-    # if mmemory warning happen, try this
-    p = pickle._Pickler(open(file_name, "wb"))
-    p.fast = True
-    p.dump(data)
 
     print("Finish Preparing Data")
 
@@ -1552,22 +1694,22 @@ def check_database_3():
 def check_database_4():
     import math
 
-    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_80.pkl', 'rb'))
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_m_80.pkl', 'rb'))
 
-    images = data[2][0]
-    classes = data[2][1]
-    del data
+    for j in [0, 1, 2]:
+        images = data[j][0]
+        classes = data[j][1]
 
-    # get first column of the tuple (which represents the image, while second one represents the image class)
-    # then get the first image and show it
-    idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 20, dtype=int).tolist()
-    for i in idx:
-        photo = images[i]
-        img_dim = photo.shape[0]
-        img_dim = math.sqrt(img_dim)
-        photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
-        c = classes[i]
-        cv2.imwrite("D:\\_Dataset\GTSRB\\_checking\\%d_%d.png" % (i, c), photo_reshaped)
+        # get first column of the tuple (which represents the image, while second one represents the image class)
+        # then get the first image and show it
+        idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 30, dtype=int).tolist()
+        for i in idx:
+            photo = images[i]
+            img_dim = photo.shape[0]
+            img_dim = math.sqrt(img_dim)
+            photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
+            c = classes[i] + 33
+            cv2.imwrite("D:\\_Dataset\GTSRB\\_checking\\%d_%d_%d.png" % (c, j, i), photo_reshaped)
 
 
 def downscale():
@@ -1592,40 +1734,5 @@ def downscale():
     x = 10
     data = ((all_images[0], data[0][1]), (all_images[1], data[1][1]), (all_images[2], data[2][1]))
     pickle.dump(data, open('D:\\_Dataset\\GTSRB\\gtsrb_organized_28_new.pkl', 'wb'))
-
-
-def remap_class_ids(img_dim):
-    # because the ids of the data are not successive
-    # so we need to re-map them from
-    # from [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 15, 16]
-    # to   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-
-    file_path = 'D:\\_Dataset\\GTSRB\\gtsrb_organized_%d.pkl' % (img_dim)
-    data = pickle.load(open(file_path, 'rb'))
-
-    train_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    valid_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    test_classes = numpy.zeros(shape=(0, 1), dtype=int)
-    all_classes = [train_classes, valid_classes, test_classes]
-
-    for i in range(0, len(data)):
-        classes = data[i][1]
-        classes[classes == 7] = 60
-        classes[classes == 8] = 70
-        classes[classes == 9] = 80
-        classes[classes == 10] = 90
-        classes[classes == 15] = 100
-        classes[classes == 16] = 110
-
-        classes[classes == 60] = 6
-        classes[classes == 70] = 7
-        classes[classes == 80] = 8
-        classes[classes == 90] = 9
-        classes[classes == 100] = 10
-        classes[classes == 110] = 11
-        all_classes[i] = classes
-
-    data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
-    pickle.dump(data, open(file_path, 'wb'))
 
 # endregion

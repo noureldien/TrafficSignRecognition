@@ -12,6 +12,7 @@ class ClassifierType(enum.Enum):
     logit = 1
     svm = 2
 
+
 class ModelType(enum.Enum):
     _00_undefined = 0
     _01_conv2_mlp2 = 1

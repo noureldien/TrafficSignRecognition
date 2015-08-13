@@ -88,23 +88,29 @@ def span_google_street_view():
     # road_locations = googlemaps.client.snap_to_roads(client, path, interpolate=True)
 
     # load the models once and for all
-    prohib_recognition_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_80.pkl"
-    prohib_detection_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
+    prohib_recog_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_p_80.pkl"
+    mandat_recog_model_path = "D:\\_Dataset\\GTSRB\\cnn_model_m_80.pkl"
+    prohib_detec_model_path = "D:\\_Dataset\\GTSDB\\las_model_p_80_binary.pkl"
+    mandat_detec_model_path = "D:\\_Dataset\\GTSDB\\las_model_m_80_binary.pkl"
     superclass_recognition_model_path = "D:\\_Dataset\\SuperClass\\cnn_model_28_lasagne.pkl"
 
-    detect_ner_p = __build_detector(prohib_recognition_model_path, prohib_detection_model_path, batch_size)
+    detect_net_p = __build_detector(prohib_recog_model_path, prohib_detec_model_path, batch_size)
+    detect_net_m = __build_detector(mandat_recog_model_path, mandat_detec_model_path, batch_size)
     recog_superclass_cnn = __build_classifier(superclass_recognition_model_path)
 
-    #import nolearn
-    #import nolearn.lasagne
-    #a = nolearn.lasagne.NeuralNet()
-    #a.predict_proba()
+    # detect the region, using superclass-specific recognition model
+    regions_p = __detect(img_color, batch_size, detect_net_p)
+    regions_m = __detect(img_color, batch_size, detect_net_m)
 
-    # detect the region
+    # extract regions from the image (for each region, extract different scales)
+    # then do super-class classification for these regions
+    # don't forget to classify and get the prediction probability
+    # ppp = net_cnn.predict_proba(imgs)
+
     img_color = cv2.imread("D:\\_Dataset\\GTSDB\\Test_PNG\\_img15.png")
     batch_size = 100
 
-    regions = __detect(img_color, batch_size, detect_ner_p)
+
 
     # after detection, run super-class classification on only the strong regions
     strong_regions = regions
