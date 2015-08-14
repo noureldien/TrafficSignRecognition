@@ -74,7 +74,7 @@ def __tutorial(boxes, overlap_thresh, min_overlap):
 def suppression(boxes, overlap_thresh, min_overlap):
     # if there are no boxes, return an empty list
     if len(boxes) == 0:
-        return []
+        return [], []
 
     # cast as numpy if needed
     if isinstance(boxes, list):
@@ -157,6 +157,5 @@ def suppression(boxes, overlap_thresh, min_overlap):
         # delete all indexes from the index list that have
         idxs = np.delete(idxs, deleted_i)
 
-        # return only the bounding boxes that were picked using the
-        # integer data type
+    # return only the bounding boxes that were picked using the integer data type
     return np.asarray(pick, dtype=int), np.asarray(strong_pick, dtype=int)
