@@ -48,9 +48,17 @@ import CNN.nms
 
 
 class StreetViewSpan:
-    def __init__(self):
+    def __init__(self, load_models=True):
 
-        self.__batch_size = 100
+        self.api_key = self.__read_api_key()
+        self.__load_models = load_models
+        if not load_models:
+            return
+
+        print("... start building the models")
+        t1 = time.clock()
+
+        self.__batch_size = 50
         self.__img_dim_80 = 80
         self.__img_dim_28 = 28
 
@@ -72,9 +80,13 @@ class StreetViewSpan:
         self.__detect_net_m = self.__build_detector(mandat_recog_model_path, mandat_detec_model_path, self.__batch_size)
         self.__recog_superclass_cnn = self.__build_classifier(superclass_recognition_model_path)
 
-    def span_google_street_view(self):
-        api_key = self.__read_api_key()
-        client = googlemaps.client.Client(key=api_key)
+        t2 = time.clock()
+        duration = t2 - t1
+        print("... finish building the models, time(sec.): %f" % (duration))
+
+    def span_google_street_view(self, address_from="", address_to=""):
+
+        client = googlemaps.client.Client(key=self.api_key)
 
         # convert start/stop addresses to geo-locations
         address11 = '6 Longmead Road, Townhill Park, Southampton, UK'
@@ -84,8 +96,12 @@ class StreetViewSpan:
         address21 = 'University of Southampton, Highfield Campus, Southampton, UK'
         address22 = 'Jurys Inn Southampton, Charlotte Place, Southampton SO14 0TB, United Kingdom'
 
-        geocode_start = googlemaps.client.geocode(client, address22)
-        geocode_stop = googlemaps.client.geocode(client, address13)
+        if len(address_from) == 0 or len(address_to) == 0:
+            address_from = address22
+            address_to = address13
+
+        geocode_start = googlemaps.client.geocode(client, address_from)
+        geocode_stop = googlemaps.client.geocode(client, address_to)
 
         start_location = geocode_start[0]["geometry"]["location"]
         stop_location = geocode_stop[0]["geometry"]["location"]
@@ -97,12 +113,31 @@ class StreetViewSpan:
         points = polyline.codec.PolylineCodec().decode(direction_result[0]["overview_polyline"]["points"])
         locations = self.__convert_points_to_locations(points)
         locations = self.__calculate_heading(locations)
-        self.__plot_points_on_map(locations)
+        n_locations = len(locations)
+        locations = locations[- (n_locations - 10):]
 
         # missing steps
         # generate more points, adjust the pace, then calculate the heading
+        meters_per_frame = 5
+        locations = self.__augument_path(locations, meters_per_frame)
+        self.__plot_points_on_map(locations)
+        self.__show_street_view_images(locations, self.api_key)
 
-        self.__show_street_view_images(locations, api_key)
+        #road_locations = googlemaps.client.snap_to_roads(client,, interpolate = True)
+
+        # loc1 = locations[3]
+        # loc2 = locations[4]
+        # distance = self.__measure_distance(loc1, loc2)
+        # frames = int(distance / meters_per_frame)
+        # print("frames: %d" % frames)
+        # new_locations = self.__interpolate_path(loc1, loc2, frames)
+        # print("start: %f, %f" % (loc1["lat"], loc1["lng"]))
+        # print("stop: %f, %f" % (loc2["lat"], loc2["lng"]))
+        # for loc in new_locations:
+        #     print("%f, %f" % (loc["lat"], loc["lng"]))
+        # self.__plot_points_on_map(new_locations)
+
+        # self.__show_street_view_images(locations, self.api_key)
 
         # since we interpolated points in the direction, these generated points might not be on
         # the road (if road wasn't straight line). The solution is to snap these point to the road
@@ -112,12 +147,19 @@ class StreetViewSpan:
         dummy_object = True
 
     def process_image_and_save(self, img_path, count):
+        if not self.__load_models:
+            print("Sorry, can't process image because models were not loaded!!!!")
+            return
+
         img_color = cv2.imread(img_path)
         img_result = self.__process_image(img_color)
-        img_path = "D://_Dataset//GTSDB//Test_Regions/result_%d.png" % (count)
-        cv2.imwrite(img_path, img_result)
+        if img_result is not None:
+            img_path = "D://_Dataset//GTSDB//Test_Regions/result_%d.png" % (count)
+            cv2.imwrite(img_path, img_result)
 
     def __process_image(self, img_color):
+
+        t1 = time.clock()
 
         # detect the region, using superclass-specific recognition model
         detec_result_p = self.__detect(img_color, self.__batch_size, self.__detect_net_p)
@@ -131,8 +173,8 @@ class StreetViewSpan:
             for r in detec_result_m[0]:
                 regions.append(r)
         if len(regions) == 0:
-            "***** NO TRAFFIC SIGN FOUND BY THE DETECTORS *****"
-            return
+            print("... NO TRAFFIC SIGN FOUND BY THE DETECTORS")
+            return None
 
         # merge only the strong regions from the detector
         # then create different superclass regions (at different scales)
@@ -154,7 +196,9 @@ class StreetViewSpan:
         superclass_ids = []
         for i in range(0, len(regions)):
             predictions = sc_prediction[i * n_scales: (i + 1) * n_scales]
-            occurrence = numpy.bincount(predictions)
+            occurrence = []
+            for i in [0, 1, 2]:
+                occurrence.append(predictions.tolist().count(i))
             if occurrence[0] >= occurrence[1] and occurrence[0] >= occurrence[2]:
                 superclass_id = 0
             elif occurrence[1] >= occurrence[0] and occurrence[1] >= occurrence[2]:
@@ -162,6 +206,10 @@ class StreetViewSpan:
             else:
                 superclass_id = 2
             superclass_ids.append(superclass_id)
+
+        t2 = time.clock()
+        duration = t2 - t1
+        print("... finish processing the image, time(sec.): %d" % (duration))
 
         # now, we have the regions and the prediction (class id) of the superclasses in the image
         img_result = self.__draw_superclass_result(img_color, regions, superclass_ids, self.__sc_imgs)
@@ -268,7 +316,6 @@ class StreetViewSpan:
         # windows that covers the strong detection proposals
         prop_weak, prop_strong, prop_map, prop_circles = CNN.prop.detection_proposal(img_color, min_dim=min_window_dim, max_dim=max_window_dim)
         if len(prop_strong) == 0:
-            print("... NO TRAFFIC SIGN PROPOSALS WERE FOUND")
             return [], [], [], []
 
         # loop on the detection proposals
@@ -351,8 +398,8 @@ class StreetViewSpan:
         predictions = predictions.astype(bool).tolist()
 
         end_time = time.clock()
-        duration = (end_time - start_time) / 60.0
-        print("... detection regions: %d, duration(min.): %f" % (r_count, duration))
+        duration = (end_time - start_time)
+        print("... detection regions: %d, duration(sec.): %f" % (r_count, duration))
 
         # construct the probability map for each scale and show it/ save it
         s_count = 0
@@ -590,7 +637,35 @@ class StreetViewSpan:
 
     # region Path Calculation
 
-    def __recode_path(self, direction_steps, frames_per_meter=1):
+    def __augument_path(self, locations, meters_per_frame=1):
+        """
+        Generate points between every 2 points in the given steps
+        This is to enrich the points within the path
+        :param direction_steps:
+        :param frames_per_meter:
+        :return:
+        """
+
+        new_locations = []
+        for i in range(0, len(locations) - 1):
+            loc1 = locations[i]
+            loc2 = locations[i + 1]
+            distance = self.__measure_distance(loc1, loc2)
+            if distance < meters_per_frame:
+                continue
+            frames = int(distance / meters_per_frame)
+            interpolated = self.__interpolate_path(loc1, loc2, frames)
+            new_locations.append(interpolated)
+
+        # update the directions so that when at a waypoint you're looking
+        # towards the next
+        if len(new_locations) > 0:
+            new_locations = numpy.hstack(new_locations)
+            new_locations = self.__calculate_heading(new_locations)
+
+        return new_locations
+
+    def __augument_path_old(self, direction_steps, frames_per_meter=1):
         """
         Generate points between every 2 points in the given steps
         This is to enrich the points within the path
@@ -604,13 +679,9 @@ class StreetViewSpan:
             step = direction_steps[i]
             distance = step["distance"]["value"]
             frames = int(distance * frames_per_meter)
-            point1 = step["start_location"]
-            point2 = step["end_location"]
-            lat1 = point1["lat"]
-            lng1 = point1["lng"]
-            lat2 = point2["lat"]
-            lng2 = point2["lng"]
-            interpolated = self.__interpolate_path(lat1, lng1, lat2, lng2, frames)
+            location1 = step["start_location"]
+            location2 = step["end_location"]
+            interpolated = self.__interpolate_path(location1, location2, frames)
             locations.append(interpolated)
 
         # update the directions so that when at a waypoint you're looking
@@ -619,6 +690,16 @@ class StreetViewSpan:
         locations = self.__calculate_heading(locations)
 
         return locations
+
+    def __measure_distance(self, location1, location2):
+        R = 6371  # earth's mean radius in km
+        dLat = math.radians(location2["lat"] - location1["lat"])
+        dLong = math.radians(location2["lng"] - location1["lng"])
+        a = math.sin(dLat / 2) * math.sin(dLat / 2) + math.cos(math.radians(location1["lat"])) * math.cos(math.radians(location2["lat"])) * math.sin(dLong / 2) * math.sin(dLong / 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        d = R * c * 1000
+        # returned distance is in meters
+        return d
 
     def __adjust_pace(self, locations):
         """
@@ -633,7 +714,7 @@ class StreetViewSpan:
         adjusted_locations = []
         return adjusted_locations
 
-    def __interpolate_path(self, lat1, lng1, lat2, lng2, frames):
+    def __interpolate_path(self, location1, location2, frames):
         """
         Generate points between the points of the given start/stop points.
         :param lat1:
@@ -644,19 +725,23 @@ class StreetViewSpan:
         :return:
         """
 
-        x = [lat1, lat2]
-        y = [lng1, lng2]
-        xvals = numpy.linspace(lat1, lat2, frames)
-        yinterp = numpy.interp(xvals, x, y)
+        x = [location1["lat"], location2["lat"]]
+        y = [location1["lng"], location2["lng"]]
+        if x[0] - x[1] == 0:
+            yvals = numpy.linspace(y[0], y[1], frames)
+            xvals = numpy.interp(yvals, y, x)
+        else:
+            xvals = numpy.linspace(x[0], x[1], frames)
+            yvals = numpy.interp(xvals, x, y)
 
         # create geo location point with each point
         # as dictionary containing lat and lng values
-        points = []
-        for lat, lng in zip(xvals, yinterp):
+        locations = []
+        for lat, lng in zip(xvals, yvals):
             point = {"lat": lat, "lng": lng}
-            points.append(point)
+            locations.append(point)
 
-        return points
+        return locations
 
     def __calculate_heading(self, locations):
         """

@@ -1449,7 +1449,6 @@ def convolve_gtsdb(recognition_model_path, superclass_type):
 
 
 def change_target_to_binary(img_dim, superclass_type, is_convolved_dataset):
-
     if is_convolved_dataset:
         name = "convolved"
     else:

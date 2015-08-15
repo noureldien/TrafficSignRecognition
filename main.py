@@ -219,15 +219,15 @@ print('Traffic Sign Recognition')
 
 # region Detection (Mandatory 80)
 
-img_dim_80 = 80
-
-gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_m_80.pkl'
-gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_m_80_binary.pkl'
-gtsdb_model_bin_from_scratch_80 = 'D:\\_Dataset\\GTSDB\\las_model_m_80_binary_scratch.pkl'
-
-gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_m_80.pkl'
-gtsdb_dataset_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_m_80_binary.pkl'
-gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_m_80_binary.pkl'
+# img_dim_80 = 80
+#
+# gtsrb_model_80 = 'D:\\_Dataset\\GTSRB\\cnn_model_m_80.pkl'
+# gtsdb_model_bin_80 = 'D:\\_Dataset\\GTSDB\\las_model_m_80_binary.pkl'
+# gtsdb_model_bin_from_scratch_80 = 'D:\\_Dataset\\GTSDB\\las_model_m_80_binary_scratch.pkl'
+#
+# gtsdb_dataset_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_m_80.pkl'
+# gtsdb_dataset_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_organized_m_80_binary.pkl'
+# gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_m_80_binary.pkl'
 
 # extract region images to train the detector
 # CNN.utils.serialize_gtsdb(img_dim_80, CNN.enums.SuperclassType._03_Mandatory, True, True)
@@ -280,11 +280,12 @@ gtsdb_dataset_conv_bin_80 = 'D:\\_Dataset\\GTSDB\\gtsdb_convolved_m_80_binary.pk
 
 # region Google Street View
 
-# CNN.stview.span_google_street_view()
+street_view = CNN.stview.StreetViewSpan(True)
 
-street_view = CNN.stview.StreetViewSpan()
-img_path = "D:\\_Dataset\\GTSDB\\Test_PNG\\_img6.png"
-count = 10
-street_view.process_image_and_save(img_path, count)
+# for i in range(100, 200):
+#     img_id = "{0:05d}".format(i)
+#     print("image: %s" % (img_id))
+#     img_path = "D:\\_Dataset\\GTSDB\\Test_PNG\\%s.png" % (img_id)
+#     street_view.process_image_and_save(img_path, i)
 
 # endregion
