@@ -280,8 +280,7 @@ print('Traffic Sign Recognition')
 
 # region Google Street View
 
-street_view = CNN.stview.StreetViewSpan(True)
-
+# street_view = CNN.stview.StreetViewSpan(True)
 # for i in range(100, 200):
 #     img_id = "{0:05d}".format(i)
 #     print("image: %s" % (img_id))

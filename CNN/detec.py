@@ -31,7 +31,7 @@ from CNN.mlp import HiddenLayer
 
 # region Train Detector
 
-def train_shallow(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=500,
+def train_model_28(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, n_epochs=10, batch_size=500,
                   classifier=CNN.enums.ClassifierType.logit):
     datasets = CNN.utils.load_data(dataset_path)
 
@@ -277,7 +277,7 @@ def train_shallow(dataset_path, recognition_model_path, detection_model_path='',
     save_file.close()
 
 
-def train_deep(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, momentum=0.9,
+def train_model_80(dataset_path, recognition_model_path, detection_model_path='', learning_rate=0.1, momentum=0.9,
                n_epochs=10, batch_size=500, mlp_layers=(1000, 4)):
     # do all the cov+pool computation using theano
     # while train the regressor of the detector using nolearn and lasagne
