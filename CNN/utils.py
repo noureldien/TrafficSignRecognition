@@ -476,6 +476,54 @@ def __plot_prob_maps(maps, shape, fig_num):
 
 # region GTSR
 
+def serialize_gtsr_test():
+    data_path = "D:\\_Dataset\GTSRB\\gtsrb_serialized_test_28.pkl"
+    directoryTest = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed"
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test_PNG\\GT-final_test.annotated.csv"
+
+    img_dim = 28
+    test_names = []
+    test_classes = []
+    test_images = []
+
+    # get the ground truth of the test data
+    with open(csvFileName, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        for row in reader:
+            if row[7] == "ClassId":
+                continue
+            class_id = int(row[7])
+            test_names.append(int(row[0][:-4]))
+            test_classes.append(class_id)
+
+    files = [f for f in listdir(directoryTest) if isfile(join(directoryTest, f))]
+    for file in files:
+        fileName = join(directoryTest, file)
+        fileID = int(file[:-4])
+        if not (fileID in test_names):
+            continue
+        img = cv2.imread(fileName, cv2.IMREAD_GRAYSCALE)
+        img = skimage.transform.resize(img, output_shape=(img_dim, img_dim))
+        img = img.reshape(img_dim * img_dim, )
+        test_images.append(img)
+
+    test_images = numpy.asarray(test_images)
+    test_classes = numpy.asarray(test_classes)
+    data = (test_images, test_classes)
+
+    print(test_images.shape)
+    print(test_classes.shape)
+
+    # this may cause memory problems
+    pickle.dump(data, open(data_path, 'wb'))
+
+    # p = pickle._Pickler(open(data_path, "wb"))
+    # p.fast = True
+    # p.dump(data)
+
+    print("Finish Serializing Test Data")
+
+
 def serialize_gtsr(img_dim, superclass_type, sampling=False):
     '''
     Read the preprocessed images (training and test) and save them on the disk
@@ -735,19 +783,32 @@ def map_class_ids(img_dim, superclass_type):
     pickle.dump(data, open(file_path, 'wb'))
 
 
-def restore_class_ids(ids):
+def restore_class_ids(mapped_ids, superclass_type):
     """
      because the class ids of the database was mapped (for example from [33, 35, 37] to [0 1 2])
      this function restores the original ids
     :return:
     """
-    original_ids = numpy.zeros((len(ids),), dtype=int)
-    # for id in ids:
-    #     classes[classes == id] = id * 100
-    #
-    # for j in range(0, len(classes_ids)):
-    #     id = classes_ids[j] * 100
-    #     classes[classes == id] = j
+
+    if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
+        classes_ids = CNN.consts.ClassesIDs.PROHIB_CLASSES
+    elif superclass_type == CNN.enums.SuperclassType._02_Warning:
+        classes_ids = CNN.consts.ClassesIDs.WARNING_CLASSES
+    elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
+        classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
+    elif superclass_type == CNN.enums.SuperclassType._04_Other:
+        classes_ids = CNN.consts.ClassesIDs.OTHER_CLASSES
+    else:
+        raise Exception("Sorry, un-recognized super-class type")
+
+    # copy list
+    original_ids = mapped_ids.copy()
+
+    # recover the original ids
+    for i in range(0, len(classes_ids)):
+        original_ids[mapped_ids == i] = classes_ids[i]
+
+    return original_ids
 
 
 def __reduce_gtsr(img_dim):

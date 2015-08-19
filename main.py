@@ -1,13 +1,16 @@
 from builtins import print
 
+import numpy
+
 import CNN
 import CNN.utils
 import CNN.recog
 import CNN.detec
 import CNN.enums
 import CNN.prop
+import CNN.consts
 import CNN.stview
-import numpy
+import CNN.comp
 
 print('Traffic Sign Recognition')
 
@@ -86,6 +89,109 @@ print('Traffic Sign Recognition')
 
 # endregion
 
+# region Recognition (Prohibitory 28)
+
+# img_dim_28 = 28
+#
+# gtsrb_model_las_p_28 = 'D://_Dataset//GTSRB//cnn_model_las_p_28.pkl'
+# gtsrb_dataset_p_28 = 'D://_Dataset//GTSRB//gtsrb_organized_p_28.pkl'
+
+# CNN.utils.serialize_gtsr(img_dim_28, CNN.enums.SuperclassType._01_Prohibitory, sampling=True)
+# CNN.utils.organize_gtsr(img_dim_28, CNN.enums.SuperclassType._01_Prohibitory)
+# CNN.utils.map_class_ids(img_dim_28, CNN.enums.SuperclassType._01_Prohibitory)
+# CNN.utils.check_database_4()
+
+# this version of the network have only 1 hidden layer in the MLP
+# error: 0.66/0.35/3.75%, loss: 0.04701/0.05821
+# n_classes = len(CNN.consts.ClassesIDs.PROHIB_CLASSES)
+# CNN.recog.train_superclass_classifier_28_light(dataset_path=gtsrb_dataset_p_28, model_path=gtsrb_model_las_p_28, n_epochs=30,
+#                                               kernel_dim=(5, 5), mlp_layers=(400, n_classes), nkerns=(40, 100))
+
+# error: 0.14/0.00/3.17%, loss: 0.02182/0.04173 after re-training for 1 time
+# CNN.recog.resume_training_lasagne(dataset_path=gtsrb_dataset_p_28, model_path=gtsrb_model_las_p_28, n_epochs=30, save_model=True)
+
+# test super-class classifier model
+# CNN.recog.classify_superclass_from_database(model_path=gtsrb_model_las_p_28, dataset_path=gtsrb_dataset_p_28, img_dim=img_dim_28)
+
+# endregion
+
+# region Recognition (Warning 28)
+
+# img_dim_28 = 28
+#
+# gtsrb_model_las_w_28 = 'D://_Dataset//GTSRB//cnn_model_las_w_28.pkl'
+# gtsrb_dataset_w_28 = 'D://_Dataset//GTSRB//gtsrb_organized_w_28.pkl'
+
+# CNN.utils.serialize_gtsr(img_dim_28, CNN.enums.SuperclassType._02_Warning, sampling=True)
+# CNN.utils.organize_gtsr(img_dim_28, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.map_class_ids(img_dim_28, CNN.enums.SuperclassType._02_Warning)
+# CNN.utils.check_database_4()
+
+# error:  %, loss:  using 600 in the hidden layer
+# error:  0.177/0.00/8.458%, loss: 0.01678/0.04349 using 400 in the hidden layer
+# n_classes = len(CNN.consts.ClassesIDs.WARNING_CLASSES)
+# CNN.recog.train_superclass_classifier_28_light(dataset_path=gtsrb_dataset_w_28, model_path=gtsrb_model_las_w_28, n_epochs=30,
+#                                               kernel_dim=(5, 5), mlp_layers=(600, n_classes), nkerns=(40, 100))
+
+# error: 0.110/0.00/8.85%, loss: 0.00625/0.03046 after re-training for 1 time
+# CNN.recog.resume_training_lasagne(dataset_path=gtsrb_dataset_w_28, model_path=gtsrb_model_las_w_28, n_epochs=30, save_model=True)
+
+# test super-class classifier model
+# CNN.recog.classify_superclass_from_database(model_path=gtsrb_model_las_w_28, dataset_path=gtsrb_dataset_w_28, img_dim=img_dim_28)
+
+# endregion
+
+# region Recognition (Mandatory 28)
+
+# img_dim_28 = 28
+#
+# gtsrb_model_las_m_28 = 'D://_Dataset//GTSRB//cnn_model_las_m_28.pkl'
+# gtsrb_dataset_m_28 = 'D://_Dataset//GTSRB//gtsrb_organized_m_28.pkl'
+
+# CNN.utils.serialize_gtsr(img_dim_28, CNN.enums.SuperclassType._03_Mandatory, sampling=True)
+# CNN.utils.organize_gtsr(img_dim_28, CNN.enums.SuperclassType._03_Mandatory)
+# CNN.utils.map_class_ids(img_dim_28, CNN.enums.SuperclassType._03_Mandatory)
+# CNN.utils.check_database_4()
+
+# error: 0.33/0.24/1.63%, loss: 0.06619/0.01091
+# n_classes = len(CNN.consts.ClassesIDs.MANDATORY_CLASSES)
+# CNN.recog.train_superclass_classifier_28_light(dataset_path=gtsrb_dataset_m_28, model_path=gtsrb_model_las_m_28, n_epochs=30,
+#                                                kernel_dim=(5, 5), mlp_layers=(400, n_classes), nkerns=(40, 100))
+
+# # error: %, loss:  after re-training for 1 time
+# CNN.recog.resume_training_lasagne(dataset_path=gtsrb_dataset_o_28, model_path=gtsrb_model_las_o_28, n_epochs=30, save_model=True)
+
+# test super-class classifier model
+# CNN.recog.classify_superclass_from_database(model_path=gtsrb_model_las_m_28, dataset_path=gtsrb_dataset_m_28, img_dim=img_dim_28)
+
+# endregion
+
+# region Recognition (Other 28)
+
+# img_dim_28 = 28
+#
+# gtsrb_model_las_o_28 = 'D://_Dataset//GTSRB//cnn_model_las_o_28.pkl'
+# gtsrb_dataset_o_28 = 'D://_Dataset//GTSRB//gtsrb_organized_o_28.pkl'
+
+# CNN.utils.serialize_gtsr(img_dim_28, CNN.enums.SuperclassType._04_Other, sampling=True)
+# CNN.utils.organize_gtsr(img_dim_28, CNN.enums.SuperclassType._04_Other)
+# CNN.utils.map_class_ids(img_dim_28, CNN.enums.SuperclassType._04_Other)
+# CNN.utils.check_database_4()
+
+# error:  0.127/0.00/3.33%, loss: 0.00419/0.02339 using 600 in the hidden layer
+# error:  0.16/0.00/3.208%, loss: 0.00724/0.03347 using 400 in the hidden layer
+# n_classes = len(CNN.consts.ClassesIDs.OTHER_CLASSES)
+# CNN.recog.train_superclass_classifier_28_light(dataset_path=gtsrb_dataset_o_28, model_path=gtsrb_model_las_o_28, n_epochs=30,
+#                                               kernel_dim=(5, 5), mlp_layers=(400, n_classes), nkerns=(40, 100))
+
+# error: 0.14/0.00/3.17%, loss: 0.02182/0.04173 after re-training for 1 time
+# CNN.recog.resume_training_lasagne(dataset_path=gtsrb_dataset_o_28, model_path=gtsrb_model_las_o_28, n_epochs=30, save_model=True)
+
+# test super-class classifier model
+# CNN.recog.classify_superclass_from_database(model_path=gtsrb_model_las_o_28, dataset_path=gtsrb_dataset_o_28, img_dim=img_dim_28)
+
+# endregion
+
 # region Recognition (Mandatory 80)
 
 # img_dim_80 = 80
@@ -125,6 +231,34 @@ print('Traffic Sign Recognition')
 # test the recognition
 # p = "D://_Dataset/GTSDB//Training_Regions//00473_04450.png"
 # CNN.recog.classify_img_from_file(img_path=p, model_path=gtsrb_model_80, img_dim=img_dim_80, model_type=CNN.enums.ModelType._02_conv3_mlp2)
+
+# endregion
+
+# region Recognition (Superclass 28)
+
+# img_dim_28 = 28
+#
+# superclass_model_las_28 = 'D://_Dataset//SuperClass//cnn_model_las_28.pkl'
+# superclass_model_svm_28 = 'D://_Dataset//SuperClass//cnn_model_las_28.pkl'
+# superclass_dataset_28 = 'D://_Dataset//SuperClass//superclass_organized_28.pkl'
+
+# CNN.utils.serialize_superclass(img_dim_28)
+# CNN.utils.check_database_4()
+
+# train super-class model on 28 pixels
+# error 1.38/0.16/0.04%, loss: 0.020/0.045 when training using all train/valid/test
+# error 0.36/0.00/4.39%, loss: 0.018/0.036 when training using train/valid only
+# CNN.recog.train_superclass_classifier_28(dataset_path=superclass_dataset_28, model_path=superclass_model_las_28, n_epochs=30,
+#                                         kernel_dim=(5, 5), mlp_layers=(400, 100, 3), nkerns=(40, 100))
+
+# this version of the network have only 1 hidden layer in the MLP
+# error 0.12/0.00/3.79%, loss: 0.0082/0.0178
+# error 0.13/0.15/1.52%, loss: 0.0097/0.0160 when using all the 4 superclasses, each class in them is sampled by 150 images
+# CNN.recog.train_superclass_classifier_28_light(dataset_path=superclass_dataset_28, model_path=superclass_model_las_28, n_epochs=30,
+#                                          kernel_dim=(5, 5), mlp_layers=(400, 4), nkerns=(40, 100))
+
+# test super-class classifier model
+# CNN.recog.classify_superclass_from_database(model_path=superclass_model_las_28, dataset_path=superclass_dataset_28, img_dim=img_dim_28)
 
 # endregion
 
@@ -275,6 +409,12 @@ print('Traffic Sign Recognition')
 
 # img = "D://_Dataset//GTSDB//Test_PNG//00061.png"
 # CNN.prop.detection_proposal_and_save(img, 10, 160)
+
+# endregion
+
+# region Competition (Recognition)
+
+# CNN.comp.classify_testset()
 
 # endregion
 
