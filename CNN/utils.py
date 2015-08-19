@@ -72,16 +72,25 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
 
 class AdjustVariable(object):
-    def __init__(self, name, start=0.03, stop=0.001):
+    def __init__(self, name, start=0.03, stop=0.001, count=None):
         self.name = name
         self.start, self.stop = start, stop
         self.ls = None
+        self.count = count
 
     def __call__(self, nn, train_history):
         if self.ls is None:
             self.ls = numpy.linspace(self.start, self.stop, nn.max_epochs)
+        elif self.count is not None:
+            self.ls = numpy.linspace(self.start, self.stop, self.count)
 
         epoch = train_history[-1]['epoch']
+        # this is hot-fix to fix bug when resuming training model
+        # that was serialized before
+        n_ls = self.ls.shape[0]
+        if epoch > n_ls:
+            epoch = epoch % n_ls
+
         new_value = numpy.cast['float32'](self.ls[epoch - 1])
         getattr(nn, self.name).set_value(new_value)
 
@@ -467,7 +476,7 @@ def __plot_prob_maps(maps, shape, fig_num):
 
 # region GTSR
 
-def serialize_gtsr(img_dim, superclass_type):
+def serialize_gtsr(img_dim, superclass_type, sampling=False):
     '''
     Read the preprocessed images (training and test) and save them on the disk
     Save them with the same format and data structure as the MNIST dataset
@@ -484,6 +493,9 @@ def serialize_gtsr(img_dim, superclass_type):
     elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
         classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
         type_char = 'm'
+    elif superclass_type == CNN.enums.SuperclassType._04_Other:
+        classes_ids = CNN.consts.ClassesIDs.OTHER_CLASSES
+        type_char = 'o'
     else:
         raise Exception("Sorry, un-recognized super-class type")
 
@@ -542,7 +554,19 @@ def serialize_gtsr(img_dim, superclass_type):
             continue
         sub_directory = join(directoryTrain, d)
         onlyfiles = [f for f in listdir(sub_directory) if isfile(join(sub_directory, f))]
-        for file in onlyfiles:
+
+        # we don't want to take all the images in the class, we want only small sample
+        n_files = len(onlyfiles)
+        idx = numpy.arange(start=0, stop=n_files, dtype=int).tolist()
+        if sampling:
+            random.shuffle(idx)
+            n_samples = 500
+            if n_files < n_samples:
+                n_samples = n_files
+        else:
+            n_samples = n_files
+        for f_index in idx[0:n_samples]:
+            file = onlyfiles[f_index]
             fileName = join(sub_directory, file)
             img = cv2.imread(fileName, cv2.IMREAD_GRAYSCALE)
             if img.shape[0] < smallest_dim or img.shape[1] < smallest_dim:
@@ -585,6 +609,9 @@ def organize_gtsr(img_dim, superclass_type):
     elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
         classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
         type_char = 'm'
+    elif superclass_type == CNN.enums.SuperclassType._04_Other:
+        classes_ids = CNN.consts.ClassesIDs.OTHER_CLASSES
+        type_char = 'o'
     else:
         raise Exception("Sorry, un-recognized super-class type")
 
@@ -668,7 +695,7 @@ def organize_gtsr(img_dim, superclass_type):
 
 def map_class_ids(img_dim, superclass_type):
     # because the ids of the data are not successive
-    # so we need to re-map them
+    # so we need to map them
 
     if superclass_type == CNN.enums.SuperclassType._01_Prohibitory:
         classes_ids = CNN.consts.ClassesIDs.PROHIB_CLASSES
@@ -679,6 +706,9 @@ def map_class_ids(img_dim, superclass_type):
     elif superclass_type == CNN.enums.SuperclassType._03_Mandatory:
         classes_ids = CNN.consts.ClassesIDs.MANDATORY_CLASSES
         type_char = 'm'
+    elif superclass_type == CNN.enums.SuperclassType._04_Other:
+        classes_ids = CNN.consts.ClassesIDs.OTHER_CLASSES
+        type_char = 'o'
     else:
         raise Exception("Sorry, un-recognized super-class type")
 
@@ -703,6 +733,21 @@ def map_class_ids(img_dim, superclass_type):
 
     data = ((data[0][0], all_classes[0]), (data[1][0], all_classes[1]), (data[2][0], all_classes[2]))
     pickle.dump(data, open(file_path, 'wb'))
+
+
+def restore_class_ids(ids):
+    """
+     because the class ids of the database was mapped (for example from [33, 35, 37] to [0 1 2])
+     this function restores the original ids
+    :return:
+    """
+    original_ids = numpy.zeros((len(ids),), dtype=int)
+    # for id in ids:
+    #     classes[classes == id] = id * 100
+    #
+    # for j in range(0, len(classes_ids)):
+    #     id = classes_ids[j] * 100
+    #     classes[classes == id] = j
 
 
 def __reduce_gtsr(img_dim):
@@ -963,7 +1008,7 @@ def organize_belgiumTS():
 # region SuperClass
 
 
-def serialize_SuperClass():
+def serialize_SuperClass_old():
     '''
     Read the preprocessed images (training and test), then split the training to training and validation
     then save them on the disk, Save them with the same format and data structure as the MNIST dataset
@@ -1070,6 +1115,130 @@ def serialize_SuperClass():
     # now, save the training and data
     data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
     pickle.dump(data, open('D:\\_Dataset\\SuperClass\\SuperClass_normalized.pkl', 'wb'))
+
+    print("Finish Preparing Data")
+
+
+def serialize_superclass(img_dim):
+    '''
+    Collect the images of GTSRB into superclasses
+    :return:
+    '''
+
+    directory_train = "D:\\_Dataset\\GTSRB\Final_Training_Preprocessed\\"
+    directory_test = "D:\\_Dataset\\GTSRB\\Final_Test_Preprocessed\\"
+
+    n_classes = 4
+    superclasses_ids = [CNN.consts.ClassesIDs.PROHIB_CLASSES,
+                        CNN.consts.ClassesIDs.WARNING_CLASSES,
+                        CNN.consts.ClassesIDs.MANDATORY_CLASSES,
+                        CNN.consts.ClassesIDs.OTHER_CLASSES]
+
+    tr_images = []
+    tr_classes = []
+    test_images = []
+    test_classes = []
+    test_classes_old = []
+
+    # read the csv of the test images to
+    # get the ground truth of the test data
+    # get the ground truth as superclass id not class id
+    csvFileName = "D:\\_Dataset\\GTSRB\\Final_Test_PNG\\GT-final_test.annotated.csv"
+    test_images_names = []
+    with open(csvFileName, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';', quotechar='|')
+        for row in reader:
+            if row[7] != "ClassId":
+                test_images_names.append(row[0][:-4])
+                class_id = int(row[7])
+                test_classes_old.append(class_id)
+                # for i in range(0, len(superclasses_ids)):
+                #     classes_ids = superclasses_ids[i]
+                #     if class_id in classes_ids:
+                #         test_classes.append(i)
+                #         break
+                if class_id in superclasses_ids[0]:
+                    test_classes.append(0)
+                elif class_id in superclasses_ids[1]:
+                    test_classes.append(1)
+                elif class_id in superclasses_ids[2]:
+                    test_classes.append(2)
+                elif class_id in superclasses_ids[3]:
+                    test_classes.append(3)
+                else:
+                    raise Exception("Unknown class")
+
+    # loop on images of each super class, then resize and append them
+    # for example loop on the images in the folders [0, 1, 2, 3, .....]
+    # and add them to the prohibitory superclass
+    for i in range(0, len(superclasses_ids)):
+        classes_ids = superclasses_ids[i]
+        for ids in classes_ids:
+            sub_directory = directory_train + "{0:05d}\\".format(ids)
+            onlyfiles = [f for f in listdir(sub_directory) if isfile(join(sub_directory, f))]
+            # we don't want to take all the images in the class, we want only small sample
+            n_files = len(onlyfiles)
+            n_samples = 150
+            if n_files < n_samples:
+                n_samples = n_files
+            idx = numpy.arange(start=0, stop=n_files, dtype=int).tolist()
+            random.shuffle(idx)
+            for f_index in idx[0:n_samples]:
+                file = onlyfiles[f_index]
+                fileName = join(sub_directory, file)
+                img = cv2.imread(fileName, cv2.IMREAD_UNCHANGED)
+                img = cv2.resize(img, (img_dim, img_dim))
+                tr_images.append(img)
+                tr_classes.append(i)
+
+    # loop on all the images of the test, resize and append
+    onlyfiles = [f for f in listdir(directory_test) if isfile(join(directory_test, f))]
+    for file in onlyfiles:
+        fileName = join(directory_test, file)
+        img = cv2.imread(fileName, cv2.IMREAD_UNCHANGED)
+        img = cv2.resize(img, (img_dim, img_dim))
+        test_images.append(img)
+
+    # shuffle the train and valid dateset
+    idx = numpy.arange(start=0, stop=len(tr_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    tr_images_shuffled = [tr_images[j] for j in idx]
+    tr_classes_shuffled = [tr_classes[j] for j in idx]
+
+    idx = numpy.arange(start=0, stop=len(test_classes), dtype=int).tolist()
+    random.shuffle(idx)
+    test_images_shuffled = [test_images[j] for j in idx]
+    test_classes_shuffled = [test_classes[j] for j in idx]
+
+    # split tr to train and test
+    n = len(tr_classes)
+    nTrain = int(n * 4 / 5)
+    train_images_shuffled = tr_images_shuffled[0:nTrain]
+    train_classes_shuffled = tr_classes_shuffled[0:nTrain]
+    valid_images_shuffled = tr_images_shuffled[nTrain:n]
+    valid_classes_shuffled = tr_classes_shuffled[nTrain:n]
+
+    # change array to numpy
+    train_images = numpy.asarray(train_images_shuffled)
+    train_classes = numpy.asarray(train_classes_shuffled)
+    valid_images = numpy.asarray(valid_images_shuffled)
+    valid_classes = numpy.asarray(valid_classes_shuffled)
+    test_images = numpy.asarray(test_images_shuffled)
+    test_classes = numpy.asarray(test_classes_shuffled)
+
+    train_images = train_images.reshape((train_images.shape[0], img_dim * img_dim))
+    valid_images = valid_images.reshape((valid_images.shape[0], img_dim * img_dim))
+    test_images = test_images.reshape((test_images.shape[0], img_dim * img_dim))
+
+    # For all the images, cast the ndarray from int to float64 then normalize (divide by 255)
+    train_images = train_images.astype(float) / 255.0
+    valid_images = valid_images.astype(float) / 255.0
+    test_images = test_images.astype(float) / 255.0
+
+    # now, save the training and data
+    data = ((train_images, train_classes), (valid_images, valid_classes), (test_images, test_classes))
+    data_path = "D:\\_Dataset\\SuperClass\\SuperClass_organized_%d.pkl" % (img_dim)
+    pickle.dump(data, open(data_path, 'wb'))
 
     print("Finish Preparing Data")
 
@@ -1661,11 +1830,16 @@ def check_database_3():
 def check_database_4():
     import math
 
-    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_m_80.pkl', 'rb'))
+    data = pickle.load(open('D:\\_Dataset\\GTSRB\\gtsrb_organized_m_28.pkl', 'rb'))
 
     for j in [0, 1, 2]:
         images = data[j][0]
         classes = data[j][1]
+
+        print(images.shape)
+        print(classes.shape)
+        print("min, max: %f, %f" % (numpy.max(images), numpy.min(images)))
+        print("min, max: %f, %f" % (numpy.max(classes), numpy.min(classes)))
 
         # get first column of the tuple (which represents the image, while second one represents the image class)
         # then get the first image and show it
@@ -1675,7 +1849,7 @@ def check_database_4():
             img_dim = photo.shape[0]
             img_dim = math.sqrt(img_dim)
             photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
-            c = classes[i] + 33
+            c = classes[i]
             cv2.imwrite("D:\\_Dataset\GTSRB\\_checking\\%d_%d_%d.png" % (c, j, i), photo_reshaped)
 
 

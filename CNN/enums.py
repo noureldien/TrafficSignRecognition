@@ -6,6 +6,7 @@ class SuperclassType(enum.Enum):
     _01_Prohibitory = 1
     _02_Warning = 2
     _03_Mandatory = 3
+    _04_Other = 4
 
 
 class ClassifierType(enum.Enum):
