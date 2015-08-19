@@ -1064,6 +1064,38 @@ def organize_belgiumTS():
     print("Finish Preparing Data")
 
 
+def serialize_belgiumTS_non_gtsrb():
+    # serialize images in Belgium Traffic Sign Dataset
+    # that does not exist in GTSRB
+    directoryTrain = "D:\\_Dataset\\BelgiumTS\\Training_Preprocessed_28\\"
+    directoryTest = "D:\\_Dataset\\BelgiumTS\\Test_Preprocessed_28\\"
+
+    images = []
+    classes = []
+    img_dim = 28
+
+    # prohibitory, warning, mandatory
+    classes_ids = [[20, 29, 30], [3, 4, 5, 9, 12, 14, 15, 18], [35]]
+    # classes_ids = [[25, 28, 31], [11, 13, 17], [37]]
+    for i in range(0, len(classes_ids)):
+        for folder_id in classes_ids[i]:
+            subDirectory = directoryTest + "{0:05d}\\".format(folder_id)
+            onlyfiles = [f for f in listdir(subDirectory) if isfile(join(subDirectory, f))]
+            for file in onlyfiles:
+                fileName = join(subDirectory, file)
+                img = cv2.imread(fileName, cv2.IMREAD_UNCHANGED)
+                images.append(img)
+                classes.append(i)
+
+    images = numpy.asarray(images, dtype=float) / 255.0
+    images.reshape((images.shape[0], img_dim * img_dim))
+    classes = numpy.asarray(classes, dtype=int)
+    data = (images, classes)
+    file_path = "D:\\_Dataset\BelgiumTS\\BelgiumTS_non_GTSRB_28.pkl"
+    with open(file_path, "wb") as data_file:
+        pickle.dump(data, data_file)
+
+
 # endregion
 
 # region SuperClass
@@ -1912,6 +1944,31 @@ def check_database_4():
             photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
             c = classes[i]
             cv2.imwrite("D:\\_Dataset\GTSRB\\_checking\\%d_%d_%d.png" % (c, j, i), photo_reshaped)
+
+
+def check_database_5():
+    import math
+
+    data_path = "D:\\_Dataset\BelgiumTS\\BelgiumTS_non_GTSRB_28.pkl"
+    data = pickle.load(open(data_path, 'rb'))
+
+    images = data[0]
+    classes = data[1]
+    img_dim = 28
+
+    print(images.shape)
+    print(classes.shape)
+    print("min, max: %f, %f" % (numpy.max(images), numpy.min(images)))
+    print("min, max: %f, %f" % (numpy.max(classes), numpy.min(classes)))
+
+    # get first column of the tuple (which represents the image, while second one represents the image class)
+    # then get the first image and show it
+    idx = numpy.arange(start=0, stop=(len(classes)), step=len(classes) / 30, dtype=int).tolist()
+    for i in idx:
+        photo = images[i]
+        photo_reshaped = photo.reshape((img_dim, img_dim)) * 255
+        c = classes[i]
+        cv2.imwrite("D:\\_Dataset\\BelgiumTS\\_checking\\%d_%d.png" % (c, i), photo_reshaped)
 
 
 def check_database_detector(img_dim, superclass_type):

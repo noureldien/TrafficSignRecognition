@@ -2006,6 +2006,26 @@ def classify_superclass_from_database(model_path, dataset_path, img_dim):
         print("... error percentage: %f%%" % (error))
 
 
+def classify_superclass_from_database_1(model_path, dataset_path, img_dim):
+    data = pickle.load(open(dataset_path, "rb"))
+
+    # load the regression model
+    with open(model_path, 'rb') as f:
+        net_cnn = pickle.load(f)
+
+    images = data[0]
+    classes = data[1]
+
+    # read the image, don't forget to reshape
+    # the image for the sake of the detector
+    imgs = numpy.asarray(images)
+    imgs = imgs.reshape((imgs.shape[0], 1, img_dim, img_dim))
+    prediction = net_cnn.predict(imgs)
+
+    error = 100 * numpy.sum(numpy.not_equal(prediction, classes)) / len(classes)
+    print("... error percentage: %f%%" % (error))
+
+
 def classify_superclass_from_image(model_path, img_dim):
     import io
     import os

@@ -82,7 +82,7 @@ def classify_testset():
     print("... error percentage: %f%%" % (error))
 
     resultdata_file_path = "D:\\_Dataset\GTSRB\\_Results\\Data-Result_%d.pkl" % int(time.time())
-    with open(resultdata_file_path, "w", newline="") as result_data_file:
+    with open(resultdata_file_path, "wb") as result_data_file:
         pickle.dump(final_predictions, result_data_file)
 
     # now, create submission

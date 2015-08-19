@@ -239,7 +239,7 @@ print('Traffic Sign Recognition')
 # img_dim_28 = 28
 #
 # superclass_model_las_28 = 'D://_Dataset//SuperClass//cnn_model_las_28.pkl'
-# superclass_model_svm_28 = 'D://_Dataset//SuperClass//cnn_model_las_28.pkl'
+# superclass_model_svm_28 = 'D://_Dataset//SuperClass//cnn_model_svm_28.pkl'
 # superclass_dataset_28 = 'D://_Dataset//SuperClass//superclass_organized_28.pkl'
 
 # CNN.utils.serialize_superclass(img_dim_28)
@@ -426,5 +426,20 @@ print('Traffic Sign Recognition')
 #     print("image: %s" % (img_id))
 #     img_path = "D:\\_Dataset\\GTSDB\\Test_PNG\\%s.png" % (img_id)
 #     street_view.process_image_and_save(img_path, i)
+
+# endregion
+
+# region Experiment
+
+# # we check if the multi-class classifier trained using GTSRB will correctly classify
+# # images from BelgiumTS that are not included in the GTSRB?
+#
+# data_path = "D:\\_Dataset\BelgiumTS\\BelgiumTS_non_GTSRB_28.pkl"
+# model_path = "D:\\_Dataset\\SuperClass\\cnn_model_las_28.pkl"
+#
+# CNN.utils.serialize_belgiumTS_non_gtsrb()
+# CNN.utils.check_database_5()
+#
+# CNN.recog.classify_superclass_from_database_1(model_path=model_path, dataset_path=data_path, img_dim=28)
 
 # endregion
